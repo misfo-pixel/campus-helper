@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "明尼助手",
+  "usingComponents": {
+    "cloud-tip-modal": "/components/cloudTipModal/index"
+  }
+}

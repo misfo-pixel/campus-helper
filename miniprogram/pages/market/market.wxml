@@ -1,0 +1,27 @@
+<!--pages/market/market.wxml-->
+<view class="page-container">
+<view style="display: flex; justify-content: space-between; align-items: center;">
+  <view class="page-title" style="margin-bottom: 0;">今天淘点什么 ♻️</view>
+  <view style="display: flex; align-items: center;">
+    <button size="mini" class="btn-primary" bindtap="goToPublish">+ 发布</button>
+  </view>
+</view>
+
+  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    还没有商品，来发布第一个吧
+  </view>
+
+
+  <!-- 商品网格：两列 -->
+  <view style="display: flex; flex-wrap: wrap; gap: 20rpx;">
+    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}"
+          style="width: calc(50% - 10rpx); background: var(--color-card); border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden;">
+      <!-- 商品首图 -->
+      <image src="{{item.images[0]}}" mode="aspectFill" style="width: 100%; height: 300rpx;"></image>
+      <view style="padding: 16rpx;">
+        <view style="font-size: 28rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
+        <view class="price" style="margin-top: 8rpx;">${{item.price}}</view>
+      </view>
+    </view>
+  </view>
+</view>

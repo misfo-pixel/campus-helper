@@ -1,0 +1,100 @@
+/**app.wxss**/
+
+/* ========== 全局设计规范 ========== */
+
+/* 配色变量 —— 以后改色只改这里 */
+page {
+  --color-primary: #7A0019;    /* UMN 栗色，主色 */
+  --color-accent: #FFCC33;     /* UMN 金色，点缀 */
+  --color-bg: #f5f5f5;         /* 页面背景 */
+  --color-card: #ffffff;       /* 卡片背景 */
+  --color-text: #333333;       /* 主文字 */
+  --color-text-light: #999999; /* 次要文字 */
+  --color-border: #eeeeee;     /* 边框 */
+
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, "PingFang SC", sans-serif;
+}
+
+/* 通用容器：页面统一留白 */
+.page-container {
+  padding: 32rpx;
+}
+
+/* 通用卡片 */
+.card {
+  background: var(--color-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: 16rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+
+/* 页面大标题 */
+.page-title {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: var(--color-text);
+  margin-bottom: 32rpx;
+}
+
+/* 小节标题 */
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: var(--color-text);
+  margin: 24rpx 0 16rpx;
+}
+
+/* 主按钮（栗色） */
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* 次要按钮（描边） */
+.btn-outline {
+  background: #fff;
+  color: var(--color-primary);
+  border: 1rpx solid var(--color-primary);
+}
+
+/* 价格文字（金色偏橙，醒目） */
+.price {
+  color: #C8102E;
+  font-weight: bold;
+}
+
+/* 次要说明文字 */
+.text-light {
+  color: var(--color-text-light);
+  font-size: 26rpx;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+} 
+
+button {
+  background: initial;
+}
+
+button:focus{
+  outline: 0;
+}
+
+button::after{
+  border: none;
+}
+
+
+page {
+  background: #f6f6f6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
