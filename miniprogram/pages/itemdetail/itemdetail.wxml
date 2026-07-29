@@ -19,5 +19,9 @@
     <button class="btn-primary" bindtap="copyWechat" style="margin-top: 48rpx;">复制卖家微信号</button>
 
     <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除商品</button>
+
+    <button wx:if="{{isOwner}}" bindtap="markSold" 
+    style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已售</button>
+
   </view>
 </view>

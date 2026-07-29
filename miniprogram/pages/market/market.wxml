@@ -1,7 +1,7 @@
 <!--pages/market/market.wxml-->
 <view class="page-container">
 <view style="display: flex; justify-content: space-between; align-items: center;">
-  <view class="page-title" style="margin-bottom: 0;">今天淘点什么 ♻️</view>
+  <view class="page-title" style="margin-bottom: 0;">省心不沉没 ♻️</view>
   <view style="display: flex; align-items: center;">
     <button size="mini" class="btn-primary" bindtap="goToPublish">+ 发布</button>
   </view>
@@ -13,9 +13,9 @@
 
 
   <!-- 商品网格：两列 -->
-  <view style="display: flex; flex-wrap: wrap; gap: 20rpx;">
+  <view style="display: flex; flex-wrap: wrap; gap: 20rpx; margin-top: 32rpx;">
     <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}"
-          style="width: calc(50% - 10rpx); background: var(--color-card); border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden;">
+          style="width: calc(48%); background: var(--color-card); border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden;">
       <!-- 商品首图 -->
       <image src="{{item.images[0]}}" mode="aspectFill" style="width: 100%; height: 300rpx;"></image>
       <view style="padding: 16rpx;">
