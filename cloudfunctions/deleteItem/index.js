@@ -14,13 +14,17 @@ exports.main = async (event, context) => {
 
     // 2. 查调用者是不是管理员
     const userRes = await db.collection('users').where({ openid: openid }).get()
-    const isAdmin = userRes.data.length > 0 && userRes.data[0].role === 'admin'
+    let roles = []
+    if (userRes.data.length > 0) {
+      roles = userRes.data[0].roles || (userRes.data[0].role ? [userRes.data[0].role] : [])
+    }
+    const isMarketAdmin = roles.includes('market_admin') || roles.includes('super_admin')
 
     // 3. 判断是不是发布者本人
     const isOwner = (item._openid === openid)
 
     // 4. 只有本人或管理员能删
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !isMarketAdmin) {
       return { success: false, message: '无权限删除' }
     }
 

@@ -35,16 +35,16 @@ Page({
       const item = res.data
       this.setData({ item: item })
   
-      // 自己调 login 拿当前用户身份，可靠判断能不能删
-      wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
-        if (loginRes.result.success) {
-          const myOpenid = loginRes.result.openid
-          const myRole = loginRes.result.role
-          const isOwner = (myOpenid === item._openid)   // 是不是发布者本人
-          const isAdmin = (myRole === 'admin')          // 是不是管理员
-          this.setData({ canDelete: isOwner || isAdmin })
-        }
-      })
+    // 自己调 login 拿当前用户身份，可靠判断能不能删
+    wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
+      if (loginRes.result.success) {
+        const myOpenid = loginRes.result.openid
+        const roles = loginRes.result.roles || []              // 改：拿 roles 数组
+        const isOwner = (myOpenid === item._openid)
+        const isMarketAdmin = roles.includes('market_admin') || roles.includes('super_admin')  // 改：查数组
+        this.setData({ canDelete: isOwner || isMarketAdmin })  // 改：用新变量
+      }
+    })
     }).catch(err => {
       console.error('加载详情失败：', err)
     })

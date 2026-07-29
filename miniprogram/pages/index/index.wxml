@@ -19,7 +19,7 @@
   </view>
 
   <button class="btn-outline" bindtap="goToMyOrders" style="margin-top: 20rpx;">我的订单</button>
-  <button wx:if="{{isAdmin}}" class="btn-outline" bindtap="goToAdmin" style="margin-top: 20rpx;">管理员：确认订单</button>
+  <button wx:if="{{isAdmin}}" class="btn-outline" bindtap="goToAdmin" style="margin-top: 20rpx;">外卖管理</button>
   <button class="btn-outline" bindtap="goToMarket" style="margin-top: 20rpx;">二手市场</button>
 
 <!-- 下单表单弹层 -->

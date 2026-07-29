@@ -36,10 +36,12 @@ Page({
     const app = getApp()
     // 稍等一下确保 login 完成（简单处理）
     // 判断是否管理员：直接调 login 云函数拿最新角色
+    // 判断是否有外卖管理权限
     wx.cloud.callFunction({ name: 'login' }).then(res => {
       if (res.result.success) {
+        const roles = res.result.roles || []
         this.setData({
-          isAdmin: res.result.role === 'admin'
+          isAdmin: roles.includes('food_admin') || roles.includes('super_admin')
         })
       }
     })

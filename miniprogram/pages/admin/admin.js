@@ -4,7 +4,18 @@ Page({
   },
 
   onShow: function () {
-    this.loadPendingOrders()
+    // 进页面先检查权限
+    wx.cloud.callFunction({ name: 'login' }).then(res => {
+      const roles = (res.result && res.result.roles) || []
+      const canManage = roles.includes('food_admin') || roles.includes('super_admin')
+      if (!canManage) {
+        wx.showToast({ title: '无权限访问', icon: 'none' })
+        setTimeout(() => wx.navigateBack(), 1000)
+        return
+      }
+      // 有权限，加载订单
+      this.loadPendingOrders()
+    })
   },
 
   // 调用云函数，获取所有待确认订单
