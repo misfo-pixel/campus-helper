@@ -1,0 +1,32 @@
+<view class="page-container">
+  <view class="card">
+    <view class="section-title">建议类型</view>
+    <picker range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
+      <view class="fb-field">{{types[typeIndex]}}</view>
+    </picker>
+  </view>
+
+  <view class="card">
+    <view class="section-title">详细内容</view>
+    <textarea
+      class="fb-textarea"
+      placeholder="说说你遇到的问题或建议…"
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="500"
+    />
+    <view class="text-light fb-count">{{content.length}}/500</view>
+  </view>
+
+  <view class="card">
+    <view class="section-title">联系方式(选填)</view>
+    <input
+      class="fb-field"
+      placeholder="微信号 / 邮箱,方便回复你"
+      value="{{contact}}"
+      bindinput="onContactInput"
+    />
+  </view>
+
+  <button class="btn-primary fb-submit" bindtap="submit" loading="{{submitting}}">提交建议</button>
+</view>

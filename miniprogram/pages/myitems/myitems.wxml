@@ -1,0 +1,17 @@
+<view class="page-container">
+  <view class="page-title">我发布的闲置</view>
+
+  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    你还没发布过闲置
+  </view>
+
+  <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card" style="display: flex; align-items: center; padding: 20rpx;">
+    <image src="{{item.images[0]}}" mode="aspectFill" style="width: 140rpx; height: 140rpx; border-radius: 12rpx; margin-right: 20rpx;"></image>
+    <view style="flex: 1;">
+      <view style="font-size: 30rpx;">{{item.title}}</view>
+      <view class="price" style="margin-top: 8rpx;">${{item.price}}</view>
+      <view class="text-light" style="margin-top: 8rpx;">状态：{{item.status}}</view>
+    </view>
+    <view style="color: #ccc; font-size: 40rpx;">›</view>
+  </view>
+</view>

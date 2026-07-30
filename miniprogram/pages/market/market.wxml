@@ -1,10 +1,8 @@
 <!--pages/market/market.wxml-->
 <view class="page-container">
 <view style="display: flex; justify-content: space-between; align-items: center;">
-  <view class="page-title" style="margin-bottom: 0;">省心不沉没 ♻️</view>
-  <view style="display: flex; align-items: center;">
-    <button size="mini" class="btn-primary" bindtap="goToPublish">+ 发布</button>
-  </view>
+  <view class="page-title" style="margin-bottom: 0;">闲置省心挂 ♻️</view>
+  <input placeholder="搜索商品名称" value="{{keyword}}" bindinput="onSearchInput" class="card" style="padding: 24rpx; margin-top: 24rpx;" />
 </view>
 
   <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">

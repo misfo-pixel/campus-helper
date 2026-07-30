@@ -1,0 +1,46 @@
+<!--pages/subletdetail/subletdetail.wxml-->
+<view wx:if="{{item}}">
+  <!-- 图片轮播 -->
+  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 600rpx;" indicator-dots circular>
+    <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+      <image src="{{img}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+    </swiper-item>
+  </swiper>
+  <view wx:else style="width: 100%; height: 300rpx; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">暂无图片</view>
+
+  <view class="page-container">
+    <view style="font-size: 40rpx; font-weight: bold;">{{item.title}}</view>
+    <view class="price" style="font-size: 44rpx; margin: 16rpx 0;">${{item.rent}}/月</view>
+
+    <!-- 核心信息 -->
+    <view class="card" style="padding: 28rpx;">
+      <view style="margin-bottom: 12rpx;">🏠 房型：{{item.room_type}}</view>
+      <view style="margin-bottom: 12rpx;">📍 地址：{{item.address}}</view>
+      <view style="margin-bottom: 12rpx;">📅 租期：{{item.start_date}} 至 {{item.end_date}}</view>
+      <view style="margin-bottom: 12rpx;">🛋 家具：{{item.furnished ? '带家具' : '不带家具'}}</view>
+      <view wx:if="{{item.utilities}}" style="margin-bottom: 12rpx;">💡 每月水电：${{item.utilities}}</view>
+      <view wx:if="{{item.deposit}}">💰 押金：${{item.deposit}}</view>
+    </view>
+
+    <!-- 室友情况 -->
+    <view wx:if="{{item.roommate_info}}">
+      <view class="section-title">室友情况</view>
+      <view style="line-height: 1.6; color: #555;">{{item.roommate_info}}</view>
+    </view>
+
+    <!-- 其他说明 -->
+    <view wx:if="{{item.description}}">
+      <view class="section-title">其他说明</view>
+      <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+    </view>
+
+    <!-- 联系 -->
+    <button class="btn-primary" bindtap="copyWechat" style="margin-top: 48rpx;">复制房东微信号</button>
+
+    <!-- 发布者：标记已租出 -->
+    <button wx:if="{{isOwner}}" class="btn-primary" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已租出</button>
+
+    <!-- 本人或管理员：删除 -->
+    <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除</button>
+  </view>
+</view>

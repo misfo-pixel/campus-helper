@@ -1,0 +1,35 @@
+<!--pages/taskdetail/taskdetail.wxml-->
+<view wx:if="{{item}}">
+  <!-- 图片轮播（委托可能没图） -->
+  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 500rpx;" indicator-dots circular>
+    <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+      <image src="{{img}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+    </swiper-item>
+  </swiper>
+
+  <view class="page-container">
+    <view style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <view style="font-size: 40rpx; font-weight: bold; flex: 1;">{{item.title}}</view>
+      <view class="price" style="font-size: 44rpx; margin-left: 20rpx;">${{item.reward}}</view>
+    </view>
+
+    <view class="section-title">任务描述</view>
+    <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+
+    <!-- 补充信息 -->
+    <view class="card" style="padding: 28rpx; margin-top: 32rpx;">
+      <view wx:if="{{item.deadline}}" style="margin-bottom: 12rpx;">⏰ 截止时间：{{item.deadline}}</view>
+      <view wx:if="{{item.location}}">📍 地点：{{item.location}}</view>
+      <view wx:if="{{!item.deadline && !item.location}}" class="text-light">无补充信息</view>
+    </view>
+
+    <!-- 联系 -->
+    <button class="btn-primary" bindtap="copyWechat" style="margin-top: 48rpx;">复制发布者微信号</button>
+
+    <!-- 发布者：标记完成 -->
+    <button wx:if="{{isOwner}}" class="btn-primary" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已完成</button>
+
+    <!-- 本人或管理员：删除 -->
+    <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除</button>
+  </view>
+</view>

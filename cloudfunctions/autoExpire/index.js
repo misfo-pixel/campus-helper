@@ -4,30 +4,32 @@ const db = cloud.database()
 
 exports.main = async (event, context) => {
   try {
-    // 今天的日期，格式 YYYY-MM-DD（和 expire_date 存的格式一致）
     const today = new Date()
     const todayStr = today.getFullYear() + '-' +
       String(today.getMonth() + 1).padStart(2, '0') + '-' +
       String(today.getDate()).padStart(2, '0')
 
-    // 查所有在售、且下架日期小于今天的商品
-    const res = await db.collection('secondhand_items')
-      .where({
-        status: 'on_sale',
-        expire_date: db.command.lt(todayStr)   // lt = less than，小于今天
-      })
+    let expiredCount = 0
+
+    // 1. 二手：expire_date 过期的下架
+    const items = await db.collection('secondhand_items')
+      .where({ status: 'on_sale', expire_date: db.command.lt(todayStr) })
       .get()
-
-    console.log('过期商品数量：', res.data.length)
-
-    // 逐个改成 expired
-    for (const item of res.data) {
-      await db.collection('secondhand_items').doc(item._id).update({
-        data: { status: 'expired' }
-      })
+    for (const item of items.data) {
+      await db.collection('secondhand_items').doc(item._id).update({ data: { status: 'expired' } })
+      expiredCount++
     }
 
-    return { success: true, expiredCount: res.data.length }
+    // 2. 转租：end_date（租期结束）过期的下架
+    const sublets = await db.collection('sublet_items')
+      .where({ status: 'on_sale', end_date: db.command.lt(todayStr) })
+      .get()
+    for (const s of sublets.data) {
+      await db.collection('sublet_items').doc(s._id).update({ data: { status: 'expired' } })
+      expiredCount++
+    }
+
+    return { success: true, expiredCount: expiredCount }
   } catch (err) {
     return { success: false, error: err }
   }

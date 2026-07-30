@@ -1,0 +1,25 @@
+<!--pages/taskmarket/taskmarket.wxml-->
+<view class="page-container">
+  <view style="display: flex; justify-content: space-between; align-items: center;">
+    <view class="page-title" style="margin-bottom: 0;">帮个忙 🙋</view>
+    <view style="display: flex; align-items: center;">
+      <button size="mini" class="btn-primary" bindtap="goToPublish">+ 发布</button>
+    </view>
+  </view>
+
+  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    还没有委托任务，来发布第一个吧
+  </view>
+
+  <!-- 任务列表 -->
+  <view style="margin-top: 32rpx;">
+    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card" style="padding: 28rpx;">
+      <view style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <view style="font-size: 32rpx; font-weight: bold; flex: 1;">{{item.title}}</view>
+        <view class="price" style="font-size: 34rpx; margin-left: 20rpx;">${{item.reward}}</view>
+      </view>
+      <view class="text-light" style="margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{item.description}}</view>
+      <view wx:if="{{item.deadline}}" class="text-light" style="font-size: 24rpx; margin-top: 12rpx;">⏰ 截止：{{item.deadline}}</view>
+    </view>
+  </view>
+</view>

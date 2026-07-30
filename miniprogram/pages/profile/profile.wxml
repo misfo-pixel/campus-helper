@@ -1,0 +1,31 @@
+<view class="page-container">
+  <!-- 用户信息区 -->
+  <view class="card" style="display: flex; align-items: center; padding: 40rpx;">
+    <view style="font-size: 56rpx; width: 100rpx; height: 100rpx; background: var(--color-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 28rpx;">🐿️</view>
+    <view>
+      <view style="font-size: 36rpx; font-weight: bold;">我的账号</view>
+      <view class="text-light">{{isAdmin ? '管理员' : '普通用户'}}</view>
+    </view>
+  </view>
+
+  <!-- 功能入口 -->
+<view bindtap="goToMyItems" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">♻️ 我发布的闲置</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<view bindtap="goToMySublets" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🏠 我发布的转租</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<view bindtap="goToMyTasks" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🙋 我发布的委托</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<view bindtap="goToMyOrders" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🍱 我的外卖订单</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+</view>

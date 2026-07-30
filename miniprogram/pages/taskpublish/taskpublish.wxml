@@ -1,0 +1,27 @@
+<!--pages/taskpublish/taskpublish.wxml-->
+<view class="page-container">
+  <view class="page-title">发布委托 🙋</view>
+
+  <view class="section-title">任务信息（必填）</view>
+  <input placeholder="任务标题（如 上门保洁、接机送机）" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
+  <input placeholder="报酬（美元）" type="digit" value="{{reward}}" bindinput="onInput" data-field="reward" class="card" style="padding: 24rpx;" />
+  <textarea placeholder="任务描述（具体做什么、有什么要求）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
+  <input placeholder="你的微信号（接单人联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+
+  <view class="section-title">补充信息（选填）</view>
+
+  <picker mode="date" value="{{deadline}}" bindchange="onDeadlineChange">
+    <view class="card" style="padding: 24rpx; color: {{deadline ? '#000' : '#999'}};">
+      {{deadline || '截止时间'}}
+    </view>
+  </picker>
+
+  <input placeholder="地点（如 在哪取 / 送到哪）" value="{{location}}" bindinput="onInput" data-field="location" class="card" style="padding: 24rpx;" />
+
+  <view style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
+    <image wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill" style="width: 160rpx; height: 160rpx; border-radius: 12rpx;"></image>
+    <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 160rpx; height: 160rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
+  </view>
+
+  <button class="btn-primary" bindtap="submitPublish" style="margin-top: 32rpx;">发布</button>
+</view>
