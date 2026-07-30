@@ -4,6 +4,9 @@ Page({
     roles: [],
     isAdmin: false
   },
+  goToEdit: function () {
+    wx.navigateTo({ url: '/pages/editprofile/editprofile' })
+  },
   goToMySublets: function () {
     wx.navigateTo({ url: '/pages/mysublets/mysublets' })
   },

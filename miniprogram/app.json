@@ -46,7 +46,8 @@
     "pages/taskdetail/taskdetail",
     "pages/feedback/feedback",
     "pages/mysublets/mysublets",
-    "pages/mytasks/mytasks"
+    "pages/mytasks/mytasks",
+    "pages/editprofile/editprofile"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",
