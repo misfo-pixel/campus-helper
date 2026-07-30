@@ -34,11 +34,11 @@
       <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
     </view>
 
-    <!-- 联系 -->
-    <button class="btn-primary" bindtap="copyWechat" style="margin-top: 48rpx;">复制房东微信号</button>
+    <!-- 房东名片 -->
+    <contact-card role="房东" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.contact_wechat}}" />
 
     <!-- 发布者：标记已租出 -->
-    <button wx:if="{{isOwner}}" class="btn-primary" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已租出</button>
+    <button wx:if="{{isOwner}}" bindtap="markRented" class="btn-primary" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已租出</button>
 
     <!-- 本人或管理员：删除 -->
     <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除</button>

@@ -1,0 +1,16 @@
+<view class="contact-card">
+  <view class="contact-title">添加{{role}}微信</view>
+
+  <view class="contact-body">
+    <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="contact-avatar" />
+    <view wx:else class="contact-avatar contact-avatar-fallback">🐿️</view>
+    <view class="contact-meta">
+      <view class="contact-name">{{nickname || '校园用户'}}</view>
+      <view class="contact-wechat">微信：{{maskedWechat || '未填写'}}</view>
+    </view>
+  </view>
+
+  <view class="contact-divider"></view>
+
+  <button class="contact-btn" bindtap="copyWechat">复制微信号</button>
+</view>

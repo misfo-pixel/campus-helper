@@ -16,6 +16,7 @@
   <input placeholder="价格（美元）" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
   <textarea placeholder="描述（成色、转手原因等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
   <input placeholder="你的微信号（买家联系用）" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
+  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
 
   <view class="section-title">下架日期</view>
   <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">

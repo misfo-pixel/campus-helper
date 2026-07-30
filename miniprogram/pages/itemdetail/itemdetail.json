@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "物品详情",
-  "usingComponents": {}
+  "usingComponents": {
+    "contact-card": "/components/contactCard/index"
+  }
 }

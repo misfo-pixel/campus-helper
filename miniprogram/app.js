@@ -1,4 +1,6 @@
 // app.js
+const { fetchMyProfile } = require('./utils/user.js')
+
 App({
   onLaunch: function () {
     this.globalData = {
@@ -14,19 +16,18 @@ App({
         env: this.globalData.env,
         traceUser: true,
       });
-      // 登录并获取角色
-      wx.cloud.callFunction({
-        name: 'login'
-      }).then(res => {
-        console.log('登录结果：', res.result)
-        if (res.result.success) {
-          this.globalData.openid = res.result.openid
-          this.globalData.role = res.result.role
-        }
+      // 全局只在这里登录一次，页面等 profileReady 复用结果。
+      // 新用户如果并发调 login，两次都会查不到记录、各建一条，所以不要在页面里再登录一遍。
+      this.globalData.profileReady = fetchMyProfile().then(profile => {
+        this.globalData.openid = profile.openid
+        this.globalData.roles = profile.roles
+        this.globalData.profile = profile
+        return profile
       }).catch(err => {
         console.error('登录失败：', err)
+        return null
       })
     }
   },
-  
+
 });

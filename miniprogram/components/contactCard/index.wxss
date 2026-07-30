@@ -1,0 +1,82 @@
+/* 组件样式是隔离的，app.wxss 的 .card / .btn-primary 进不来，
+   但 page 上定义的 CSS 变量会继承下来，所以配色圆角还是走全局那套 */
+
+.contact-card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 28rpx;
+  margin-top: 40rpx;
+}
+
+.contact-title {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin-bottom: 20rpx;
+}
+
+.contact-body {
+  display: flex;
+  align-items: center;
+}
+
+.contact-avatar {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+/* 对方没设置过头像时的兜底 */
+.contact-avatar-fallback {
+  font-size: 52rpx;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.contact-name {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.contact-wechat {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin-top: 6rpx;
+}
+
+.contact-divider {
+  height: 2rpx;
+  background: var(--color-border);
+  margin: 24rpx 0 0;
+}
+
+.contact-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80rpx;
+  margin: 24rpx 32rpx 4rpx;
+  padding: 0;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: normal;
+}
+.contact-btn:active { opacity: .85; }
+.contact-btn::after { border: none; }

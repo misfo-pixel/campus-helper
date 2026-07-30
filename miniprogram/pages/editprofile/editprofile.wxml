@@ -1,8 +1,17 @@
 <view class="page-container">
   <view class="page-title">编辑资料</view>
 
+  <!-- 头像：点一下弹微信头像选择（也可以拍照/相册） -->
+  <button class="card avatar-row" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+    <view class="avatar-label">头像</view>
+    <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar-img" />
+    <view wx:else class="avatar-img avatar-fallback">🐿️</view>
+    <view class="chevron">›</view>
+  </button>
+
   <view class="section-title">昵称</view>
-  <input placeholder="填一个昵称" value="{{nickname}}" bindinput="onInput" data-field="nickname" class="card" style="padding: 24rpx;" />
+  <!-- type="nickname" 会弹「使用微信昵称」的快捷填写 -->
+  <input type="nickname" placeholder="填一个昵称" value="{{nickname}}" bindinput="onInput" bindblur="onInput" data-field="nickname" class="card" style="padding: 24rpx;" />
 
   <view class="section-title">微信号</view>
   <input placeholder="填你的微信号（发布时自动填入）" value="{{wechat}}" bindinput="onInput" data-field="wechat" class="card" style="padding: 24rpx;" />

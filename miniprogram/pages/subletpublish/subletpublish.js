@@ -1,3 +1,5 @@
+const { fetchMyProfile } = require('../../utils/user.js')
+
 Page({
   data: {
     images: [],
@@ -5,6 +7,7 @@ Page({
     rent: '',
     address: '',
     contact_wechat: '',
+    wechatAutoFilled: false,
     start_date: '',
     end_date: '',
     bedroomIndex: null,
@@ -16,6 +19,17 @@ Page({
     description: '',
     bedrooms: ['Studio', '1', '2', '3', '4', '5+'],
     bathrooms: ['1', '2', '3', '4+']
+  },
+
+  // 微信号自动填个人资料里存的那个，没存过就留空手填
+  onLoad: function () {
+    fetchMyProfile().then(profile => {
+      if (profile.wechat && !this.data.contact_wechat) {
+        this.setData({ contact_wechat: profile.wechat, wechatAutoFilled: true })
+      }
+    }).catch(err => {
+      console.error('读取微信号失败：', err)
+    })
   },
 
   onInput: function (e) {

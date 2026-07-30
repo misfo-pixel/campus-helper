@@ -1,8 +1,11 @@
+const { fetchPublicProfile } = require('../../utils/user.js')
+
 Page({
   data: {
     item: null,
     canDelete: false,
-    isOwner: false
+    isOwner: false,
+    seller: { nickname: '', avatarUrl: '' }
   },
 
   onLoad: function (options) {
@@ -12,6 +15,9 @@ Page({
     db.collection('task_items').doc(id).get().then(res => {
       const item = res.data
       this.setData({ item: item })
+
+      // 发布者的昵称和头像（现查，对方改了资料这里跟着变）
+      fetchPublicProfile(item._openid).then(seller => this.setData({ seller: seller }))
 
       wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
         if (loginRes.result.success) {
@@ -30,13 +36,6 @@ Page({
     })
   },
 
-  copyWechat: function () {
-    wx.setClipboardData({
-      data: this.data.item.contact_wechat,
-      success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
-    })
-  },
-
   // 标记已完成（发布者）
   markDone: function () {
     wx.showModal({
@@ -50,6 +49,9 @@ Page({
           }).then(() => {
             wx.showToast({ title: '已标记完成', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
+          }).catch(err => {
+            console.error('标记失败：', err)
+            wx.showToast({ title: '操作失败', icon: 'none' })
           })
         }
       }

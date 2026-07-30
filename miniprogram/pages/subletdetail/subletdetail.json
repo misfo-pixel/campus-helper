@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "房源详情",
-  "usingComponents": {}
+  "usingComponents": {
+    "contact-card": "/components/contactCard/index"
+  }
 }

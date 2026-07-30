@@ -1,4 +1,6 @@
 // pages/publish.js
+const { fetchMyProfile } = require('../../utils/user.js')
+
 Page({
   data: {
     images: [],        // 已选的图片（本地临时路径）
@@ -6,7 +8,19 @@ Page({
     price: '',
     description: '',
     seller_wechat: '',
-    expire_date: ''
+    expire_date: '',
+    wechatAutoFilled: false
+  },
+
+  // 微信号自动填个人资料里存的那个，没存过就留空手填
+  onLoad: function () {
+    fetchMyProfile().then(profile => {
+      if (profile.wechat && !this.data.seller_wechat) {
+        this.setData({ seller_wechat: profile.wechat, wechatAutoFilled: true })
+      }
+    }).catch(err => {
+      console.error('读取微信号失败：', err)
+    })
   },
 
   // 通用输入处理（用 data-field 区分是哪个输入框）

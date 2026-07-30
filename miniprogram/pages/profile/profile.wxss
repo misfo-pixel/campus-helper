@@ -1,1 +1,18 @@
 /* pages/profile/profile.wxss */
+
+.profile-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  margin-right: 28rpx;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+.profile-avatar-fallback {
+  font-size: 56rpx;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

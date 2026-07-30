@@ -1,8 +1,11 @@
+const { fetchPublicProfile } = require('../../utils/user.js')
+
 Page({
   data: {
     item: null,
     canDelete: false,
-    isOwner: false
+    isOwner: false,
+    seller: { nickname: '', avatarUrl: '' }
   },
 
   onLoad: function (options) {
@@ -12,6 +15,9 @@ Page({
     db.collection('sublet_items').doc(id).get().then(res => {
       const item = res.data
       this.setData({ item: item })
+
+      // 房东的昵称和头像（现查，房东改了资料这里跟着变）
+      fetchPublicProfile(item._openid).then(seller => this.setData({ seller: seller }))
 
       // 判断权限：本人 或 转租管理员
       wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
@@ -31,13 +37,6 @@ Page({
     })
   },
 
-  copyWechat: function () {
-    wx.setClipboardData({
-      data: this.data.item.contact_wechat,
-      success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
-    })
-  },
-
   // 标记已租出（发布者）
   markRented: function () {
     wx.showModal({
@@ -51,6 +50,9 @@ Page({
           }).then(() => {
             wx.showToast({ title: '已标记租出', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
+          }).catch(err => {
+            console.error('标记失败：', err)
+            wx.showToast({ title: '操作失败', icon: 'none' })
           })
         }
       }

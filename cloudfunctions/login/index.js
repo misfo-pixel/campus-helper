@@ -11,15 +11,27 @@ exports.main = async (event, context) => {
 
     if (res.data.length === 0) {
       // 新用户：默认 roles 为 ['student']
+      const nickname = event.nickname || '匿名用户'
+      const avatarUrl = event.avatarUrl || ''
       await db.collection('users').add({
         data: {
           openid: openid,
-          nickname: event.nickname || '匿名用户',
+          nickname: nickname,
+          avatarUrl: avatarUrl,
+          wechat: '',
           roles: ['student'],
           created_at: new Date()
         }
       })
-      return { success: true, openid: openid, roles: ['student'], isNew: true }
+      return {
+        success: true,
+        openid: openid,
+        roles: ['student'],
+        isNew: true,
+        nickname: nickname,
+        avatarUrl: avatarUrl,
+        wechat: ''
+      }
     } else {
       // 老用户：返回 roles。兼容老数据（如果只有 role 没有 roles）
       const user = res.data[0]
@@ -28,7 +40,15 @@ exports.main = async (event, context) => {
         // 老数据兼容：把旧的单个 role 转成数组
         roles = user.role ? [user.role] : ['student']
       }
-      return { success: true, openid: openid, roles: roles, isNew: false }
+      return {
+        success: true,
+        openid: openid,
+        roles: roles,
+        isNew: false,
+        nickname: user.nickname || '',
+        avatarUrl: user.avatarUrl || '',
+        wechat: user.wechat || ''
+      }
     }
   } catch (err) {
     return { success: false, error: err }

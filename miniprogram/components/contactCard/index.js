@@ -1,0 +1,44 @@
+// 微信号显示成 abc****yz，完整的靠点「复制微信号」拿
+function maskWechat(wechat) {
+  if (!wechat) return ''
+  const s = String(wechat)
+  if (s.length <= 2) return s.charAt(0) + '****'
+  if (s.length <= 5) return s.charAt(0) + '****' + s.charAt(s.length - 1)
+  return s.slice(0, 3) + '****' + s.slice(-2)
+}
+
+Component({
+  properties: {
+    avatar: String,
+    nickname: String,
+    wechat: String,
+    role: {          // 卖家 / 房东 / 发布者
+      type: String,
+      value: '卖家'
+    }
+  },
+
+  data: {
+    maskedWechat: ''
+  },
+
+  observers: {
+    wechat: function (wechat) {
+      this.setData({ maskedWechat: maskWechat(wechat) })
+    }
+  },
+
+  methods: {
+    copyWechat: function () {
+      const wechat = this.data.wechat
+      if (!wechat) {
+        wx.showToast({ title: '对方还没填微信号', icon: 'none' })
+        return
+      }
+      wx.setClipboardData({
+        data: wechat,
+        success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
+      })
+    }
+  }
+})

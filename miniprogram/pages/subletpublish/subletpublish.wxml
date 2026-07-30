@@ -6,6 +6,7 @@
   <input placeholder="月租（美元）" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="card" style="padding: 24rpx;" />
   <input placeholder="详细地址 / 公寓名" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
   <input placeholder="你的微信号（租客联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
 
   <view style="display: flex; gap: 20rpx;">
     <picker mode="selector" range="{{bedrooms}}" value="{{bedroomIndex}}" bindchange="onBedroomChange" style="flex: 1;">

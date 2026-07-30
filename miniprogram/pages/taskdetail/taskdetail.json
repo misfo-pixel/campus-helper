@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "委托详情",
-  "usingComponents": {}
+  "usingComponents": {
+    "contact-card": "/components/contactCard/index"
+  }
 }

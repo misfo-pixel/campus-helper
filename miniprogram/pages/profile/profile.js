@@ -1,6 +1,9 @@
+const { fetchMyProfile, guideProfileSetupOnce } = require('../../utils/user.js')
+
 Page({
   data: {
     nickname: '',
+    avatarUrl: '',
     roles: [],
     isAdmin: false
   },
@@ -14,16 +17,19 @@ Page({
     wx.navigateTo({ url: '/pages/mytasks/mytasks' })
   },
 
+  // 编辑资料返回时会再走一次 onShow，改动就刷新出来了
   onShow: function () {
-    // 拿当前用户信息
-    wx.cloud.callFunction({ name: 'login' }).then(res => {
-      if (res.result.success) {
-        const roles = res.result.roles || []
-        this.setData({
-          roles: roles,
-          isAdmin: roles.includes('food_admin') || roles.includes('market_admin') || roles.includes('super_admin')
-        })
-      }
+    fetchMyProfile().then(profile => {
+      const roles = profile.roles
+      this.setData({
+        roles: roles,
+        nickname: profile.nickname,
+        avatarUrl: profile.avatarUrl,
+        isAdmin: roles.includes('food_admin') || roles.includes('market_admin') || roles.includes('super_admin')
+      })
+      guideProfileSetupOnce(profile)
+    }).catch(err => {
+      console.error('加载个人资料失败：', err)
     })
   },
 

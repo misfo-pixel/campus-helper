@@ -1,7 +1,10 @@
+const { fetchPublicProfile } = require('../../utils/user.js')
+
 Page({
   data: {
     item: null,
-    isOwner: false
+    isOwner: false,
+    seller: { nickname: '', avatarUrl: '' }
   },
   deleteItem: function () {
     wx.showModal({
@@ -56,7 +59,10 @@ Page({
     db.collection('secondhand_items').doc(id).get().then(res => {
       const item = res.data
       this.setData({ item: item })
-  
+
+    // 卖家的昵称和头像（现查，卖家改了资料这里跟着变）
+    fetchPublicProfile(item._openid).then(seller => this.setData({ seller: seller }))
+
     // 自己调 login 拿当前用户身份，可靠判断能不能删
     wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
       if (loginRes.result.success) {
@@ -72,16 +78,6 @@ Page({
     })
     }).catch(err => {
       console.error('加载详情失败：', err)
-    })
-  },
-
-  // 一键复制卖家微信
-  copyWechat: function () {
-    wx.setClipboardData({
-      data: this.data.item.seller_wechat,
-      success: () => {
-        wx.showToast({ title: '微信号已复制', icon: 'success' })
-      }
     })
   }
 })

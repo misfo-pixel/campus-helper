@@ -1,1 +1,37 @@
 /* pages/editprofile/editprofile.wxss */
+
+/* 头像那一行本身是个 button，先把小程序默认按钮样式抹掉 */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  line-height: normal;
+  font-size: 30rpx;
+  color: var(--color-text);
+  text-align: left;
+}
+.avatar-row:active { opacity: .9; }
+
+.avatar-label { flex: 1; }
+
+.avatar-img {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-bg);
+}
+
+.avatar-fallback {
+  font-size: 52rpx;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chevron {
+  color: #ccc;
+  font-size: 40rpx;
+  margin-left: 16rpx;
+}
