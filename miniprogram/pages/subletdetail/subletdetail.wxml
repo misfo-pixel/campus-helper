@@ -42,5 +42,9 @@
 
     <!-- 本人或管理员：删除 -->
     <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除</button>
+
+    <disclaimer-bar type="sublet" />
+
+    <report-bar target-type="sublet" target-id="{{item._id}}" />
   </view>
 </view>

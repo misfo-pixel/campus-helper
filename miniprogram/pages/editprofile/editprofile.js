@@ -1,4 +1,5 @@
 const { fetchMyProfile } = require('../../utils/user.js')
+const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
   data: {
@@ -35,13 +36,29 @@ Page({
     this.setData({ [field]: e.detail.value })
   },
 
-  save: function () {
+  save: async function () {
     if (this.data.saving) return
     this.setData({ saving: true })
     wx.showLoading({ title: '保存中', mask: true })
 
-    this.uploadAvatar().then(avatarUrl => {
-      return wx.cloud.callFunction({
+    try {
+      // 昵称和微信号会展示给别的同学看，属于 UGC，要过内容安全检测
+      if (!(await ensureContentOk({
+        texts: [this.data.nickname, this.data.wechat],
+        scene: 1
+      }))) return
+
+      const avatarUrl = await this.uploadAvatar()
+
+      // 只有这次换了新头像才需要检测；没换的话是之前已经检过的云文件
+      if (this.data.tempAvatar && avatarUrl) {
+        if (!(await ensureContentOk({ fileIDs: [avatarUrl], scene: 1 }))) {
+          await deleteCloudFiles([avatarUrl])
+          return
+        }
+      }
+
+      const res = await wx.cloud.callFunction({
         name: 'updateUserInfo',
         data: {
           nickname: this.data.nickname,
@@ -49,21 +66,21 @@ Page({
           avatarUrl: avatarUrl
         }
       })
-    }).then(res => {
+
       wx.hideLoading()
-      this.setData({ saving: false })
       if (res.result.success) {
         wx.showToast({ title: '已保存', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 1000)
       } else {
         wx.showToast({ title: '保存失败', icon: 'none' })
       }
-    }).catch(err => {
+    } catch (err) {
       console.error('保存资料失败：', err)
       wx.hideLoading()
-      this.setData({ saving: false })
       wx.showToast({ title: '保存失败，请重试', icon: 'none' })
-    })
+    } finally {
+      this.setData({ saving: false })
+    }
   },
 
   // 没换头像就把原来的云文件 ID 原样传回去

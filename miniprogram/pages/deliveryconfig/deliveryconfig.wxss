@@ -1,0 +1,80 @@
+.field-hint {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+}
+
+.ranges {
+  display: flex;
+  gap: 16rpx;
+  margin: 24rpx 0;
+}
+
+.range {
+  padding: 12rpx 32rpx;
+  border-radius: 32rpx;
+  background: var(--color-card);
+  border: 1rpx solid var(--color-border);
+  font-size: 28rpx;
+  color: var(--color-text-light);
+}
+
+.range-on {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.empty {
+  text-align: center;
+  margin: 100rpx 0;
+  line-height: 1.6;
+}
+
+.stat-top {
+  display: flex;
+  padding: 28rpx 0;
+}
+
+.stat-cell {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 40rpx;
+  font-weight: bold;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.stat-sub {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin: 20rpx 0 12rpx;
+}
+
+.stat-table {
+  padding: 8rpx 28rpx;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  line-height: 2.2;
+}
+
+.stat-head {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.c1 { flex: 1; min-width: 0; }
+.c2 { width: 120rpx; text-align: right; }
+.c3 { width: 110rpx; text-align: right; }

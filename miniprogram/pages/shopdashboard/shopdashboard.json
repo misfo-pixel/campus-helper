@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "商家工作台",
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index"
+  }
+}

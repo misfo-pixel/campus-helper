@@ -1,9 +1,9 @@
 <!--pages/itemdetail/itemdetail.wxml-->
 <view wx:if="{{item}}">
   <!-- 图片轮播（多张图可滑动） -->
-  <swiper style="width: 100%; height: 600rpx;" indicator-dots circular>
-    <swiper-item wx:for="{{item.images}}" wx:key="*this">
-      <image src="{{item}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 600rpx;" indicator-dots circular>
+    <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+      <image src="{{img}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
     </swiper-item>
   </swiper>
 
@@ -21,8 +21,11 @@
 
     <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除商品</button>
 
-    <button wx:if="{{isOwner}}" bindtap="markSold" 
+    <button wx:if="{{isOwner}}" bindtap="markSold"
     style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已售</button>
 
+    <disclaimer-bar type="trade" />
+
+    <report-bar target-type="item" target-id="{{item._id}}" />
   </view>
 </view>

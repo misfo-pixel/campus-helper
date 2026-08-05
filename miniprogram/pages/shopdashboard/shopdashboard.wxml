@@ -1,0 +1,131 @@
+<view wx:if="{{!loading}}" class="page-container">
+
+  <!-- 还没开店 -->
+  <block wx:if="{{!shop}}">
+    <view class="empty-apply">
+      <view class="empty-emoji">🍜</view>
+      <view class="empty-title">你还没有店铺</view>
+      <view class="text-light empty-desc">申请入驻后可以上架菜品、接收订单，自己管理营业状态。</view>
+      <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">申请入驻</button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <!-- 审核中 / 未通过 -->
+    <view wx:if="{{shop.audit_status === 'pending'}}" class="audit-box audit-pending">
+      <view class="audit-title">店铺审核中</view>
+      <view class="audit-desc">我们会尽快处理。通过之后就能上架菜品并开始营业。</view>
+    </view>
+    <view wx:elif="{{shop.audit_status === 'rejected'}}" class="audit-box audit-rejected">
+      <view class="audit-title">审核未通过</view>
+      <view class="audit-desc">{{shop.audit_reason || '请检查店铺信息是否完整、真实'}}</view>
+      <view class="audit-action" bindtap="goToSettings">去修改店铺信息 ›</view>
+    </view>
+
+    <!-- 店头 + 营业状态开关 -->
+    <view class="shop-head card">
+      <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
+      <view wx:else class="shop-logo shop-logo-fallback">🍽</view>
+      <view class="shop-meta">
+        <view class="shop-name">{{shop.name}}</view>
+        <view class="text-light shop-cat">{{shop.category}}</view>
+      </view>
+      <view wx:if="{{shop.audit_status === 'approved'}}"
+            class="status-pill status-{{shop.status}}"
+            bindtap="changeShopStatus">{{shopStatusText}} ▾</view>
+    </view>
+
+    <block wx:if="{{shop.audit_status === 'approved'}}">
+      <!-- 今日数据 -->
+      <view class="summary card">
+        <view class="summary-cell">
+          <view class="summary-num">{{summary.todayCount}}</view>
+          <view class="text-light summary-label">今日订单</view>
+        </view>
+        <view class="summary-cell">
+          <view class="summary-num summary-hot">{{summary.pendingCount}}</view>
+          <view class="text-light summary-label">待处理</view>
+        </view>
+        <view class="summary-cell">
+          <view class="summary-num">${{summary.revenue}}</view>
+          <view class="text-light summary-label">今日流水</view>
+        </view>
+      </view>
+
+      <!-- 订单 tab -->
+      <view class="tabs">
+        <view class="tab {{tab === 'pending' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="pending">待处理</view>
+        <view class="tab {{tab === 'active' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="active">进行中</view>
+        <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">已完成</view>
+      </view>
+
+      <view wx:if="{{orders.length === 0}}" class="text-light empty-orders">
+        {{tab === 'pending' ? '没有待处理的订单' : (tab === 'active' ? '没有进行中的订单' : '还没有已完成的订单')}}
+      </view>
+
+      <!-- 订单卡片 -->
+      <view wx:for="{{orders}}" wx:key="_id" class="card order">
+        <view class="order-head">
+          <view class="order-id">#{{item.shortId}}</view>
+          <view class="text-light order-time">{{item.timeText}}</view>
+          <view class="order-total">${{item.total}}</view>
+        </view>
+
+        <view class="order-buyer">{{item.buyer_nickname || '买家'}} · {{item.pickup_info}}</view>
+
+        <view class="order-items">
+          <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="name" class="order-dish">
+            <text>{{dish.name}}</text>
+            <text class="order-dish-count">×{{dish.count}}</text>
+          </view>
+        </view>
+
+        <view wx:if="{{item.note}}" class="order-note">备注：{{item.note}}</view>
+
+        <view class="order-contact">
+          <text class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
+          <text wx:if="{{item.contact_wechat}}" class="order-copy" bindtap="copyWechat" data-wechat="{{item.contact_wechat}}">复制</text>
+        </view>
+
+        <view wx:if="{{item.status === 'cancelled' && item.cancel_reason}}" class="order-cancel">
+          取消原因：{{item.cancel_reason}}
+        </view>
+
+        <!-- 按钮跟着状态走，一次最多两个 -->
+        <view class="order-actions">
+          <block wx:if="{{item.status === 'pending'}}">
+            <button class="btn-sm" bindtap="rejectOrder" data-id="{{item._id}}">拒单</button>
+            <button class="btn-primary btn-sm" bindtap="acceptOrder" data-id="{{item._id}}">接单</button>
+          </block>
+          <block wx:elif="{{item.status === 'accepted'}}">
+            <button class="btn-primary btn-sm" bindtap="startDelivery" data-id="{{item._id}}">开始配送</button>
+          </block>
+          <block wx:elif="{{item.status === 'delivering'}}">
+            <button class="btn-primary btn-sm" bindtap="completeOrder" data-id="{{item._id}}">已送达</button>
+          </block>
+          <block wx:else>
+            <view class="text-light order-done">{{item.statusText}}</view>
+          </block>
+        </view>
+      </view>
+    </block>
+
+    <disclaimer-bar type="merchant" />
+
+    <view class="entries">
+      <view class="entry card" bindtap="goToMenu">
+        <view class="entry-icon">🍜</view>
+        <view class="entry-label">菜单管理</view>
+      </view>
+      <view class="entry card" bindtap="goToSettings">
+        <view class="entry-icon">⚙️</view>
+        <view class="entry-label">店铺设置</view>
+      </view>
+      <!-- 外包配送才需要跟队伍结账，自己送的没这回事 -->
+      <view wx:if="{{shop.delivery_mode === 'outsourced'}}" class="entry card" bindtap="goToSettlement">
+        <view class="entry-icon">💵</view>
+        <view class="entry-label">配送费对账</view>
+      </view>
+    </view>
+  </block>
+</view>

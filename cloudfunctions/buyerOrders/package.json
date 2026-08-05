@@ -1,0 +1,14 @@
+{
+  "name": "buyerOrders",
+  "version": "1.0.0",
+  "description": "买家侧下单、订单列表与取消",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "latest"
+  }
+}

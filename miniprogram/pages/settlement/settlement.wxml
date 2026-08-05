@@ -1,0 +1,74 @@
+<view wx:if="{{!loading}}" class="page-container">
+  <view class="role-hint">
+    {{as === 'shop' ? '你是商家：买家把配送费一起付给了你，这些钱要结给配送队。' : '你是配送队：这些配送费由商家代收，需要向商家结算。'}}
+  </view>
+
+  <!-- 待结算 -->
+  <view class="section-title">待结算</view>
+  <view wx:if="{{groups.length === 0}}" class="text-light empty">
+    没有待结算的配送费。订单完成后会自动累计到这里。
+  </view>
+
+  <view wx:for="{{groups}}" wx:key="id" class="card group">
+    <view class="group-head">
+      <view class="group-name">{{item.name}}</view>
+      <view class="group-amount">${{item.amount}}</view>
+    </view>
+    <view class="text-light group-sub">{{item.count}} 单</view>
+
+    <!-- 商家侧显示队伍的收款方式，方便直接转 -->
+    <view wx:if="{{as === 'shop' && item.payment_note}}" class="pay-line">
+      <text class="text-light">收款方式：</text>
+      <text class="pay-note">{{item.payment_note}}</text>
+      <text class="pay-copy" bindtap="copyText" data-text="{{item.payment_note}}">复制</text>
+    </view>
+    <view wx:if="{{as === 'shop' && item.contact_wechat}}" class="pay-line">
+      <text class="text-light">队长微信：</text>
+      <text class="pay-note">{{item.contact_wechat}}</text>
+      <text class="pay-copy" bindtap="copyText" data-text="{{item.contact_wechat}}">复制</text>
+    </view>
+
+    <button class="btn-primary group-btn btn-sm" bindtap="createBill"
+            data-id="{{item.id}}" data-name="{{item.name}}"
+            data-amount="{{item.amount}}" data-count="{{item.count}}">发起对账</button>
+  </view>
+
+  <!-- 历史账单 -->
+  <view class="section-title">账单记录</view>
+  <view wx:if="{{settlements.length === 0}}" class="text-light empty-small">还没有账单</view>
+
+  <view wx:for="{{settlements}}" wx:key="_id" class="card bill">
+    <view class="bill-head">
+      <view class="bill-name">{{as === 'shop' ? item.team_name : item.shop_name}}</view>
+      <view class="bill-status bill-{{item.status}}">{{item.statusText}}</view>
+    </view>
+
+    <view class="bill-row">
+      <text class="bill-amount">${{item.amount}}</text>
+      <text class="text-light bill-meta">{{item.order_count}} 单 · {{item.period_from}} ~ {{item.period_to}}</text>
+    </view>
+
+    <view wx:if="{{as === 'shop' && item.status === 'pending' && item.team_payment_note}}" class="pay-line">
+      <text class="text-light">转到：</text>
+      <text class="pay-note">{{item.team_payment_note}}</text>
+      <text class="pay-copy" bindtap="copyText" data-text="{{item.team_payment_note}}">复制</text>
+    </view>
+
+    <view class="bill-actions">
+      <!-- 商家：还没转账时可以标记已转 -->
+      <button wx:if="{{as === 'shop' && item.status === 'pending'}}" class="btn-primary btn-sm"
+              bindtap="markPaid" data-id="{{item._id}}">我已转账</button>
+
+      <!-- 配送队：商家转了之后确认收款 -->
+      <button wx:if="{{as === 'team' && item.status === 'paid'}}" class="btn-primary btn-sm"
+              bindtap="confirmReceived" data-id="{{item._id}}">确认收到</button>
+
+      <!-- 队伍等商家转账时的提示 -->
+      <text wx:if="{{as === 'team' && item.status === 'pending'}}" class="text-light bill-wait">等商家转账</text>
+      <text wx:if="{{as === 'shop' && item.status === 'paid'}}" class="text-light bill-wait">等队伍确认</text>
+
+      <text wx:if="{{item.status !== 'settled'}}" class="bill-cancel"
+            bindtap="cancelBill" data-id="{{item._id}}">撤回</text>
+    </view>
+  </view>
+</view>

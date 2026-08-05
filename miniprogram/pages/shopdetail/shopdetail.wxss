@@ -1,0 +1,203 @@
+.shop-head {
+  display: flex;
+  gap: 24rpx;
+  padding: 32rpx;
+  background: var(--color-card);
+}
+
+.shop-logo {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 16rpx;
+  flex-shrink: 0;
+}
+
+.shop-logo-fallback {
+  background: #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 60rpx;
+}
+
+.shop-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-name {
+  font-size: 38rpx;
+  font-weight: bold;
+}
+
+.shop-desc {
+  font-size: 26rpx;
+  color: #666;
+  margin-top: 8rpx;
+  line-height: 1.5;
+}
+
+.shop-info {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  margin-top: 6rpx;
+}
+
+.paused-bar {
+  background: #fff4e0;
+  color: #b8860b;
+  font-size: 26rpx;
+  text-align: center;
+  padding: 20rpx;
+}
+
+.empty {
+  text-align: center;
+  margin: 100rpx 0;
+}
+
+/* 菜品 */
+.dish {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  gap: 20rpx;
+}
+
+.dish-img {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.dish-img-fallback {
+  background: #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52rpx;
+}
+
+.dish-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-name {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+.dish-off {
+  color: #bbb;
+}
+
+.dish-desc {
+  font-size: 24rpx;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+
+/* 过敏原要显眼，这是商家在告知书里承诺如实标注的东西 */
+.dish-allergens {
+  font-size: 22rpx;
+  color: #b8860b;
+  margin-top: 8rpx;
+  line-height: 1.4;
+}
+
+.dish-price {
+  font-size: 32rpx;
+  color: var(--color-primary);
+  font-weight: bold;
+  margin-top: 10rpx;
+}
+
+.dish-ops {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.dish-soldout {
+  font-size: 24rpx;
+  color: #bbb;
+  border: 1rpx solid #e5e5e5;
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+}
+
+.stepper-btn {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.stepper-add {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.stepper-count {
+  min-width: 40rpx;
+  text-align: center;
+  font-size: 30rpx;
+}
+
+.cart-spacer {
+  height: 140rpx;
+}
+
+/* 底部购物车条 */
+.cart-bar {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 24rpx;
+  height: 104rpx;
+  background: #2b2b2b;
+  border-radius: 52rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 16rpx 0 40rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+}
+
+.cart-info {
+  flex: 1;
+  color: #fff;
+}
+
+.cart-total {
+  font-size: 34rpx;
+  font-weight: bold;
+}
+
+.cart-sub {
+  font-size: 22rpx;
+  color: #bbb;
+  margin-top: 2rpx;
+}
+
+.cart-btn {
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 30rpx;
+  padding: 0 44rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  border-radius: 40rpx;
+}
+
+.cart-btn-off {
+  background: #666;
+  color: #ccc;
+}

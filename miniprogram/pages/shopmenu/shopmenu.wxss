@@ -1,0 +1,96 @@
+.menu-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.import-link {
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  padding: 40rpx 0 20rpx;
+}
+
+.import-link:active {
+  opacity: 0.6;
+}
+
+.dish {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  gap: 20rpx;
+}
+
+.dish-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.dish-img-fallback {
+  background: #f2f2f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+}
+
+.dish-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.dish-name {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+/* 售罄的菜名灰掉，一眼能扫出哪些下架了 */
+.dish-off {
+  color: #bbb;
+  text-decoration: line-through;
+}
+
+.dish-desc {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dish-price {
+  font-size: 30rpx;
+  color: var(--color-primary);
+  font-weight: bold;
+  margin-top: 8rpx;
+}
+
+.dish-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.dish-ops {
+  display: flex;
+  gap: 20rpx;
+}
+
+.dish-op {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+}
+
+.dish-op-danger {
+  color: #C8102E;
+}

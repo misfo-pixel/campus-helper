@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "发布二手",
-  "usingComponents": {}
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index"
+  }
 }

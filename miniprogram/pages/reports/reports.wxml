@@ -1,0 +1,30 @@
+<view class="page-container">
+  <view class="tabs">
+    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">待处理</view>
+    <view class="tab {{status === 'handled' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="handled">已处理</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <view wx:elif="{{reports.length === 0}}" class="text-light empty">
+    {{status === 'pending' ? '没有待处理的举报' : '还没有处理过的举报'}}
+  </view>
+
+  <view wx:for="{{reports}}" wx:key="_id" class="card report">
+    <view class="report-head">
+      <view class="report-type">{{item.typeText}}</view>
+      <view class="text-light report-time">{{item.timeText}}</view>
+    </view>
+
+    <view class="report-title">{{item.targetTitle || '（内容已删除）'}}</view>
+    <view class="report-reason">举报原因：{{item.reason}}</view>
+    <view wx:if="{{item.detail}}" class="text-light report-detail">{{item.detail}}</view>
+
+    <view wx:if="{{status === 'pending'}}" class="report-actions">
+      <button bindtap="removeContent" data-id="{{item._id}}" class="btn-danger btn-sm">删除内容</button>
+      <button class="btn-sm" bindtap="dismiss" data-id="{{item._id}}">不违规</button>
+    </view>
+    <view wx:else class="text-light report-done">
+      已{{item.action === 'delete' ? '删除内容' : '驳回'}}
+    </view>
+  </view>
+</view>

@@ -16,12 +16,11 @@
   <view>{{item.name}}</view>
   <view style="display: flex; align-items: center;">
     <view class="price" style="margin-right: 20rpx;">${{item.price_after_tax}}</view>
-    <button size="mini" class="btn-primary" bindtap="openOrderForm" data-item="{{item}}">下单</button>
+    <button class="btn-primary btn-sm" bindtap="openOrderForm" data-item="{{item}}">下单</button>
   </view>
 </view>
 
 <button class="btn-outline" bindtap="goToMyOrders" style="margin-top: 20rpx;">我的订单</button>
-<button wx:if="{{isAdmin}}" class="btn-outline" bindtap="goToAdmin" style="margin-top: 20rpx;">外卖管理</button>
 
 </view>
 
@@ -42,8 +41,8 @@
   </picker>
 
   <view style="display: flex; justify-content: space-between; margin-top: 20rpx;">
-    <button size="mini" class="btn-outline" bindtap="closeOrderForm">取消</button>
-    <button size="mini" class="btn-primary" bindtap="submitOrder">确认下单</button>
+    <button class="btn-outline btn-sm" bindtap="closeOrderForm">取消</button>
+    <button class="btn-primary btn-sm" bindtap="submitOrder">确认下单</button>
   </view>
 </view>
 </view>

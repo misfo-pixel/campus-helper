@@ -24,5 +24,8 @@
     <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 160rpx; height: 160rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
   </view>
 
+  <disclaimer-bar type="publish" />
+
+
   <button class="btn-primary" bindtap="submitPublish" style="margin-top: 32rpx;">发布</button>
 </view>

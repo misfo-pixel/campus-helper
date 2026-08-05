@@ -1,4 +1,5 @@
 const { fetchMyProfile } = require('../../utils/user.js')
+const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
   data: {
@@ -32,6 +33,7 @@ Page({
     wx.chooseMedia({
       count: 6 - this.data.images.length,
       mediaType: ['image'],
+      sizeType: ['compressed'],   // 压缩版才能过 imgSecCheck 的 1MB 上限
       success: (res) => {
         const newImages = res.tempFiles.map(f => f.tempFilePath)
         this.setData({ images: this.data.images.concat(newImages) })
@@ -52,6 +54,12 @@ Page({
     }
 
     wx.showLoading({ title: '发布中...' })
+
+    // 文字先过内容安全检测，违规就不用传图了
+    if (!(await ensureContentOk({
+      texts: [d.title, d.description, d.location, d.contact_wechat]
+    }))) return
+
     try {
       const imageUrls = []
       for (let i = 0; i < d.images.length; i++) {
@@ -60,6 +68,12 @@ Page({
           filePath: d.images[i]
         })
         imageUrls.push(uploadRes.fileID)
+      }
+
+      // 图片也要过检测，没过就把刚传上去的清掉
+      if (!(await ensureContentOk({ fileIDs: imageUrls }))) {
+        await deleteCloudFiles(imageUrls)
+        return
       }
 
       const db = wx.cloud.database()

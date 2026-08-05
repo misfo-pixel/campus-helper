@@ -1,0 +1,47 @@
+<view wx:if="{{!loading}}" class="page-container">
+  <view class="head">
+    <view class="head-shop">{{shopName}}</view>
+    <view class="text-light">{{batchLabel}} · {{deliverTime}} 送达 · 还剩 {{remaining}} 单未送达</view>
+  </view>
+
+  <!-- 取餐清单：直接念给商家 -->
+  <view class="section-title">📋 取餐清单（报给商家）</view>
+  <view class="card pickup-card">
+    <view wx:for="{{pickup}}" wx:key="name" class="pickup-line">
+      <text class="pickup-name">{{item.name}}</text>
+      <text class="pickup-count">×{{item.count}}</text>
+    </view>
+  </view>
+
+  <button wx:if="{{!allPicked}}" class="btn-primary" bindtap="markPicked" style="margin: 24rpx 0;">
+    我在店里取到餐了
+  </button>
+  <view wx:else class="picked-tip">已标记取餐，商家那边显示配送中</view>
+
+  <!-- 交付清单：按取餐点走 -->
+  <view class="section-title">🚚 交付清单（按取餐点）</view>
+
+  <view wx:for="{{points}}" wx:key="point" class="building">
+    <view class="building-head">
+      {{item.point}}（{{item.orders.length}} 单）
+      <text wx:if="{{item.address}}" class="building-addr">{{item.address}}</text>
+    </view>
+
+    <view wx:for="{{item.orders}}" wx:for-item="o" wx:key="order_id"
+          class="card drop {{o.delivery_status === 'delivered' ? 'drop-done' : ''}}">
+      <view class="drop-main">
+        <view class="drop-room">{{o.buyer_nickname}}</view>
+        <view class="drop-items">{{o.items}}</view>
+        <view wx:if="{{o.note}}" class="drop-note">备注：{{o.note}}</view>
+        <view class="drop-contact">
+          <text class="text-light">微信：{{o.contact_wechat || '未填'}}</text>
+          <text wx:if="{{o.contact_wechat}}" class="drop-copy" bindtap="copyWechat" data-wechat="{{o.contact_wechat}}">复制</text>
+        </view>
+      </view>
+
+      <button wx:if="{{o.delivery_status !== 'delivered'}}" class="btn-primary btn-sm"
+              bindtap="markDelivered" data-id="{{o.order_id}}">送达</button>
+      <text wx:else class="drop-ok">✓</text>
+    </view>
+  </view>
+</view>

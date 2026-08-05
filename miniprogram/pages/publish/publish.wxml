@@ -25,5 +25,8 @@
     </view>
   </picker>
 
+  <disclaimer-bar type="publish" />
+
+
   <button class="btn-primary" bindtap="submitPublish" style="margin-top: 32rpx;">发布</button>
 </view>

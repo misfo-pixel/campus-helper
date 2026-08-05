@@ -45,7 +45,7 @@
     "disableSWC": true
   },
   "appid": "wxa66ae726a1077e80",
-  "projectname": "quickstart-wx-cloud",
+  "projectname": "campus-helper",
   "libVersion": "2.20.1",
   "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "condition": {
@@ -62,19 +62,17 @@
       "list": []
     },
     "miniprogram": {
-      "list": [
-        {
-          "id": -1,
-          "name": "db guide",
-          "pathName": "pages/databaseGuide/databaseGuide"
-        }
-      ]
+      "list": []
     }
   },
   "compileType": "miniprogram",
   "srcMiniprogramRoot": "miniprogram/",
   "packOptions": {
-    "ignore": [],
+    "comment": "以下内容留在仓库里但不打进上传包。恢复外卖时把对应项从 ignore 里删掉即可，详见 miniprogram/config.js",
+    "ignore": [
+      { "type": "folder", "value": "pages/index" },
+      { "type": "folder", "value": "pages/myorders" }
+    ],
     "include": []
   },
   "editorSetting": {

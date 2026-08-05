@@ -1,0 +1,130 @@
+.role-hint {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+  background: #f5f8ff;
+  border: 1rpx solid #d6e2f7;
+  border-radius: 12rpx;
+  padding: 20rpx;
+}
+
+.empty {
+  text-align: center;
+  margin: 80rpx 0;
+  line-height: 1.6;
+  font-size: 26rpx;
+}
+
+.empty-small {
+  text-align: center;
+  margin: 40rpx 0;
+  font-size: 26rpx;
+}
+
+.group,
+.bill {
+  padding: 28rpx;
+}
+
+.group-head,
+.bill-head {
+  display: flex;
+  align-items: baseline;
+}
+
+.group-name,
+.bill-name {
+  flex: 1;
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.group-amount {
+  font-size: 40rpx;
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.group-sub {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.group-btn {
+  margin-top: 24rpx;
+  float: right;
+}
+
+.pay-line {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+}
+
+.pay-note {
+  flex: 1;
+  font-weight: bold;
+  color: #2b4a7d;
+  word-break: break-all;
+}
+
+.pay-copy {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.bill-status {
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.bill-pending {
+  background: #fff4e0;
+  color: #b8860b;
+}
+
+.bill-paid {
+  background: #e8f0fb;
+  color: #2b4a7d;
+}
+
+.bill-settled {
+  background: #e8f6ec;
+  color: #1a7f37;
+}
+
+.bill-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.bill-amount {
+  font-size: 34rpx;
+  font-weight: bold;
+}
+
+.bill-meta {
+  font-size: 24rpx;
+}
+
+.bill-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.bill-wait {
+  font-size: 26rpx;
+}
+
+.bill-cancel {
+  margin-left: auto;
+  font-size: 26rpx;
+  color: var(--color-text-light);
+}

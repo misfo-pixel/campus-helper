@@ -1,0 +1,105 @@
+.head {
+  margin-bottom: 16rpx;
+}
+
+.head-shop {
+  font-size: 40rpx;
+  font-weight: bold;
+}
+
+.pickup-card {
+  padding: 24rpx 28rpx;
+}
+
+.pickup-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 32rpx;
+  line-height: 2;
+}
+
+.pickup-count {
+  font-weight: bold;
+  color: var(--color-primary);
+}
+
+.picked-tip {
+  text-align: center;
+  font-size: 26rpx;
+  color: #1a7f37;
+  background: #e8f6ec;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin: 24rpx 0;
+}
+
+.building {
+  margin-top: 24rpx;
+}
+
+.building-head {
+  font-size: 30rpx;
+  font-weight: bold;
+  background: #f2f2f2;
+  padding: 16rpx 24rpx;
+  border-radius: 8rpx;
+}
+
+.building-addr {
+  display: block;
+  font-size: 24rpx;
+  font-weight: normal;
+  color: var(--color-text-light);
+  margin-top: 4rpx;
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  gap: 16rpx;
+}
+
+.drop-done {
+  opacity: 0.5;
+}
+
+.drop-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.drop-room {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+.drop-items {
+  font-size: 26rpx;
+  color: #555;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+
+.drop-note {
+  font-size: 24rpx;
+  color: #b8860b;
+  margin-top: 6rpx;
+}
+
+.drop-contact {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+}
+
+.drop-copy {
+  color: var(--color-primary);
+}
+
+.drop-ok {
+  font-size: 40rpx;
+  color: #1a7f37;
+}

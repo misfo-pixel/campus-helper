@@ -1,0 +1,47 @@
+.agreement {
+  padding-bottom: 60rpx;
+}
+
+.agreement-intro {
+  font-size: 28rpx;
+  color: var(--color-text-light);
+  line-height: 1.7;
+  margin-bottom: 16rpx;
+}
+
+.para {
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 16rpx;
+}
+
+.strong {
+  font-weight: bold;
+  color: #2b2b2b;
+}
+
+.list {
+  margin-bottom: 16rpx;
+}
+
+.li {
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: #444;
+  padding-left: 28rpx;
+  position: relative;
+}
+
+.li::before {
+  content: '·';
+  position: absolute;
+  left: 8rpx;
+}
+
+.updated {
+  margin-top: 48rpx;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  text-align: center;
+}

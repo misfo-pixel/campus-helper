@@ -1,0 +1,32 @@
+<view class="page-container">
+  <view class="list-head">
+    <view class="page-title" style="margin-bottom: 0;">校园餐厅 🍜</view>
+    <button class="btn-sm" bindtap="goToMyOrders">我的订单</button>
+  </view>
+
+  <disclaimer-bar type="buyer" />
+
+  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <view wx:elif="{{shops.length === 0}}" class="text-light empty">
+    还没有商家入驻，晚点再来看看
+  </view>
+
+  <view wx:for="{{shops}}" wx:key="_id" class="card shop" bindtap="goToShop" data-id="{{item._id}}">
+    <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="shop-logo" />
+    <view wx:else class="shop-logo shop-logo-fallback">🍽</view>
+
+    <view class="shop-meta">
+      <view class="shop-name-row">
+        <text class="shop-name">{{item.name}}</text>
+        <text class="shop-status shop-status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+      <view wx:if="{{item.description}}" class="text-light shop-desc">{{item.description}}</view>
+      <view class="text-light shop-info">
+        {{item.category}} · 起送 ${{item.min_order}}{{item.delivery_mode === 'outsourced' ? ' · 饭搭子配送' : ' · 商家自送'}}
+      </view>
+      <view wx:if="{{item.business_hours}}" class="text-light shop-info">{{item.business_hours}}</view>
+    </view>
+
+    <view class="shop-arrow">›</view>
+  </view>
+</view>

@@ -1,0 +1,75 @@
+<view wx:if="{{cart && !loading}}" class="page-container">
+  <view class="page-title">确认订单</view>
+
+  <!-- 菜品清单 -->
+  <view class="card order-card">
+    <view class="shop-name">{{cart.shopName}}</view>
+    <view wx:for="{{cart.items}}" wx:key="item_id" class="line">
+      <text class="line-name">{{item.name}}</text>
+      <text class="line-count">×{{item.count}}</text>
+      <text class="line-price">${{item.lineTotal}}</text>
+    </view>
+
+    <view class="divider"></view>
+    <view class="line">
+      <text class="line-name">小计</text>
+      <text class="line-price">${{cart.subtotal}}</text>
+    </view>
+    <view class="line">
+      <text class="line-name">配送费{{pointIndex === null ? '（选取餐点后计算）' : ''}}</text>
+      <text class="line-price">${{deliveryFee}}</text>
+    </view>
+    <view class="line line-total">
+      <text class="line-name">合计</text>
+      <text class="line-price">${{total}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">取餐点</view>
+  <view class="field-hint">餐会统一送到取餐点，请你到点自取——不送到公寓门口。不同点位的配送费不一样。</view>
+
+  <picker mode="selector" range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPointChange">
+    <view class="card picker-row">
+      <text class="{{pointIndex === null ? 'placeholder' : ''}}">
+        {{pointIndex === null ? '选择取餐点（必填）' : pointLabels[pointIndex]}}
+      </text>
+      <text class="picker-arrow">›</text>
+    </view>
+  </picker>
+
+  <view wx:if="{{pointIndex !== null && points[pointIndex].address}}" class="field-hint">
+    📍 {{points[pointIndex].address}}
+  </view>
+
+  <input placeholder="你的微信号（必填，商家和配送员联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+
+  <view class="section-title">取餐场次</view>
+  <view class="field-hint">所有订单都按场次统一配送，一趟送多单，配送费因此比单送便宜。请按时到取餐点。</view>
+
+  <picker mode="selector" range="{{batchLabels}}" value="{{batchIndex}}" bindchange="onBatchChange">
+    <view class="card picker-row">
+      <text>{{batchLabels[batchIndex]}}</text>
+      <text class="picker-arrow">›</text>
+    </view>
+  </picker>
+
+  <textarea placeholder="备注（口味、忌口等）" value="{{note}}" bindinput="onInput" data-field="note" class="card" style="padding: 24rpx; width: auto; height: 140rpx; margin-top: 24rpx;"></textarea>
+
+  <!-- 付款说明：这一段是整个流程里最需要说清楚的 -->
+  <view class="section-title">付款方式</view>
+  <view class="pay-box">
+    <view class="pay-note">{{cart.payment_note || '下单后请联系商家确认收款方式'}}</view>
+    <view class="pay-desc">
+      提交订单后，请你直接通过上面的方式向商家支付 <text class="pay-amount">${{total}}</text>（含配送费）。商家确认收到款后会接单。
+    </view>
+    <view class="pay-warn">
+      本平台不提供支付功能、不经手资金、不做交易担保、不处理退款。付款前请自行核对收款方信息，付款后如有纠纷请直接与商家协商。
+    </view>
+  </view>
+
+  <disclaimer-bar type="buyer" />
+
+  <button class="btn-primary" bindtap="submit" loading="{{submitting}}" style="margin-top: 24rpx;">
+    提交订单
+  </button>
+</view>

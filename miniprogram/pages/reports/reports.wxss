@@ -1,0 +1,81 @@
+.tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.tab {
+  padding: 12rpx 32rpx;
+  border-radius: 32rpx;
+  background: var(--color-card);
+  border: 1rpx solid var(--color-border);
+  font-size: 28rpx;
+  color: var(--color-text-light);
+}
+
+.tab-on {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.report {
+  padding: 28rpx;
+}
+
+.report-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.report-type {
+  font-size: 24rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  background: #f2f2f2;
+  color: #666;
+}
+
+.report-time {
+  font-size: 24rpx;
+}
+
+.report-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 12rpx;
+}
+
+.report-reason {
+  font-size: 28rpx;
+  color: #C8102E;
+}
+
+.report-detail {
+  font-size: 26rpx;
+  margin-top: 12rpx;
+  line-height: 1.5;
+}
+
+.report-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 24rpx;
+}
+
+.btn-danger {
+  background: #C8102E;
+  color: #fff;
+}
+
+.report-done {
+  margin-top: 20rpx;
+  font-size: 26rpx;
+}

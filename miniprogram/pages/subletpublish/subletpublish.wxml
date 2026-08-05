@@ -51,5 +51,8 @@
   <textarea placeholder="室友情况（几人合租、性别、作息等）" value="{{roommate_info}}" bindinput="onInput" data-field="roommate_info" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
   <textarea placeholder="其他说明" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
 
+  <disclaimer-bar type="publish" />
+
+
   <button class="btn-primary" bindtap="submitPublish" style="margin-top: 32rpx;">发布</button>
 </view>

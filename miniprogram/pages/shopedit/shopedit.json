@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "店铺设置",
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index",
+    "plan-editor": "/components/planEditor/index"
+  }
+}

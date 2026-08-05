@@ -1,0 +1,18 @@
+.report-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin: 40rpx 0 20rpx;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #999;
+}
+
+.report-icon {
+  font-size: 26rpx;
+}
+
+.report-bar:active {
+  opacity: 0.6;
+}

@@ -1,3 +1,5 @@
+const { ensureContentOk } = require('../../utils/contentCheck.js')
+
 Page({
   data: {
     types: ['功能建议', 'Bug 报告', '内容问题', '其他'],
@@ -19,6 +21,9 @@ Page({
     if (this.data.submitting) return          // 防止连点重复提交
     this.setData({ submitting: true })
     try {
+      // 反馈也是用户产生的内容，一样要过内容安全检测
+      if (!(await ensureContentOk({ texts: [content, this.data.contact], scene: 2 }))) return
+
       const db = wx.cloud.database()
       await db.collection('feedback').add({
         data: {

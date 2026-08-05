@@ -26,8 +26,50 @@
   <view style="color: #ccc; font-size: 40rpx;">›</view>
 </view>
 
-<view bindtap="goToMyOrders" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+<!-- 外卖订单：由 config.js 的 FOOD_MODULE_ENABLED 控制，提审期间不渲染 -->
+<view wx:if="{{foodEnabled}}" bindtap="goToMyOrders" class="card" style="display: flex; align-items: center; padding: 32rpx;">
   <view style="flex: 1; font-size: 30rpx;">🍱 我的外卖订单</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<!-- 校园餐厅相关：由 config.js 的 SHOP_MODULE_ENABLED 控制 -->
+<view wx:if="{{shopEnabled}}" bindtap="goToFoodOrders" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🍜 我的餐厅订单</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<view wx:if="{{shopEnabled}}" bindtap="goToShop" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">💁 我的店铺</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<!-- 配送工作台：饭搭子管理员 / 有店的商家 / 已在队里的人才看得到 -->
+<view wx:if="{{shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🛵 饭搭子工作台</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<!-- 配送数据：定价已经下放给商家和配送队，这里只看单量 -->
+<view wx:if="{{shopEnabled && canAudit}}" bindtap="goToDeliveryConfig" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">💰 配送配置（取餐点 / 批次）</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<!-- 商家审核：超管和饭搭子管理员都能审 -->
+<view wx:if="{{shopEnabled && canAudit}}" bindtap="goToShopAudit" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🏪 商家信息核对</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<!-- 举报处理：只有管理员看得到 -->
+<view wx:if="{{isAdmin}}" bindtap="goToReports" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">🛡️ 举报处理</view>
+  <view wx:if="{{pendingReports > 0}}" style="background: #C8102E; color: #fff; font-size: 22rpx; padding: 4rpx 14rpx; border-radius: 20rpx; margin-right: 12rpx;">{{pendingReports}}</view>
+  <view style="color: #ccc; font-size: 40rpx;">›</view>
+</view>
+
+<view bindtap="goToAgreement" class="card" style="display: flex; align-items: center; padding: 32rpx;">
+  <view style="flex: 1; font-size: 30rpx;">📄 用户协议与免责声明</view>
   <view style="color: #ccc; font-size: 40rpx;">›</view>
 </view>
 </view>

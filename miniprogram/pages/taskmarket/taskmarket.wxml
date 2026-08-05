@@ -1,10 +1,9 @@
 <!--pages/taskmarket/taskmarket.wxml-->
 <view class="page-container">
+  <!-- 和转租页用同一套按钮类，别再混 size="mini"：两条路径的默认行高不一样 -->
   <view style="display: flex; justify-content: space-between; align-items: center;">
     <view class="page-title" style="margin-bottom: 0;">帮个忙 🙋</view>
-    <view style="display: flex; align-items: center;">
-      <button size="mini" class="btn-primary" bindtap="goToPublish">+ 发布</button>
-    </view>
+    <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
   </view>
 
   <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">

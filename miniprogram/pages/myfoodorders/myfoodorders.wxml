@@ -1,0 +1,47 @@
+<view class="page-container">
+  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <view wx:elif="{{orders.length === 0}}" class="text-light empty">还没有订单</view>
+
+  <view wx:for="{{orders}}" wx:key="_id" class="card order">
+    <view class="order-head">
+      <view class="order-shop">{{item.shop_name}}</view>
+      <view class="order-status order-status-{{item.status}}">{{item.statusText}}</view>
+    </view>
+    <view class="text-light order-sub">#{{item.shortId}} · {{item.timeText}}</view>
+
+    <view class="order-items">
+      <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="item_id" class="order-dish">
+        <text>{{dish.name}}</text>
+        <text class="order-dish-count">×{{dish.count}}</text>
+      </view>
+    </view>
+
+    <view class="order-total">
+      合计 <text class="order-amount">${{item.total}}</text>
+      <text wx:if="{{item.delivery_fee_charged > 0}}" class="text-light order-fee">（含配送费 ${{item.delivery_fee_charged}}）</text>
+    </view>
+
+    <view wx:if="{{item.statusHint}}" class="order-hint">{{item.statusHint}}</view>
+
+    <!-- 待确认：把收款方式亮出来 -->
+    <view wx:if="{{item.status === 'pending'}}" class="pay-box">
+      <view class="pay-label">商家收款方式</view>
+      <view class="pay-row">
+        <text class="pay-note">{{item.payment_note || '请联系商家确认'}}</text>
+        <text wx:if="{{item.payment_note}}" class="pay-copy" bindtap="copyText" data-text="{{item.payment_note}}">复制</text>
+      </view>
+      <view class="pay-warn">平台不经手资金、不提供担保。付款前请核对收款方信息。</view>
+    </view>
+
+    <view wx:if="{{item.cancel_reason}}" class="order-cancel">取消原因：{{item.cancel_reason}}</view>
+
+    <view class="order-contact">
+      <text class="text-light">商家微信：{{item.shop_wechat || '未填写'}}</text>
+      <text wx:if="{{item.shop_wechat}}" class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">复制</text>
+    </view>
+
+    <view wx:if="{{item.status === 'pending'}}" class="order-actions">
+      <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">取消订单</button>
+    </view>
+  </view>
+</view>

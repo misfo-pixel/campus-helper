@@ -1,0 +1,4 @@
+<view class="report-bar" bindtap="onReport">
+  <text class="report-icon">⚠️</text>
+  <text>举报此内容</text>
+</view>

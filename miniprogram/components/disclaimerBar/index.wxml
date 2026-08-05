@@ -1,0 +1,8 @@
+<view class="disclaimer">
+  <view class="disclaimer-head">
+    <text class="disclaimer-icon">ⓘ</text>
+    <text class="disclaimer-title">{{title}}</text>
+  </view>
+  <view class="disclaimer-line" wx:for="{{lines}}" wx:key="*this">{{item}}</view>
+  <view class="disclaimer-link" bindtap="openFull">查看完整免责声明 ›</view>
+</view>

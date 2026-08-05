@@ -1,0 +1,66 @@
+<view wx:if="{{!loading}}" class="page-container">
+
+  <!-- 还没加入任何队伍 -->
+  <block wx:if="{{!team}}">
+    <view class="empty-box">
+      <view class="empty-emoji">🛵</view>
+      <view class="empty-title">你还不在配送队里</view>
+      <view class="text-light empty-desc">
+        可以自己拉一支队伍，也可以用队长给的邀请码加入现有队伍。
+      </view>
+      <button class="btn-primary" bindtap="goToEdit" style="margin-top: 40rpx;">创建配送队</button>
+      <button bindtap="joinTeam" style="margin-top: 20rpx;">用邀请码加入</button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="card team-head">
+      <view class="team-meta">
+        <view class="team-name">{{team.name}}</view>
+        <view class="text-light">{{role === 'admin' ? '队长' : '队员'}}</view>
+      </view>
+      <view class="team-set" bindtap="goToSettlement">对账</view>
+      <view class="team-set" bindtap="goToEdit">设置 ›</view>
+    </view>
+
+    <view wx:if="{{team.audit_status === 'pending'}}" class="audit-box audit-pending">
+      <view class="audit-title">队伍审核中</view>
+      <view class="audit-desc">通过后商家才能选择把配送外包给你们。</view>
+    </view>
+    <view wx:elif="{{team.audit_status === 'rejected'}}" class="audit-box audit-rejected">
+      <view class="audit-title">审核未通过</view>
+      <view class="audit-desc">{{team.audit_reason || '请检查队伍信息是否完整'}}</view>
+    </view>
+
+    <block wx:if="{{team.audit_status === 'approved'}}">
+      <view wx:if="{{groups.length === 0}}" class="text-light empty">
+        暂时没有待配送的单。商家接单后，这一批就会出现在这里。
+      </view>
+
+      <view wx:for="{{groups}}" wx:key="batch_key" class="batch">
+        <view class="batch-head">
+          <text class="batch-label">{{item.batch_label}}</text>
+          <text class="text-light batch-time">{{item.batch_date}} {{item.deliver_time}} 送达</text>
+        </view>
+
+        <view wx:for="{{item.shops}}" wx:for-item="shop" wx:key="shop_id" class="card shop-row">
+          <view class="shop-meta">
+            <view class="shop-name">{{shop.shop_name}}</view>
+            <view class="text-light shop-sub">
+              {{shop.count}} 单{{shop.picked > 0 ? ' · 已取餐' : ''}}
+              <block wx:if="{{shop.taken && !shop.mine}}"> · {{shop.deliverer_nickname || '队友'}} 已领</block>
+            </view>
+          </view>
+
+          <button wx:if="{{!shop.taken}}" class="btn-primary btn-sm"
+                  bindtap="claim" data-batch="{{item.batch_key}}" data-shop="{{shop.shop_id}}">领这批</button>
+
+          <button class="btn-sm" wx:elif="{{shop.mine}}"
+                  bindtap="openManifest" data-batch="{{item.batch_key}}" data-shop="{{shop.shop_id}}">看清单</button>
+
+          <text wx:else class="text-light shop-taken">已被领</text>
+        </view>
+      </view>
+    </block>
+  </block>
+</view>

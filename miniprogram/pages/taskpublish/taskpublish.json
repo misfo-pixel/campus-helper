@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "发布委托",
-  "usingComponents": {}
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index"
+  }
 }

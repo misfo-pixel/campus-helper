@@ -110,6 +110,12 @@
     border-radius: 16rpx;
     font-size: 30rpx;
     font-weight: 600;
+    /* 微信 button 基础样式自带 line-height: 2.55，在定高的 flex 容器里会把
+       文字顶上去。压成 1 之后 align-items: center 才是真的居中。
+       上下 padding 一并清零，size="mini" 的默认内边距也会让文字偏。 */
+    line-height: 1;
+    padding-top: 0;
+    padding-bottom: 0;
   }
   .btn-primary { background: var(--color-primary); color: #fff; }
   .btn-primary:active { opacity: .85; }
@@ -144,3 +150,21 @@
   button { background: initial; }
   button:focus { outline: 0; }
   button::after { border: none; }
+
+  .btn-sm {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: auto !important;
+    height: 64rpx;
+    line-height: 1;
+    padding: 0 28rpx;
+    font-size: 26rpx;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  /* 小按钮一律用 .btn-sm，不要写 size="mini"。
+     微信的 wx-button[size=mini] 特异性 (0,1,1) 压得过单个 class (0,1,0)，
+     会把 display 打回 inline-block、line-height 顶成 2.3，文字就偏上。
+     .btn-sm 走的是普通按钮那条路径，冲突点都用 !important 锁掉了。 */

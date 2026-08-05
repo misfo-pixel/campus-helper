@@ -1,0 +1,125 @@
+<view wx:if="{{!loading}}" class="page-container">
+  <view class="page-title">{{isNew ? '申请入驻 🍜' : '店铺设置'}}</view>
+
+  <!-- 审核被拒时把原因显示出来，不然商家不知道要改什么 -->
+  <view wx:if="{{auditStatus === 'rejected'}}" class="reject-box">
+    <view class="reject-title">审核未通过</view>
+    <view class="reject-reason">{{auditReason || '请检查店铺信息是否完整、真实'}}</view>
+    <view class="reject-tip">修改后重新保存即可再次提交审核。</view>
+  </view>
+
+  <disclaimer-bar wx:if="{{isNew}}" type="apply" />
+
+  <view class="section-title">店铺信息</view>
+
+  <view class="logo-row card" bindtap="chooseLogo">
+    <image wx:if="{{logo}}" src="{{logo}}" mode="aspectFill" class="logo-img" />
+    <view wx:else class="logo-img logo-placeholder">+</view>
+    <view class="logo-hint">
+      <view>店铺 Logo</view>
+      <view class="text-light">点击{{logo ? '更换' : '上传'}}，建议正方形</view>
+    </view>
+  </view>
+
+  <input placeholder="店铺名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
+
+  <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+    <view class="card" style="padding: 24rpx;">分类：{{categories[categoryIndex]}}</view>
+  </picker>
+
+  <textarea placeholder="店铺简介（做什么菜、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+
+  <view class="section-title">配送与营业</view>
+
+  <input placeholder="配送范围（必填，如 UMN 东岸各公寓）" value="{{delivery_area}}" bindinput="onInput" data-field="delivery_area" class="card" style="padding: 24rpx;" />
+  <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card" style="padding: 24rpx;" />
+
+  <input placeholder="起送价（美元）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card" style="padding: 24rpx;" />
+
+  <view class="section-title">配送方式</view>
+  <view class="field-hint">买家到取餐点自取。谁送就由谁定取餐点和时间——自己送就在下面填，外包就用配送队那套。</view>
+
+  <radio-group bindchange="onDeliveryModeChange">
+    <label class="card mode-row">
+      <radio value="self" checked="{{deliveryMode === 'self'}}" color="#7A0019" />
+      <view class="mode-text">
+        <view class="mode-title">我自己送</view>
+        <view class="text-light mode-desc">配送费直接归你，不用跟谁结算</view>
+      </view>
+    </label>
+    <label class="card mode-row">
+      <radio value="outsourced" checked="{{deliveryMode === 'outsourced'}}" color="#7A0019" />
+      <view class="mode-text">
+        <view class="mode-title">外包给配送队</view>
+        <view class="text-light mode-desc">买家把配送费一起付给你，你事后按对账结果结给队伍</view>
+      </view>
+    </label>
+  </radio-group>
+
+  <picker wx:if="{{deliveryMode === 'outsourced'}}" mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
+    <view class="card picker-row">
+      <text class="{{teamIndex === null ? 'placeholder' : ''}}">
+        {{teamIndex === null ? '选择配送队（必填）' : teamNames[teamIndex]}}
+      </text>
+      <text class="picker-arrow">›</text>
+    </view>
+  </picker>
+
+  <view wx:if="{{deliveryMode === 'outsourced' && teamNames.length === 0}}" class="field-hint">
+    目前还没有通过审核的配送队，暂时只能选自己送。
+  </view>
+
+  <view wx:if="{{deliveryMode === 'outsourced' && teamIndex !== null}}" class="field-hint">
+    取餐点和配送时间用这支队伍设定的那套，你不用填。
+  </view>
+
+  <!-- 自己送：取餐点和批次由你自己定 -->
+  <plan-editor wx:if="{{deliveryMode === 'self'}}"
+               init-points="{{planPoints}}" init-batches="{{planBatches}}"
+               bind:change="onPlanChange" />
+
+  <view class="section-title">经营资质</view>
+  <view class="field-hint">
+    平台不核实、也没有能力核实你的资质。这里填的是你自己的声明——如果你不具备所在地要求的资质就开店，
+    由此产生的全部后果由你承担，详见《商家责任告知书》第二节。
+  </view>
+
+  <view class="card license-row" bindtap="chooseLicense">
+    <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />
+    <view wx:else class="license-img license-placeholder">+</view>
+    <view class="license-hint">
+      <view>许可证 / 资质凭证（选填）</view>
+      <view class="text-light">点击{{licenseImage ? '更换' : '上传'}}。传了对你自己更有利——出纠纷时这是你合规经营的证据</view>
+    </view>
+  </view>
+
+  <view class="agree-row">
+    <checkbox-group bindchange="onLicenseChange">
+      <label class="agree-label">
+        <checkbox value="1" checked="{{licenseConfirmed}}" color="#7A0019" />
+        <text class="agree-text">我已取得所在地法律要求的食品经营资质，并对此负全部责任</text>
+      </label>
+    </checkbox-group>
+  </view>
+
+  <view class="section-title">收款与联系</view>
+  <view class="field-hint">平台不经手任何资金。下面填的收款方式会展示给买家，由买家直接付款给你。</view>
+
+  <input placeholder="收款方式（必填，如 Venmo @your-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" class="card" style="padding: 24rpx;" />
+  <input placeholder="联系微信（必填，买家联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+
+  <!-- 入驻时必须勾选，已入驻的改资料就不用重复勾了 -->
+  <view wx:if="{{isNew}}" class="agree-row">
+    <checkbox-group bindchange="onAgreeChange">
+      <label class="agree-label">
+        <checkbox value="1" checked="{{agreed}}" color="#7A0019" />
+        <text class="agree-text">我已阅读并同意</text>
+      </label>
+    </checkbox-group>
+    <text class="agree-link" catchtap="openAgreement">《商家责任告知书》</text>
+  </view>
+
+  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">
+    {{isNew ? '提交入驻申请' : '保存'}}
+  </button>
+</view>

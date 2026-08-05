@@ -1,5 +1,6 @@
 // pages/publish.js
 const { fetchMyProfile } = require('../../utils/user.js')
+const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
   data: {
@@ -38,6 +39,7 @@ Page({
     wx.chooseMedia({
       count: 6 - this.data.images.length,  // 最多6张
       mediaType: ['image'],
+      sizeType: ['compressed'],   // 压缩版才能过 imgSecCheck 的 1MB 上限
       success: (res) => {
         const newImages = res.tempFiles.map(f => f.tempFilePath)
         this.setData({
@@ -63,6 +65,9 @@ Page({
 
     wx.showLoading({ title: '发布中...' })
 
+    // 文字先过内容安全检测。放在上传之前，违规的话能省掉传图那一步
+    if (!(await ensureContentOk({ texts: [title, description, seller_wechat] }))) return
+
     try {
       // 1. 先把所有图片上传到云存储，收集它们的 fileID
       const imageUrls = []
@@ -74,7 +79,13 @@ Page({
         imageUrls.push(uploadRes.fileID)
       }
 
-      // 2. 把商品信息写进数据库
+      // 2. 图片也要过检测，没过就把刚传上去的清掉
+      if (!(await ensureContentOk({ fileIDs: imageUrls }))) {
+        await deleteCloudFiles(imageUrls)
+        return
+      }
+
+      // 3. 把商品信息写进数据库
       const db = wx.cloud.database()
       await db.collection('secondhand_items').add({
         data: {

@@ -1,0 +1,67 @@
+<view class="page-container">
+  <view class="page-title">配送数据</view>
+  <view class="field-hint">
+    定价不在这里改——商家自送的在「店铺设置」里填，配送队的在「队伍设置」里填。
+    这一页只看单量，给调价当依据。
+  </view>
+
+  <view class="ranges">
+    <view class="range {{days === 7 ? 'range-on' : ''}}" bindtap="switchDays" data-days="7">7 天</view>
+    <view class="range {{days === 30 ? 'range-on' : ''}}" bindtap="switchDays" data-days="30">30 天</view>
+    <view class="range {{days === 90 ? 'range-on' : ''}}" bindtap="switchDays" data-days="90">90 天</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+
+  <block wx:elif="{{stats}}">
+    <view wx:if="{{stats.total === 0}}" class="text-light empty">
+      这段时间还没有订单。跑几周之后再回来看，那时候调价才有依据。
+    </view>
+
+    <block wx:else>
+      <view class="card stat-top">
+        <view class="stat-cell">
+          <view class="stat-num">{{stats.total}}</view>
+          <view class="text-light stat-label">总单量</view>
+        </view>
+        <view class="stat-cell">
+          <view class="stat-num">{{stats.activeDays}}</view>
+          <view class="text-light stat-label">有单的天数</view>
+        </view>
+      </view>
+
+      <view class="stat-sub">按批次</view>
+      <view class="card stat-table">
+        <view class="stat-row stat-head">
+          <text class="c1">批次</text>
+          <text class="c2">平均</text>
+          <text class="c3">总单</text>
+        </view>
+        <view wx:for="{{stats.batches}}" wx:key="label" class="stat-row">
+          <text class="c1">{{item.label}}</text>
+          <text class="c2">{{item.avg}}</text>
+          <text class="c3">{{item.count}}</text>
+        </view>
+      </view>
+
+      <view class="stat-sub">按取餐点</view>
+      <view class="card stat-table">
+        <view class="stat-row stat-head">
+          <text class="c1">取餐点</text>
+          <text class="c2">占比</text>
+          <text class="c3">总单</text>
+        </view>
+        <view wx:for="{{stats.points}}" wx:key="name" class="stat-row">
+          <text class="c1">{{item.name}}</text>
+          <text class="c2">{{item.share}}%</text>
+          <text class="c3">{{item.count}}</text>
+        </view>
+      </view>
+
+      <view class="field-hint">
+        平均单量低的批次、占比很小的取餐点，要么提价要么撤掉——一趟只送两三单是亏的。
+        改完记得通知对应的商家或队长，改动在他们各自的设置页里。
+      </view>
+    </block>
+  </block>
+</view>

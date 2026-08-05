@@ -1,0 +1,85 @@
+.field-hint {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: 16rpx;
+}
+
+.info-card {
+  padding: 28rpx;
+}
+
+.info-name {
+  font-size: 34rpx;
+  font-weight: bold;
+}
+
+.info-desc,
+.info-row {
+  font-size: 26rpx;
+  margin-top: 8rpx;
+  line-height: 1.5;
+}
+
+.code-card {
+  display: flex;
+  align-items: center;
+  padding: 28rpx;
+  gap: 24rpx;
+}
+
+.code-text {
+  flex: 1;
+  font-size: 44rpx;
+  font-weight: bold;
+  letter-spacing: 8rpx;
+  color: var(--color-primary);
+}
+
+.code-op {
+  font-size: 26rpx;
+  color: var(--color-primary);
+}
+
+.code-reset {
+  color: var(--color-text-light);
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+}
+
+.member-name {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.member-tag {
+  font-size: 22rpx;
+  background: #f2f2f2;
+  color: #666;
+  padding: 2rpx 12rpx;
+  border-radius: 16rpx;
+  margin-left: 12rpx;
+}
+
+.member-del {
+  font-size: 26rpx;
+  color: #C8102E;
+}
+
+.quit {
+  text-align: center;
+  font-size: 28rpx;
+  color: #C8102E;
+  padding: 40rpx 0 20rpx;
+}
+
+.members-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 24rpx 0 16rpx;
+}
