@@ -1,4 +1,41 @@
-node_modules/
+# ---------- 密钥与凭证（绝不能进仓库）----------
+# 环境变量文件
+.env
+.env.*
+!.env.example
+# 私钥、证书（微信支付商户证书 apiclient_cert/apiclient_key 等）
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+apiclient_*
+# 小程序代码上传密钥（miniprogram-ci 用）
+private.*.key
+# 以防手动存放的密钥文件
+*secret*
+*credential*
+secrets/
+
+# ---------- 微信开发者工具 ----------
+# 本地私有设置，每个开发者不同
 project.private.config.json
-.DS_Store
+# npm 构建产物
 miniprogram_npm/
+
+# ---------- 依赖 ----------
+node_modules/
+
+# ---------- 日志与缓存 ----------
+*.log
+npm-debug.log*
+.cache/
+coverage/
+
+# ---------- 系统与编辑器 ----------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
