@@ -1,9 +1,16 @@
+const { markStale } = require('../../utils/refresh.js')
 // pages/publish.js
 const { fetchMyProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { KINDS, isDemand } = require('../../utils/kinds.js')
+
+const CFG = KINDS.item
 
 Page({
   data: {
+    kind: CFG.default,   // sell = 我要卖，want = 我要收
+    kinds: CFG.tabs,
+    demand: false,       // 求购帖没有实物，不强制传图
     images: [],        // 已选的图片（本地临时路径）
     title: '',
     price: '',
@@ -22,6 +29,11 @@ Page({
     }).catch(err => {
       console.error('读取微信号失败：', err)
     })
+  },
+
+  onTapKind: function (e) {
+    const kind = e.currentTarget.dataset.key
+    this.setData({ kind: kind, demand: isDemand(kind) })
   },
 
   // 通用输入处理（用 data-field 区分是哪个输入框）
@@ -58,7 +70,8 @@ Page({
       wx.showToast({ title: '请填完整信息', icon: 'none' })
       return
     }
-    if (images.length === 0) {
+    // 求购是「我想要什么」，本来就没有实物可拍，不强制传图
+    if (!this.data.demand && images.length === 0) {
       wx.showToast({ title: '请上传图片', icon: 'none' })
       return
     }
@@ -95,12 +108,14 @@ Page({
           images: imageUrls,       // 存的是所有图片地址的数组
           seller_wechat: seller_wechat,
           expire_date: expire_date,
+          kind: this.data.kind,     // sell / want，决定它出现在市场页的哪一面
           status: 'on_sale',
           created_at: new Date()
         }
       })
 
       wx.hideLoading()
+      markStale('item')   // 列表页返回时会看到这条新发布的
       wx.showToast({ title: '发布成功！', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1500)  // 发布后返回上一页
 

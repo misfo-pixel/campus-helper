@@ -1,4 +1,6 @@
-const { fetchPublicProfile } = require('../../utils/user.js')
+const { markStale } = require('../../utils/refresh.js')
+
+const app = getApp()
 
 Page({
   data: {
@@ -8,33 +10,44 @@ Page({
     seller: { nickname: '', avatarUrl: '' }
   },
 
+  // 点卖家头像进 TA 的主页，直接停在本板块那一页
+  // 内容没了时给个出口。冷启动进来的页面栈只有一页，navigateBack 是空操作。
+  goToMarket: function () {
+    wx.reLaunch({ url: '/pages/subletmarket/subletmarket' })
+  },
+
+  // 用 seller.uid（users 文档的随机 id），不要用 openid——链接会被转发出去
+  goToSellerStore: function () {
+    const uid = this.data.seller && this.data.seller.uid
+    if (!uid) return
+    wx.navigateTo({ url: '/pages/userstore/userstore?uid=' + uid + '&tab=sublet' })
+  },
+
   onLoad: function (options) {
+    this.setData({ isRootPage: getCurrentPages().length === 1 })
+
     const id = options.id
-    const db = wx.cloud.database()
+    if (!id) return this.setData({ loading: false, notFound: true })
 
-    db.collection('sublet_items').doc(id).get().then(res => {
-      const item = res.data
-      this.setData({ item: item })
-
-      // 房东的昵称和头像（现查，房东改了资料这里跟着变）
-      fetchPublicProfile(item._openid).then(seller => this.setData({ seller: seller }))
-
-      // 判断权限：本人 或 转租管理员
-      wx.cloud.callFunction({ name: 'login' }).then(loginRes => {
-        if (loginRes.result.success) {
-          const myOpenid = loginRes.result.openid
-          const roles = loginRes.result.roles || []
-          const isOwner = (myOpenid === item._openid)
-          const isSubletAdmin = roles.includes('sublet_admin') || roles.includes('super_admin')
-          this.setData({
-            canDelete: isOwner || isSubletAdmin,
-            isOwner: isOwner
-          })
-        }
+    // 一次调用拿齐三样：内容、发布者资料、我能不能删。
+    // 原来是三趟串行往返，跨太平洋一趟约 0.3 秒，合并后省掉 0.6 秒。
+    // 而且 _openid 在云函数里就被摘掉了，不会下发到前端。
+    wx.cloud.callFunction({ name: 'getDetail', data: { type: 'sublet', id: id } })
+      .then(res => {
+        const r = (res && res.result) || {}
+        if (!r.success) return this.setData({ loading: false, notFound: true })
+        this.setData({
+          item: r.item,
+          seller: r.seller,
+          isOwner: r.isOwner,
+          canDelete: r.canDelete,
+          loading: false
+        })
       })
-    }).catch(err => {
-      console.error('加载详情失败：', err)
-    })
+      .catch(err => {
+        console.error('加载详情失败：', err)
+        this.setData({ loading: false, notFound: true })
+      })
   },
 
   // 标记已租出（发布者）
@@ -48,6 +61,7 @@ Page({
           db.collection('sublet_items').doc(this.data.item._id).update({
             data: { status: 'rented' }
           }).then(() => {
+            markStale('sublet')   // 返回列表时要看到这次改动
             wx.showToast({ title: '已标记租出', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {
@@ -68,6 +82,7 @@ Page({
         if (res.confirm) {
           const db = wx.cloud.database()
           db.collection('sublet_items').doc(this.data.item._id).remove().then(() => {
+            markStale('sublet')   // 返回列表时要看到这次改动
             wx.showToast({ title: '已删除', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {

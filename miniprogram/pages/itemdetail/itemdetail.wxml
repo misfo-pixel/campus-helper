@@ -17,15 +17,31 @@
     <view class="text-light" style="margin-top: 32rpx;">下架日期：{{item.expire_date}}</view>
 
     <!-- 卖家名片 -->
-    <contact-card role="卖家" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.seller_wechat}}" />
+    <contact-card avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.seller_wechat}}"
+      link-to-store="{{true}}" bindviewstore="goToSellerStore" />
 
     <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除商品</button>
 
     <button wx:if="{{isOwner}}" bindtap="markSold"
     style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已售</button>
 
+    <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
+         给一个往下逛的出口，别让人看完就退出小程序。 -->
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">逛逛更多闲置 ›</view>
+
     <disclaimer-bar type="trade" />
 
     <report-bar target-type="item" target-id="{{item._id}}" />
   </view>
+</view>
+
+<!-- 首次进来还没拿到数据。不显示这个的话，慢网络下就是一段白屏。 -->
+<view wx:elif="{{loading}}" class="detail-state">加载中…</view>
+
+<!-- 分享卡片会在群里躺很久，点开时商品可能已删或已售。
+     这里必须给出口，否则就是白屏——落地页不能假设数据一定还在。 -->
+<view wx:else class="detail-state">
+  <view class="detail-state-title">这件闲置已经下架了</view>
+  <view class="text-light" style="margin-top: 12rpx;">可能已经卖出，或者被发布者删掉了</view>
+  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">去看看别的闲置</button>
 </view>

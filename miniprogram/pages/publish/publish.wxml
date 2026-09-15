@@ -1,21 +1,30 @@
 <!--pages/publish.wxml-->
 <view class="page-container">
-  <view class="page-title">发布你的闲置 ♻️</view>
+  <view class="page-title">{{demand ? '发布求购 🔎' : '发布你的闲置 ♻️'}}</view>
 
-  <!-- 图片上传区 -->
-  <view class="section-title">商品图片</view>
-  <view style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
+  <!-- 这是表单的第一个决定，会改变下面填什么，所以放最上面 -->
+  <view class="kind-switch">
+    <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+          bindtap="onTapKind" data-key="{{k.key}}"
+          class="kind-switch-item {{kind === k.key ? 'kind-switch-on' : ''}}">
+      {{k.action}}
+    </view>
+  </view>
+
+  <!-- 图片上传区。求购没有实物可拍，整块收起来 -->
+  <view wx:if="{{!demand}}" class="section-title">商品图片</view>
+  <view wx:if="{{!demand}}" style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
     <!-- 已选的图片 -->
     <image wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill" style="width: 200rpx; height: 200rpx; border-radius: 12rpx;"></image>
     <!-- 添加按钮 -->
     <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 200rpx; height: 200rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
   </view>
 
-  <view class="section-title">商品信息</view>
-  <input placeholder="商品名称（如 宜家台灯）" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
-  <input placeholder="价格（美元）" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
-  <textarea placeholder="描述（成色、转手原因等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
-  <input placeholder="你的微信号（买家联系用）" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
+  <view class="section-title">{{demand ? '求购信息' : '商品信息'}}</view>
+  <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
+  <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
+  <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
   <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
 
   <view class="section-title">下架日期</view>

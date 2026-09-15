@@ -1,1 +1,26 @@
 /* pages/myitems/myitems.wxss */
+
+.share-card {
+  display: flex;
+  align-items: center;
+}
+.share-text { flex: 1; margin-right: 20rpx; }
+.share-title { font-size: 30rpx; font-weight: 600; }
+.share-preview {
+  /* 只有一行小字，热区太窄容易点空：撑成行内块再加内边距，指头点得中 */
+  display: inline-block;
+  margin-top: 6rpx;
+  padding: 10rpx 4rpx;
+  font-size: 26rpx;
+  color: var(--color-primary);
+}
+
+/* 画布必须真实渲染才画得出东西，所以是挪出屏幕，不是隐藏 */
+.poster-canvas {
+  position: fixed;
+  left: -9999rpx;
+  top: 0;
+  width: 600px;
+  height: 900px;
+}
+.btn-busy { opacity: .6; }

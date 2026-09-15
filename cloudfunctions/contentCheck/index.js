@@ -45,7 +45,8 @@ async function checkText(content, scene, openid) {
     return { pass: false, reason: '文字可能包含' + (LABEL_TEXT[result.label] || '违规内容') }
   } catch (err) {
     if (isRiskyError(err)) return { pass: false, reason: '文字包含违规内容' }
-    console.error('msgSecCheck 调用失败：', err)
+    console.error('msgSecCheck 调用失败：errCode=', err && (err.errCode || err.errcode),
+                  'errMsg=', err && (err.errMsg || err.errmsg), err)
     return { pass: false, reason: '内容校验服务暂时不可用，请稍后重试', serviceError: true }
   }
 }
@@ -75,7 +76,8 @@ async function checkImage(fileID) {
     return { pass: true }
   } catch (err) {
     if (isRiskyError(err)) return { pass: false, reason: '图片包含违规内容' }
-    console.error('imgSecCheck 调用失败：', fileID, err)
+    console.error('imgSecCheck 调用失败：', fileID, 'errCode=', err && (err.errCode || err.errcode),
+                  'errMsg=', err && (err.errMsg || err.errmsg), err)
     return { pass: false, reason: '图片校验服务暂时不可用，请稍后重试', serviceError: true }
   }
 }

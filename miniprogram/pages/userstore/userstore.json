@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "闲置主页",
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index"
+  }
+}

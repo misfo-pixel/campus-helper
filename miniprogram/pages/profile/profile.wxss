@@ -16,3 +16,31 @@
   align-items: center;
   justify-content: center;
 }
+
+/* ===== 「我的」页面的分组 ===== */
+
+/* 分组标题：比正文小、比正文浅，只做分隔用，不该抢入口的注意力 */
+.profile-group {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin: 44rpx 0 16rpx 12rpx;
+}
+/* 头像卡片下面第一个标题不用留那么大空 */
+.profile-group:first-of-type { margin-top: 32rpx; }
+
+/* 入口行。原来每行都内联写一遍同样的样式，提出来省得改一处漏三处 */
+.profile-row {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+}
+.profile-row-label { flex: 1; font-size: 30rpx; }
+.profile-row-arrow { color: #ccc; font-size: 40rpx; }
+.profile-row-badge {
+  background: #C8102E;
+  color: #fff;
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  margin-right: 12rpx;
+}

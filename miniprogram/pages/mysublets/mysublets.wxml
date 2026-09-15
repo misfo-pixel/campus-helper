@@ -1,13 +1,22 @@
-<view class="page-container">
-  <view class="page-title">我发布的转租</view>
+<view class="page-container with-kind-pill">
+  <view class="page-title">我的转租</view>
 
   <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
-    你还没发布过转租
+    {{demand ? '你还没发过求租' : '你还没发布过转租'}}
   </view>
 
-  <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card" style="padding: 24rpx;">
+  <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="padding: 24rpx;">
     <view style="font-size: 30rpx; font-weight: bold;">{{item.title}}</view>
-    <view class="price" style="margin: 8rpx 0;">${{item.rent}}/月</view>
+    <view class="price" style="margin: 8rpx 0;">{{demand ? '预算 ' : ''}}${{item.rent}}/月</view>
     <view class="text-light" style="font-size: 24rpx;">{{item.room_type}} · 状态：{{item.status}}</view>
   </view>
+
+  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
+</view>
+
+<view class="kind-pill">
+  <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+        bindtap="onTapKind" data-key="{{k.key}}"
+        class="kind-pill-item {{kind === k.key ? 'kind-pill-on' : ''}}">{{k.label}}</view>
 </view>

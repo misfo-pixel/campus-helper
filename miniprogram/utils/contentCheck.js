@@ -16,11 +16,13 @@ function checkContent(options) {
     }
   }).then(res => {
     const r = (res && res.result) || {}
-    if (!r.success) return { pass: false, reason: '内容校验失败，请稍后重试' }
-    return { pass: !!r.pass, reason: r.reason || '' }
+    if (!r.success) {
+      return { pass: false, serviceError: true, reason: '内容校验失败，请稍后重试' }
+    }
+    return { pass: !!r.pass, serviceError: !!r.serviceError, reason: r.reason || '' }
   }).catch(err => {
     console.error('contentCheck 调用失败：', err)
-    return { pass: false, reason: '内容校验服务暂时不可用，请稍后重试' }
+    return { pass: false, serviceError: true, reason: '内容校验服务暂时不可用，请稍后重试' }
   })
 }
 

@@ -1,5 +1,5 @@
 <view class="page-container">
-  <view class="page-title">我发布的委托</view>
+  <view class="page-title">我的委托</view>
 
   <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
     你还没发布过委托

@@ -1,19 +1,21 @@
 <!--pages/subletmarket/subletmarket.wxml-->
-<view class="page-container">
+<view class="page-container with-kind-pill">
   <view style="display: flex; justify-content: space-between; align-items: center;">
     <view class="page-title" style="margin-bottom: 0;">找房转租 🏠</view>
     <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
   </view>
 
-  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
-    还没有转租房源，来发布第一个吧
+  <view wx:if="{{loading}}" class="text-light" style="text-align: center; margin-top: 100rpx;">加载中…</view>
+
+  <view wx:elif="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    {{emptyText}}
   </view>
 
-  <!-- 房源列表：横向卡片 -->
-  <view style="margin-top: 32rpx;">
-    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card" style="display: flex; padding: 20rpx;">
-      <image src="{{item.images[0]}}" mode="aspectFill" style="width: 200rpx; height: 200rpx; border-radius: 12rpx; margin-right: 20rpx; background: #f0f0f0;"></image>
-      <view style="flex: 1;">
+  <!-- 转租：有房源图，横向卡片 -->
+  <view wx:elif="{{!demand}}" style="margin-top: 32rpx;">
+    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="display: flex; padding: 20rpx;">
+      <image src="{{item.images[0]}}" mode="aspectFill" lazy-load style="width: 200rpx; height: 200rpx; border-radius: 12rpx; margin-right: 20rpx; background: #f0f0f0;"></image>
+      <view style="flex: 1; min-width: 0;">
         <view style="font-size: 30rpx; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
         <view class="price" style="margin: 8rpx 0;">${{item.rent}}/月</view>
         <view class="text-light" style="font-size: 24rpx;">{{item.room_type}} · {{item.address}}</view>
@@ -21,4 +23,26 @@
       </view>
     </view>
   </view>
+
+  <!-- 求租：没有房源图，改成文字列表 -->
+  <view wx:else style="margin-top: 32rpx;">
+    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="padding: 28rpx;">
+      <view style="display: flex; align-items: baseline;">
+        <view style="font-size: 30rpx; font-weight: bold; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
+        <view class="price" style="margin-left: 20rpx;">预算 ${{item.rent}}/月</view>
+      </view>
+      <view class="text-light" style="font-size: 24rpx; margin-top: 8rpx;">想找：{{item.room_type || '不限'}} · {{item.address || '区域不限'}}</view>
+      <view wx:if="{{item.description}}" class="text-light"
+            style="margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{item.description}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
+</view>
+
+<view class="kind-pill">
+  <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+        bindtap="onTapKind" data-key="{{k.key}}"
+        class="kind-pill-item {{kind === k.key ? 'kind-pill-on' : ''}}">{{k.label}}</view>
 </view>

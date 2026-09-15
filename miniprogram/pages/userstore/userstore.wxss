@@ -1,0 +1,82 @@
+/* pages/userstore/userstore.wxss */
+
+.store-head {
+  display: flex;
+  align-items: center;
+}
+.store-avatar {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  margin-right: 24rpx;
+  background: var(--color-bg);
+}
+.store-meta { flex: 1; }
+.store-name {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.store-empty {
+  text-align: center;
+  color: var(--color-text-light);
+  font-size: 26rpx;
+  margin: 100rpx 0;
+}
+
+.store-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx;
+}
+.store-thumb {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background: var(--color-bg);
+}
+.store-item-meta { flex: 1; min-width: 0; }
+.store-item-title {
+  font-size: 30rpx;
+  /* 标题长了就截断，卡片高度保持一致 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.store-arrow {
+  color: #ccc;
+  font-size: 40rpx;
+}
+
+/* ===== 页签 ===== */
+.store-tabs {
+  display: flex;
+  gap: 40rpx;
+  padding: 0 8rpx;
+  margin: 8rpx 0 24rpx;
+  border-bottom: 2rpx solid var(--color-border);
+}
+.store-tab {
+  padding: 0 0 18rpx;
+  font-size: 28rpx;
+  color: var(--color-text-light);
+  border-bottom: 4rpx solid transparent;
+  margin-bottom: -2rpx;   /* 压住容器那条线，选中态才连得上 */
+}
+.store-tab-on {
+  color: var(--color-primary);
+  font-weight: 700;
+  border-bottom-color: var(--color-primary);
+}
+
+/* ===== 「全部」页签下的类型标 ===== */
+.store-badge {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+}
+.store-badge-item   { background: #FAEEDA; color: #854F0B; }
+.store-badge-sublet { background: #E1F5EE; color: #0F6E56; }
+.store-badge-task   { background: #EEEDFE; color: #3C3489; }

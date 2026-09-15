@@ -168,3 +168,67 @@
      微信的 wx-button[size=mini] 特异性 (0,1,1) 压得过单个 class (0,1,0)，
      会把 display 打回 inline-block、line-height 顶成 2.3，文字就偏上。
      .btn-sm 走的是普通按钮那条路径，冲突点都用 !important 锁掉了。 */
+  /* ==================== 供/求 悬浮切换胶囊 ==================== */
+
+  /* 悬浮在内容之上，不参与文档流——所以加不加它，底下的列表布局完全不变。
+     位置在拇指自然落点。用它的页面记得给容器加 .with-kind-pill 留出空间。 */
+  .kind-pill {
+    position: fixed;
+    left: 50%;
+    bottom: calc(48rpx + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex;
+    padding: 6rpx;
+    border-radius: 999rpx;
+    background: #fff;
+    box-shadow: 0 8rpx 32rpx rgba(122, 0, 25, .2);
+    z-index: 50;
+  }
+  .kind-pill-item {
+    min-width: 128rpx;
+    padding: 16rpx 0;
+    text-align: center;
+    font-size: 30rpx;
+    color: var(--color-text-light);
+    border-radius: 999rpx;
+  }
+  .kind-pill-on {
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+  }
+
+  /* 最后一条内容别被胶囊压住 */
+  .with-kind-pill { padding-bottom: 200rpx; }
+
+  /* 发布页顶部的「供/求」选择。这是表单里的一个字段，不是悬浮层，所以走内联分段样式 */
+  .kind-switch {
+    display: flex;
+    gap: 12rpx;
+    padding: 8rpx;
+    margin-bottom: 32rpx;
+    border-radius: 16rpx;
+    background: var(--color-bg);
+  }
+  .kind-switch-item {
+    flex: 1;
+    padding: 20rpx 0;
+    text-align: center;
+    font-size: 28rpx;
+    color: var(--color-text-light);
+    border-radius: 12rpx;
+  }
+  .kind-switch-on {
+    background: var(--color-card);
+    color: var(--color-primary);
+    font-weight: 700;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* 列表触底的状态提示 */
+  .list-foot {
+    text-align: center;
+    color: var(--color-text-light);
+    font-size: 24rpx;
+    padding: 32rpx 0 8rpx;
+  }

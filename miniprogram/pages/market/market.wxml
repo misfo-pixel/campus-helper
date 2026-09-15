@@ -1,25 +1,49 @@
 <!--pages/market/market.wxml-->
-<view class="page-container">
-<view style="display: flex; justify-content: space-between; align-items: center;">
-  <view class="page-title" style="margin-bottom: 0;">闲置省心挂 ♻️</view>
-  <input placeholder="搜索商品名称" value="{{keyword}}" bindinput="onSearchInput" class="card" style="padding: 24rpx; margin-top: 24rpx;" />
-</view>
-
-  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
-    还没有商品，来发布第一个吧
+<view class="page-container with-kind-pill">
+  <view style="display: flex; justify-content: space-between; align-items: center;">
+    <view class="page-title" style="margin-bottom: 0;">闲置省心挂 ♻️</view>
+    <input placeholder="搜索名称" value="{{keyword}}" bindinput="onSearchInput" class="card" style="padding: 24rpx; margin-top: 24rpx;" />
   </view>
 
+  <view wx:if="{{loading}}" class="text-light" style="text-align: center; margin-top: 100rpx;">加载中…</view>
 
-  <!-- 商品网格：两列 -->
-  <view style="display: flex; flex-wrap: wrap; gap: 20rpx; margin-top: 32rpx;">
+  <view wx:elif="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    {{keyword ? '没有匹配的结果' : emptyText}}
+  </view>
+
+  <!-- 在卖：有实拍图，两列网格最好看 -->
+  <view wx:elif="{{!demand}}" style="display: flex; flex-wrap: wrap; gap: 20rpx; margin-top: 32rpx;">
     <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}"
           style="width: calc(48%); background: var(--color-card); border: 1rpx solid var(--color-border); border-radius: 16rpx; overflow: hidden;">
-      <!-- 商品首图 -->
-      <image src="{{item.images[0]}}" mode="aspectFill" style="width: 100%; height: 300rpx;"></image>
+      <image src="{{item.images[0]}}" mode="aspectFill" lazy-load style="width: 100%; height: 300rpx;"></image>
       <view style="padding: 16rpx;">
         <view style="font-size: 28rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
         <view class="price" style="margin-top: 8rpx;">${{item.price}}</view>
       </view>
     </view>
   </view>
+
+  <!-- 求购：没有实拍图，硬套网格会是一整屏灰色占位图，改成文字列表 -->
+  <view wx:else style="margin-top: 32rpx;">
+    <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}"
+          class="card card-tap" style="padding: 28rpx;">
+      <view style="display: flex; align-items: baseline;">
+        <view style="font-size: 30rpx; font-weight: bold; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
+        <view class="price" style="margin-left: 20rpx;">预算 ${{item.price}}</view>
+      </view>
+      <view wx:if="{{item.description}}" class="text-light"
+            style="margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{item.description}}</view>
+    </view>
+  </view>
+
+  <!-- 触底加载的反馈。没有这个的话，滑到底会有一秒不知道在发生什么 -->
+  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
+</view>
+
+<!-- 供/求切换。悬浮在内容之上，不挤压上面的布局。 -->
+<view class="kind-pill">
+  <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+        bindtap="onTapKind" data-key="{{k.key}}"
+        class="kind-pill-item {{kind === k.key ? 'kind-pill-on' : ''}}">{{k.label}}</view>
 </view>

@@ -12,15 +12,20 @@ exports.main = async (event, context) => {
   try {
     const res = await db.collection('users')
       .where({ openid: openid })
-      .field({ nickname: true, avatarUrl: true })
+      .field({ nickname: true, avatarUrl: true })   // _id 总会返回，就是对外的 uid
       .limit(1)
       .get()
 
     if (res.data.length === 0) {
-      return { success: true, nickname: '', avatarUrl: '' }
+      return { success: true, nickname: '', avatarUrl: '', uid: '' }
     }
     const user = res.data[0]
-    return { success: true, nickname: user.nickname || '', avatarUrl: user.avatarUrl || '' }
+    return {
+      success: true,
+      nickname: user.nickname || '',
+      avatarUrl: user.avatarUrl || '',
+      uid: user._id      // 详情页拿它拼主页链接，不再暴露 openid
+    }
   } catch (err) {
     return { success: false, error: err }
   }

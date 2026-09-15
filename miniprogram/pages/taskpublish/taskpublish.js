@@ -1,3 +1,4 @@
+const { markStale } = require('../../utils/refresh.js')
 const { fetchMyProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
@@ -92,6 +93,7 @@ Page({
       })
 
       wx.hideLoading()
+      markStale('task')   // 列表页返回时会看到这条新发布的
       wx.showToast({ title: '发布成功！', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1500)
     } catch (err) {

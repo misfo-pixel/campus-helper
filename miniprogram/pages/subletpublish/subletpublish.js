@@ -1,8 +1,15 @@
+const { markStale } = require('../../utils/refresh.js')
 const { fetchMyProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { KINDS, isDemand } = require('../../utils/kinds.js')
+
+const CFG = KINDS.sublet
 
 Page({
   data: {
+    kind: CFG.default,   // offer = 我要转租，seek = 我要找房
+    kinds: CFG.tabs,
+    demand: false,
     images: [],
     title: '',
     rent: '',
@@ -66,6 +73,11 @@ Page({
     this.setData({ furnished: e.detail.value })
   },
 
+  onTapKind: function (e) {
+    const kind = e.currentTarget.dataset.key
+    this.setData({ kind: kind, demand: isDemand(kind) })
+  },
+
   submitPublish: async function () {
     const d = this.data
     // 必填校验：title, rent, address, contact_wechat, start_date, end_date, 房型
@@ -123,12 +135,14 @@ Page({
           roommate_info: d.roommate_info,
           description: d.description,
           images: imageUrls,
+          kind: this.data.kind,     // offer / seek，决定它出现在找房页的哪一面
           status: 'on_sale',
           created_at: new Date()
         }
       })
 
       wx.hideLoading()
+      markStale('sublet')   // 列表页返回时会看到这条新发布的
       wx.showToast({ title: '发布成功！', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1500)
     } catch (err) {

@@ -1,17 +1,42 @@
-<view class="page-container">
-  <view class="page-title">我发布的闲置</view>
+<view class="page-container with-kind-pill">
+  <view class="page-title">我的闲置</view>
 
-  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
-    你还没发布过闲置
+  <!-- 海报把在售商品拼成一张图，发群、发朋友圈都行。
+       右上角的 ••• 转发走的是 onShareAppMessage，两条路并存。 -->
+  <view wx:if="{{!demand}}" class="share-card card">
+    <view class="share-text">
+      <view class="share-title">分享我的闲置主页</view>
+      <view class="text-light">展示所有在售的闲置</view>
+      <view class="share-preview" bindtap="previewStore">预览 ›</view>
+    </view>
+    <view class="btn-primary btn-sm {{posterBusy ? 'btn-busy' : ''}}" bindtap="makePoster">海报分享</view>
   </view>
 
-  <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card" style="display: flex; align-items: center; padding: 20rpx;">
-    <image src="{{item.images[0]}}" mode="aspectFill" style="width: 140rpx; height: 140rpx; border-radius: 12rpx; margin-right: 20rpx;"></image>
-    <view style="flex: 1;">
+  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+    {{demand ? '你还没发过求购' : '你还没发布过闲置'}}
+  </view>
+
+  <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="display: flex; align-items: center; padding: 20rpx;">
+    <!-- 求购帖没有图，不占这块位置 -->
+    <image wx:if="{{!demand}}" src="{{item.images[0]}}" mode="aspectFill" lazy-load style="width: 140rpx; height: 140rpx; border-radius: 12rpx; margin-right: 20rpx;"></image>
+    <view style="flex: 1; min-width: 0;">
       <view style="font-size: 30rpx;">{{item.title}}</view>
-      <view class="price" style="margin-top: 8rpx;">${{item.price}}</view>
+      <view class="price" style="margin-top: 8rpx;">{{demand ? '预算 ' : ''}}${{item.price}}</view>
       <view class="text-light" style="margin-top: 8rpx;">状态：{{item.status}}</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>
+
+  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
 </view>
+
+<view class="kind-pill">
+  <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+        bindtap="onTapKind" data-key="{{k.key}}"
+        class="kind-pill-item {{kind === k.key ? 'kind-pill-on' : ''}}">{{k.label}}</view>
+</view>
+
+<!-- 画海报用的画布。不能用 hidden 或 display:none——那样画布不会真正渲染，
+     导出的会是空白图。所以挪到屏幕外面去。 -->
+<canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>

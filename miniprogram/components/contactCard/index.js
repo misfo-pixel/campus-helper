@@ -12,10 +12,8 @@ Component({
     avatar: String,
     nickname: String,
     wechat: String,
-    role: {          // 卖家 / 房东 / 发布者
-      type: String,
-      value: '卖家'
-    }
+    // 传了才把头像那块变成「进对方主页」的入口。二手详情页开，转租/任务页不开。
+    linkToStore: Boolean
   },
 
   data: {
@@ -29,6 +27,12 @@ Component({
   },
 
   methods: {
+    // 组件不自己跳转——它不知道该跳去哪个主页，交给用它的页面决定
+    onTapProfile: function () {
+      if (!this.data.linkToStore) return
+      this.triggerEvent('viewstore')
+    },
+
     copyWechat: function () {
       const wechat = this.data.wechat
       if (!wechat) {

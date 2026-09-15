@@ -9,12 +9,6 @@
   margin-top: 40rpx;
 }
 
-.contact-title {
-  font-size: 26rpx;
-  color: var(--color-text-light);
-  margin-bottom: 20rpx;
-}
-
 .contact-body {
   display: flex;
   align-items: center;
@@ -36,6 +30,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.contact-body-tap:active { opacity: .6; }
+
+.contact-arrow {
+  color: var(--color-text-light);
+  font-size: 40rpx;
+  margin-left: 12rpx;
+  flex-shrink: 0;
 }
 
 .contact-meta {

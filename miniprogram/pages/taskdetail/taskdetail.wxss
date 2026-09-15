@@ -1,1 +1,24 @@
 /* pages/taskdetail/taskdetail.wxss */
+
+/* 加载中 / 已下架 的占位状态 */
+.detail-state {
+  padding: 160rpx 64rpx;
+  text-align: center;
+  color: var(--color-text-light);
+}
+.detail-state-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* 分享落地页专用：给没有上一页可退的人一个入口 */
+.detail-more {
+  margin-top: 32rpx;
+  padding: 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--color-primary);
+  background: var(--color-card);
+  border-radius: var(--radius);
+}

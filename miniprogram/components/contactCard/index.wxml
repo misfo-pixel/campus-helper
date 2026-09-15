@@ -1,13 +1,15 @@
 <view class="contact-card">
-  <view class="contact-title">添加{{role}}微信</view>
-
-  <view class="contact-body">
+  <!-- 头像+昵称这一块可点：进对方的公开主页。
+       只有传了 link-to-store 的页面才有这个行为，转租/任务页没有主页可去，
+       所以不给点击反馈，也不给箭头。 -->
+  <view class="contact-body {{linkToStore ? 'contact-body-tap' : ''}}" bindtap="onTapProfile">
     <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="contact-avatar" />
     <view wx:else class="contact-avatar contact-avatar-fallback">🐿️</view>
     <view class="contact-meta">
       <view class="contact-name">{{nickname || '校园用户'}}</view>
       <view class="contact-wechat">微信：{{maskedWechat || '未填写'}}</view>
     </view>
+    <view wx:if="{{linkToStore}}" class="contact-arrow">›</view>
   </view>
 
   <view class="contact-divider"></view>

@@ -33,6 +33,7 @@
     "pages/market/market",
     "pages/itemdetail/itemdetail",
     "pages/myitems/myitems",
+    "pages/userstore/userstore",
     "pages/subletpublish/subletpublish",
     "pages/subletmarket/subletmarket",
     "pages/subletdetail/subletdetail",

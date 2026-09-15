@@ -1,11 +1,19 @@
 <view class="page-container">
-  <view class="page-title">发布你的转租 🏠</view>
+  <view class="page-title">{{demand ? '发布求租 🔎' : '发布你的转租 🏠'}}</view>
+
+  <view class="kind-switch">
+    <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+          bindtap="onTapKind" data-key="{{k.key}}"
+          class="kind-switch-item {{kind === k.key ? 'kind-switch-on' : ''}}">
+      {{k.action}}
+    </view>
+  </view>
 
   <view class="section-title">基本信息（必填）</view>
-  <input placeholder="房源标题（如 Radius 单间转租）" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
-  <input placeholder="月租（美元）" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="card" style="padding: 24rpx;" />
-  <input placeholder="详细地址 / 公寓名" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
-  <input placeholder="你的微信号（租客联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '求租标题（如 求 Dinkytown 单间）' : '房源标题（如 Radius 单间转租）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '预算月租（美元）' : '月租（美元）'}}" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '想找的区域（如 Dinkytown 附近）' : '详细地址 / 公寓名'}}" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '你的微信号（房东联系用）' : '你的微信号（租客联系用）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
   <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
 
   <view style="display: flex; gap: 20rpx;">

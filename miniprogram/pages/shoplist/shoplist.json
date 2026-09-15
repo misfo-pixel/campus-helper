@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "校园餐厅",
+  "navigationBarTitleText": "校外服务",
   "enablePullDownRefresh": true,
   "usingComponents": {
     "disclaimer-bar": "/components/disclaimerBar/index"

@@ -1,4 +1,4 @@
-const { fetchMyProfile } = require('../../utils/user.js')
+const { fetchMyProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
@@ -69,6 +69,17 @@ Page({
 
       wx.hideLoading()
       if (res.result.success) {
+        // 服务端存好了，本地那份缓存也得同步更新。
+        // 不更新的话，下次打开小程序会先闪一下旧昵称旧头像，
+        // 等后台刷新回来才跳成新的——缓存最常见的坑就是写完忘了失效。
+        const cached = readCachedProfile() || {}
+        cached.nickname = this.data.nickname
+        cached.wechat = this.data.wechat
+        cached.avatarUrl = avatarUrl
+        writeCachedProfile(cached)
+        const app = getApp()
+        if (app.globalData) app.globalData.profile = cached
+
         wx.showToast({ title: '已保存', icon: 'success' })
         setTimeout(() => wx.navigateBack(), 1000)
       } else {

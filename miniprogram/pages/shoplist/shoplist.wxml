@@ -1,6 +1,6 @@
 <view class="page-container">
   <view class="list-head">
-    <view class="page-title" style="margin-bottom: 0;">校园餐厅 🍜</view>
+    <view class="page-title" style="margin-bottom: 0;">校外服务 🍜</view>
     <button class="btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 

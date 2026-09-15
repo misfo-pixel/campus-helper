@@ -1,0 +1,51 @@
+<view class="page-container">
+
+  <!-- 卖家头部 -->
+  <view class="store-head card">
+    <image class="store-avatar" src="{{seller.avatarUrl || '/images/avatar.png'}}" mode="aspectFill"></image>
+    <view class="store-meta">
+      <view class="store-name">{{seller.nickname || '明大同学'}}</view>
+      <view class="text-light">共 {{total}} 条在架</view>
+    </view>
+  </view>
+
+  <!-- 页签。数量为 0 的也留着，让人知道这个板块存在 -->
+  <view wx:if="{{!loading && !notFound}}" class="store-tabs">
+    <view wx:for="{{tabs}}" wx:for-item="t" wx:key="key"
+          bindtap="onTapTab" data-key="{{t.key}}"
+          class="store-tab {{tab === t.key ? 'store-tab-on' : ''}}">
+      {{t.label}} {{t.count}}
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="store-empty">加载中…</view>
+
+  <view wx:elif="{{notFound}}" class="store-empty">
+    <view>这个主页打不开了</view>
+    <view class="text-light" style="margin-top: 12rpx;">链接可能不完整，或者用户已经注销</view>
+    <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">去逛逛市场</button>
+  </view>
+
+  <view wx:elif="{{shown.length === 0}}" class="store-empty">
+    {{isMe ? '这个板块你还没有在架的内容' : 'TA 在这个板块暂时没有内容'}}
+  </view>
+
+  <block wx:else>
+    <view wx:for="{{shown}}" wx:key="_id" bindtap="goToDetail"
+          data-id="{{item._id}}" data-type="{{item.type}}"
+          class="card card-tap store-item">
+      <image class="store-thumb" src="{{item.image || '/images/default-goods-image.png'}}" mode="aspectFill" lazy-load></image>
+      <view class="store-item-meta">
+        <view class="store-item-title">{{item.title}}</view>
+        <view class="price" style="margin-top: 8rpx;">{{item.price}}</view>
+        <view wx:if="{{item.sub}}" class="text-light" style="font-size: 24rpx; margin-top: 4rpx;">{{item.sub}}</view>
+      </view>
+      <!-- 「全部」页签下混着三种内容，得标出来这条是什么 -->
+      <view wx:if="{{tab === 'all'}}" class="store-badge store-badge-{{item.type}}">{{item.label}}</view>
+      <view wx:else class="store-arrow">›</view>
+    </view>
+  </block>
+
+  <!-- 分享进来的人多半是第一次用，这条得留着 -->
+  <disclaimer-bar wx:if="{{!loading}}" type="trade" />
+</view>
