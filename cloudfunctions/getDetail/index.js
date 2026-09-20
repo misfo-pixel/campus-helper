@@ -61,6 +61,13 @@ exports.main = async (event) => {
   const ownerOpenid = doc._openid
   delete doc._openid          // ← 关键一行：openid 到此为止，不下发
 
+  // 审核中 / 没通过的帖子只给发布者自己看。列表页本来就查不到它们，
+  // 但发布者可能审核还没结束就把详情页转发出去了——没审过的内容不能经这条路漏出去
+  const isOwner = !!myOpenid && myOpenid === ownerOpenid
+  if (!isOwner && (doc.status === 'reviewing' || doc.status === 'rejected')) {
+    return { success: false, message: '内容审核中' }
+  }
+
   // 发布者资料 和 我的角色 互不依赖，并发查
   const pair = await Promise.all([
     findUser(ownerOpenid, { nickname: true, avatarUrl: true }),
@@ -70,7 +77,6 @@ exports.main = async (event) => {
   const me = pair[1]
 
   const roles = (me && me.roles) || []
-  const isOwner = !!myOpenid && myOpenid === ownerOpenid
 
   return {
     success: true,

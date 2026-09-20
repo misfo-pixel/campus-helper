@@ -1,8 +1,7 @@
-.field-hint {
-  font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 16rpx;
+/* 跟 shopedit 保持一致：表单正文 30rpx */
+.form-card {
+  padding: 24rpx;
+  font-size: 30rpx;
 }
 
 .info-card {

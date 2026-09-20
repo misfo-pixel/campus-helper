@@ -1,35 +1,43 @@
 // 全局功能开关。
 //
-// 外卖拼团只剩买家端两页留在仓库里，提审期间不让审核员走到。
-// 想恢复外卖，做三件事：
-//   1. 把下面 FOOD_MODULE_ENABLED 改成 true
-//   2. 把这两行加回 app.json 的 pages 数组：
-//        "pages/index/index"        （外卖拼团首页）
-//        "pages/myorders/myorders"  （我的外卖订单）
-//   3. 把 project.config.json 的 packOptions.ignore 里对应的两条 folder 删掉
-//      （提审期间这些页面留在仓库里但不打进上传包）
-//
-// ⚠️ 恢复前务必先把「上传付款截图 + 管理员确认收款」那套换掉。
-// 引导用户走微信支付以外的方式付钱是明确违规的，带着这套提审必被驳回。
-// 见 pages/myorders/myorders.js 的 uploadProof。
-//
-// 管理端（pages/admin + pages/summary + getPendingOrders/getConfirmedOrders 云函数）
-// 已删除：它整个就是那套违规流程的执行端，换掉付款方式后也没有复用价值。
-// 汇总清单的两张表已迁到 pages/teammanifest；需要时从 git 历史取回。
-const FOOD_MODULE_ENABLED = false
+// 外卖拼团（pages/index + pages/myorders，数据在 orders / daily_offers 两个集合）
+// 已于 2026-09-19 整体删除，原因有三：
+//   1. 功能被校外服务完整覆盖，连「拼团」也是校外服务的批次做得更实
+//   2. 管理端（pages/admin + pages/summary + getPendingOrders/getConfirmedOrders）
+//      早就删了，订单进到 pending_confirm 之后没有任何人能推进——是条断头路
+//   3. 付款靠「上传付款截图 + 管理员确认收款」，属于明确违规
+// 需要时从 git 历史取回。menu_items 集合在代码里已无引用——
+// shopmenu 页的一次性迁移入口「导入旧菜单」同日一并删除（它无条件把整张
+// menu_items 导给点按钮的商家，而老表没有 shop_id，多商家会串台）。
 
-// 校外服务（商家自营）：买家端 + 商家端都已完成，所以默认开着。
+// 校外服务（商家入驻）：买家端 + 商家端都已完成，所以默认开着。
 //
-// 开着意味着首页会出现「校外服务」入口，提审时这个模块会被审核员看到，
-// 相应地就需要餐饮相关的服务类目。如果你想先提交一个不含外卖的版本，
-// 把这里改成 false 就行——入口全部消失，其余四个模块不受影响。
+// 开着意味着首页会出现「校外服务」入口，提审时这个模块会被审核员看到。
+// 想先提交一个不含校外服务的版本，把这里改成 false 就行——入口全部消失，
+// 其余四个模块不受影响。
 //
-// 平台不经手资金：订单里没有支付状态，买家按商家填的收款方式在小程序外
-// 自行转账，商家收到钱后在工作台点「接单」。
+// 2026-09-19 改造，去掉了「引导站外支付」这个提审风险点：
+//   - 小程序里任何位置都不再出现收款方式。shops.payment_note 不再采集、
+//     不再下发（shopBrowse / buyerOrders 都摘掉了），老数据的字段值还留在
+//     库里，但已经没有任何代码读它。
+//   - 订单只是买家的「下单意向」：商家在工作台看到后自己用微信联系买家，
+//     交易怎么完成平台不参与、不展示、不引导。
+//   - 同日把餐饮口径的用词整体换掉：取餐点→服务地点、取餐场次→服务时间、
+//     菜品→商品、菜单→商品管理，模块不再绑死在餐饮上。
 //
-// 首次提审关着：个人主体报不了餐饮类目，而且「在小程序外按商家收款方式付款」
-// 跟外卖那套是同一类引导站外支付的问题（见上面 FOOD_MODULE_ENABLED 的说明）。
-const SHOP_MODULE_ENABLED = false
+// 2026-09-19 第二步：商家事前审核整个拆掉（auditShop 云函数已删），定位从
+// 「平台」退成「工具」。提交即开店，治理改成机检 + 举报 + 人工下架。
+// 店铺和商品现在也能被举报了（submitReport / handleReport 加了 shop 类型）。
+// 配送队的核对保留——那不是内容问题，是「谁能碰到别人的订单和买家信息」。
+//
+// 还没解决的两件事：
+//   1. settlement / teamedit 里仍有商家↔配送队之间的收款方式（B 端对账）。
+//      要先有通过审核的店铺或配送队才看得到，审核期间走不到，但这是剩下的敞口。
+//   2. 服务类目怎么报还没定。别往「餐饮/食品」上报——那要求主体自己持有
+//      《食品经营许可证》，公司经营范围里没有食品项，根本申请不了。按现在
+//      这个「只展示信息 + 记录下单意向」的形态，应该往信息服务类目上靠。
+//      具体要求以小程序后台「设置 → 基本设置 → 服务类目」页为准。
+const SHOP_MODULE_ENABLED = true
 
 // 延迟测量开关。开着的时候：
 //   1. 所有被包过的请求都会往 Console 打一行 [timing]
@@ -40,7 +48,6 @@ const SHOP_MODULE_ENABLED = false
 const DEBUG_TIMING = false
 
 module.exports = {
-  FOOD_MODULE_ENABLED: FOOD_MODULE_ENABLED,
   SHOP_MODULE_ENABLED: SHOP_MODULE_ENABLED,
   DEBUG_TIMING: DEBUG_TIMING
 }

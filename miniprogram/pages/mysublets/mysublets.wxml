@@ -7,8 +7,8 @@
 
   <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="padding: 24rpx;">
     <view style="font-size: 30rpx; font-weight: bold;">{{item.title}}</view>
-    <view class="price" style="margin: 8rpx 0;">{{demand ? '预算 ' : ''}}${{item.rent}}/月</view>
-    <view class="text-light" style="font-size: 24rpx;">{{item.room_type}} · 状态：{{item.status}}</view>
+    <view class="price" style="margin: 8rpx 0;">{{demand ? '预算 ' : ''}}${{item.rentText}}/月</view>
+    <view class="text-light" style="font-size: 24rpx;">{{item.room_type || '房型不限'}} · 状态：{{item.statusText}}</view>
   </view>
 
   <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>

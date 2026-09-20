@@ -1,11 +1,11 @@
 <view wx:if="{{!loading}}" class="page-container">
   <view class="head">
     <view class="head-shop">{{shopName}}</view>
-    <view class="text-light">{{batchLabel}} · {{deliverTime}} 送达 · 还剩 {{remaining}} 单未送达</view>
+    <view class="text-light">{{batchLabel ? batchLabel + ' · ' : ''}}{{deliverTime}} 送达 · 还剩 {{remaining}} 单未送达</view>
   </view>
 
-  <!-- 取餐清单：直接念给商家 -->
-  <view class="section-title">📋 取餐清单（报给商家）</view>
+  <!-- 取货清单：直接念给商家 -->
+  <view class="section-title">📋 取货清单（报给商家）</view>
   <view class="card pickup-card">
     <view wx:for="{{pickup}}" wx:key="name" class="pickup-line">
       <text class="pickup-name">{{item.name}}</text>
@@ -14,12 +14,12 @@
   </view>
 
   <button wx:if="{{!allPicked}}" class="btn-primary" bindtap="markPicked" style="margin: 24rpx 0;">
-    我在店里取到餐了
+    我在商家取到货了
   </button>
-  <view wx:else class="picked-tip">已标记取餐，商家那边显示配送中</view>
+  <view wx:else class="picked-tip">已标记取货，商家那边显示配送中</view>
 
-  <!-- 交付清单：按取餐点走 -->
-  <view class="section-title">🚚 交付清单（按取餐点）</view>
+  <!-- 交付清单：按服务地点走 -->
+  <view class="section-title">🚚 交付清单（按服务地点）</view>
 
   <view wx:for="{{points}}" wx:key="point" class="building">
     <view class="building-head">

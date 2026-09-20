@@ -1,5 +1,5 @@
-// 菜单管理。
-// 「今天这道菜卖完了」是每天要点好几次的操作，所以上架开关直接放在列表行上，
+// 商品管理。
+// 「今天这件卖完了」是每天要点好几次的操作，所以上架开关直接放在列表行上，
 // 不要求商家点进编辑页再保存。
 
 Page({
@@ -22,7 +22,7 @@ Page({
       }
       this.setData({ groups: this.groupByCategory(r.items || []), loading: false })
     }).catch(err => {
-      console.error('读取菜单失败：', err)
+      console.error('读取商品失败：', err)
       this.setData({ loading: false })
       wx.showToast({ title: '读取失败', icon: 'none' })
     })
@@ -66,7 +66,7 @@ Page({
         this.load()   // 切换失败就刷回真实状态，别让开关停在假状态上
       }
     }).catch(err => {
-      console.error('切换菜品状态失败：', err)
+      console.error('切换商品状态失败：', err)
       wx.showToast({ title: '操作失败', icon: 'none' })
       this.load()
     })
@@ -76,7 +76,7 @@ Page({
     const id = e.currentTarget.dataset.id
     const name = e.currentTarget.dataset.name
     wx.showModal({
-      title: '删除菜品',
+      title: '删除商品',
       content: '确定删除「' + name + '」吗？删除后无法恢复。',
       success: res => {
         if (!res.confirm) return
@@ -92,7 +92,7 @@ Page({
             wx.showToast({ title: result.message || '删除失败', icon: 'none' })
           }
         }).catch(err => {
-          console.error('删除菜品失败：', err)
+          console.error('删除商品失败：', err)
           wx.showToast({ title: '删除失败', icon: 'none' })
         })
       }
@@ -105,42 +105,5 @@ Page({
 
   addItem: function () {
     wx.navigateTo({ url: '/pages/shopitem/shopitem' })
-  },
-
-  // 一次性迁移：把老外卖模块 menu_items 里的菜导进来。
-  // 按菜名去重，误点两次不会导出两份。
-  importLegacy: function () {
-    wx.showModal({
-      title: '从旧菜单导入',
-      content: '会把老外卖模块里的菜品导入当前店铺。同名的菜会自动跳过，不会重复。',
-      confirmText: '导入',
-      success: res => {
-        if (!res.confirm) return
-        wx.showLoading({ title: '导入中', mask: true })
-        wx.cloud.callFunction({
-          name: 'shopManage',
-          data: { action: 'importLegacyMenu' }
-        }).then(r => {
-          wx.hideLoading()
-          const result = (r && r.result) || {}
-          if (!result.success) {
-            wx.showToast({ title: result.message || '导入失败', icon: 'none' })
-            return
-          }
-          console.log('旧菜单字段：', result.sourceFields)
-          wx.showModal({
-            title: '导入完成',
-            content: '共 ' + result.total + ' 条，导入 ' + result.imported +
-                     ' 条，跳过 ' + result.skipped + ' 条（同名或无名称）。\n\n价格和分类请核对一遍再开卖。',
-            showCancel: false
-          })
-          this.load()
-        }).catch(err => {
-          wx.hideLoading()
-          console.error('导入旧菜单失败：', err)
-          wx.showToast({ title: '导入失败', icon: 'none' })
-        })
-      }
-    })
   }
 })

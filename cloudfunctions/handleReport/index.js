@@ -9,7 +9,8 @@ const db = cloud.database()
 const COLLECTIONS = {
   item: 'secondhand_items',
   sublet: 'sublet_items',
-  task: 'task_items'
+  task: 'task_items',
+  shop: 'shops'
 }
 
 exports.main = async (event) => {
@@ -33,11 +34,25 @@ exports.main = async (event) => {
     if (action === 'delete') {
       const collection = COLLECTIONS[report.targetType]
       if (collection) {
-        // 内容可能已经被发布者自己删了，删不到不算失败
+        // 内容可能已经被发布者自己删了，处理不到不算失败
         try {
-          await db.collection(collection).doc(report.targetId).remove()
+          if (report.targetType === 'shop') {
+            // 店铺不能直接删：底下挂着 shop_items 和历史订单，删了全成孤儿数据，
+            // 买家也再查不到自己下过的单。改成强制关店 + takedown 标记，
+            // shopManage 的 setStatus 据此不让商家自己再开回来。
+            await db.collection(collection).doc(report.targetId).update({
+              data: {
+                status: 'closed',
+                takedown: true,
+                takedown_at: new Date(),
+                updated_at: new Date()
+              }
+            })
+          } else {
+            await db.collection(collection).doc(report.targetId).remove()
+          }
         } catch (e) {
-          console.warn('待删内容已不存在：', report.targetType, report.targetId)
+          console.warn('待处理内容已不存在：', report.targetType, report.targetId)
         }
       }
     }

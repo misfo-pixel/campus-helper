@@ -14,17 +14,17 @@ const TYPES = {
   item: {
     collection: 'secondhand_items',
     status: 'on_sale',
-    field: { title: true, price: true, images: true, kind: true }
+    field: { title: true, price: true, images: true, thumb: true, kind: true }
   },
   sublet: {
     collection: 'sublet_items',
     status: 'on_sale',
-    field: { title: true, rent: true, images: true, room_type: true, address: true, kind: true }
+    field: { title: true, rent: true, rent_min: true, rent_max: true, images: true, thumb: true, room_type: true, address: true, kind: true }
   },
   task: {
     collection: 'task_items',
     status: 'open',      // 注意任务用的是 open，不是 on_sale
-    field: { title: true, reward: true, images: true, deadline: true }
+    field: { title: true, reward: true, images: true, thumb: true, deadline: true }
   }
 }
 

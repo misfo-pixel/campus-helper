@@ -7,7 +7,7 @@
   <input placeholder="报酬（美元）" type="digit" value="{{reward}}" bindinput="onInput" data-field="reward" class="card" style="padding: 24rpx;" />
   <textarea placeholder="任务描述（具体做什么、有什么要求）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
   <input placeholder="你的微信号（接单人联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
-  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
+  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号</view>
 
   <view class="section-title">补充信息（选填）</view>
 
@@ -20,7 +20,13 @@
   <input placeholder="地点（如 在哪取 / 送到哪）" value="{{location}}" bindinput="onInput" data-field="location" class="card" style="padding: 24rpx;" />
 
   <view style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
-    <image wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill" style="width: 160rpx; height: 160rpx; border-radius: 12rpx;"></image>
+    <view wx:for="{{images}}" wx:key="*this" style="position: relative; width: 160rpx; height: 160rpx;">
+      <image src="{{item}}" mode="aspectFill" style="width: 160rpx; height: 160rpx; border-radius: 12rpx;"></image>
+      <!-- 右上角删除：外层透明 padding 把点击区域放大，圆点本身只画 40rpx -->
+      <view catchtap="removeImage" data-index="{{index}}" style="position: absolute; top: -20rpx; right: -20rpx; padding: 12rpx;">
+        <view style="width: 40rpx; height: 40rpx; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 30rpx; line-height: 40rpx; text-align: center;">×</view>
+      </view>
+    </view>
     <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 160rpx; height: 160rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
   </view>
 

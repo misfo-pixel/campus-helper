@@ -2,39 +2,96 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
-// 商家自助管理：店铺资料 + 菜单。
+// 商家自助管理：店铺资料 + 商品。
 //
 // 这些 action 合在一个云函数里，是因为它们全都要先过同一道
 // 「这家店到底是不是你的」校验。拆成七个函数就得把那段逻辑抄七遍，
 // 而且每加一个 action 你就得在开发者工具里多点一次部署。
 //
 // 注意：云函数写库不会自动带 _openid（那是小程序端 add 才有的），
-// 所以店铺和菜品的归属都用显式的 owner 字段存。
+// 所以店铺和商品的归属都用显式的 owner 字段存。
 
-const SHOP_STATUS = ['open', 'paused', 'closed']
+// 商家自己能切的只有两态：营业中 / 打烊。
+// closed 不在其中——它是系统态，表示「还轮不到营业」：新店待审、审核被拒、
+// 改了关键信息要重审。三种情况都由别处写入，商家在工作台里选不到它。
+// 显示上 closed 和 paused 都是「打烊」，所以商家看不出区别，切一次就收敛成 paused。
+const SHOP_STATUS_SELECTABLE = ['open', 'paused']
+
+// 场次截没截单要按明尼苏达当地时间判断。这段和 shopBrowse / buyerOrders /
+// deliveryManage 里的是同一份——云函数之间没法共享代码，只能各存一份，
+// 改的时候四处一起改。
+const TZ = 'America/Chicago'
+
+function nowInTZ() {
+  const parts = {}
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(new Date()).forEach(p => {
+    if (p.type !== 'literal') parts[p.type] = p.value
+  })
+  let hour = Number(parts.hour)
+  if (hour === 24) hour = 0
+  return {
+    date: parts.year + '-' + parts.month + '-' + parts.day,
+    minutes: hour * 60 + Number(parts.minute)
+  }
+}
+
+function toMinutes(hhmm) {
+  const bits = String(hhmm).split(':')
+  return Number(bits[0]) * 60 + Number(bits[1])
+}
+
+// 开门营业的硬前提：得有一场买家真能约上的服务时间。
+// 没有这道闸，工作台会出现「营业中」但买家点进店一个时段都选不出来的死局。
+// 返回拦截理由，null = 可以开门。
+//
+// 外包给配送队的店走的是队伍那份方案，场次不归商家管，不拦他。
+function slotBlocker(shop) {
+  if (shop.delivery_mode === 'outsourced') return null
+
+  const slot = (shop.batches || [])[0]
+  if (!slot || !slot.date) {
+    return '先在店铺设置里设一个服务时间（日期 + 截单时间 + 送达时间），才能开门营业'
+  }
+
+  const now = nowInTZ()
+  if (slot.date < now.date) {
+    return '服务时间还停在 ' + slot.date + '，先去店铺设置里改成今天或以后'
+  }
+  if (slot.date === now.date && now.minutes >= toMinutes(slot.cutoff)) {
+    return '今天 ' + slot.cutoff + ' 已经截单了，先去店铺设置里把服务时间改到明天'
+  }
+  return null
+}
 
 function cleanPickupPoints(raw) {
   if (!Array.isArray(raw)) return []
   return raw
     .filter(p => p && String(p.name || '').trim())
     .map(p => ({
-      name: String(p.name).trim(),
-      address: String(p.address || '').trim(),
+      // 一句话就是服务地点（「Coffman 门口」），不再拆名称 + 具体位置两格。
+      // 它同时是订单里引用的标识符，所以限长，别让它长成一段描述。
+      name: String(p.name).trim().slice(0, 20),
       fee: Math.max(0, Number(p.fee) || 0)
     }))
 }
 
+// 场次每次只开一场，所以这里只认第一条。
+// 结构保持数组：将来要恢复「上午班 / 下午班」两趟只需放开界面，不用迁移数据。
+//
+// 过去的日期照样存下来——场次一过期就拒绝保存的话，商家连改商品都改不了。
+// 该不该给买家看，由 expandBatches 决定。
 function cleanBatches(raw) {
   if (!Array.isArray(raw)) return []
   const isTime = t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t)
-  return raw
-    .filter(b => b && b.label && isTime(b.cutoff) && isTime(b.deliver_time))
-    .map(b => ({
-      label: String(b.label).trim(),
-      cutoff: b.cutoff,
-      deliver_time: b.deliver_time
-    }))
-    .sort((a, b) => (a.cutoff < b.cutoff ? -1 : 1))
+  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s)
+  const b = raw[0]
+  if (!b || !isDate(b.date) || !isTime(b.cutoff) || !isTime(b.deliver_time)) return []
+  if (b.deliver_time <= b.cutoff) return []
+  return [{ date: b.date, cutoff: b.cutoff, deliver_time: b.deliver_time }]
 }
 
 // 拿到自己的店。没有就返回 null，不算错误——新用户本来就没有店。
@@ -43,7 +100,7 @@ async function getMyShop(openid) {
   return res.data[0] || null
 }
 
-// 配送方案（取餐点 + 批次时间）属于实际送货的那一方：
+// 配送方案（服务地点 + 服务时间）属于实际送货的那一方：
 // 自己送就存在这里，外包就用配送队的那份。商家先选谁送，再决定填不填。
 function pickShopFields(event) {
   const mode = event.delivery_mode === 'outsourced' ? 'outsourced' : 'self'
@@ -53,16 +110,13 @@ function pickShopFields(event) {
     logo: event.logo || '',
     category: event.category || '',
     min_order: Number(event.min_order) || 0,
-    delivery_area: (event.delivery_area || '').trim(),
     business_hours: (event.business_hours || '').trim(),
-    payment_note: (event.payment_note || '').trim(),
     contact_wechat: (event.contact_wechat || '').trim(),
     delivery_mode: mode,
     delivery_team_id: mode === 'outsourced' ? (event.delivery_team_id || '') : '',
 
-    // 资质由商家自己声明并举证。平台不核实、也没有能力核实，
-    // 但要把这个声明和凭证留下来——出事时这是责任在谁的直接证据。
-    license_confirmed: event.license_confirmed === true,
+    // 资质凭证选填，不作为入驻门槛。平台不核实、也没有能力核实，
+    // 传了就留档——出事时这是责任在谁的直接证据。
     license_image: event.license_image || '',
 
     // 自送才用得上；外包时买家走的是配送队那份方案
@@ -74,16 +128,12 @@ function pickShopFields(event) {
 function validateShop(fields) {
   if (!fields.name) return '请填写店铺名称'
   if (!fields.contact_wechat) return '请填写联系微信'
-  if (!fields.payment_note) return '请填写收款方式，买家要按这个付款给你'
   if (fields.delivery_mode === 'outsourced' && !fields.delivery_team_id) {
     return '请选择要外包给哪个配送队'
   }
-  if (!fields.license_confirmed) {
-    return '请确认你已取得当地要求的食品经营资质'
-  }
   if (fields.delivery_mode === 'self') {
-    if (!fields.pickup_points.length) return '自己送的话，至少要设一个取餐点'
-    if (!fields.batches.length) return '自己送的话，至少要设一个配送批次'
+    if (!fields.pickup_points.length) return '自己送的话，至少要设一个服务地点'
+    if (!fields.batches.length) return '自己送的话，要设一个服务时间：日期 + 截单时间 + 送达时间'
   }
   return null
 }
@@ -118,11 +168,10 @@ exports.main = async (event) => {
         const res = await db.collection('shops').add({
           data: Object.assign({}, fields, {
             owner: openid,
-            status: 'closed',          // 审核通过前先不营业
-            audit_status: 'pending',
-            audit_reason: '',
-            agreed_at: new Date(),           // 同意告知书的时间
-            license_confirmed_at: new Date(), // 声明持有资质的时间
+            // 新店默认打烊。平台不做事前审核，提交即开店，但也不该在商家
+            // 还没上架商品时就把店推到买家面前——他自己在工作台点「营业中」。
+            status: 'closed',
+            agreed_at: new Date(),     // 同意告知书的时间
             created_at: new Date(),
             updated_at: new Date()
           })
@@ -138,26 +187,28 @@ exports.main = async (event) => {
         const invalid = validateShop(fields)
         if (invalid) return { success: false, message: invalid }
 
-        // 改过资料要重新审核，不然可以先用正经内容过审再改成别的
-        const needReaudit = shop.audit_status === 'approved' && fields.name !== shop.name
-
         await db.collection('shops').doc(shop._id).update({
-          data: Object.assign({}, fields, {
-            updated_at: new Date()
-          }, needReaudit ? { audit_status: 'pending', status: 'closed' } : {})
+          data: Object.assign({}, fields, { updated_at: new Date() })
         })
-        return { success: true, reaudit: needReaudit }
+        return { success: true }
       }
 
-      // 营业中 / 暂停接单 / 打烊
+      // 营业中 / 打烊
       case 'setStatus': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
-        if (shop.audit_status !== 'approved') {
-          return { success: false, message: '店铺还在审核中，通过后才能营业' }
+        // 被举报下架的店，商家自己切不回营业中——否则下架等于没下架
+        if (shop.takedown) {
+          return { success: false, message: '店铺因违规被下架，如有异议请通过意见反馈联系我们' }
         }
-        if (SHOP_STATUS.indexOf(event.status) === -1) {
+        if (SHOP_STATUS_SELECTABLE.indexOf(event.status) === -1) {
           return { success: false, message: '状态不合法' }
+        }
+
+        // 打烊随时可以，开门要先过场次这一关
+        if (event.status === 'open') {
+          const blocked = slotBlocker(shop)
+          if (blocked) return { success: false, message: blocked }
         }
 
         await db.collection('shops').doc(shop._id).update({
@@ -166,7 +217,7 @@ exports.main = async (event) => {
         return { success: true }
       }
 
-      // ---- 菜单 ----
+      // ---- 商品 ----
 
       case 'listItems': {
         const shop = await getMyShop(openid)
@@ -180,14 +231,14 @@ exports.main = async (event) => {
         return { success: true, items: res.data }
       }
 
-      // 新增或修改菜品。带 itemId 就是改，不带就是加。
+      // 新增或修改商品。带 itemId 就是改，不带就是加。
       case 'saveItem': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
 
         const name = (event.name || '').trim()
         const price = Number(event.price)
-        if (!name) return { success: false, message: '请填写菜品名称' }
+        if (!name) return { success: false, message: '请填写商品名称' }
         if (!(price >= 0)) return { success: false, message: '请填写正确的价格' }
 
         const data = {
@@ -202,7 +253,7 @@ exports.main = async (event) => {
         }
 
         if (event.itemId) {
-          // 只能改自己店里的菜
+          // 只能改自己店里的商品
           const doc = await db.collection('shop_items').doc(event.itemId).get()
           if (!doc.data || doc.data.shop_id !== shop._id) {
             return { success: false, message: '没有权限' }
@@ -235,70 +286,6 @@ exports.main = async (event) => {
           data: { available: !!event.available, updated_at: new Date() }
         })
         return { success: true }
-      }
-
-      // 把老外卖模块的 menu_items 导进当前店铺的菜单。
-      // 老表字段是 name + price_after_tax，跟新的 shop_items 对不上，所以要映射一遍。
-      // 按菜名去重，重复跑不会导出两份。
-      case 'importLegacyMenu': {
-        const shop = await getMyShop(openid)
-        if (!shop) return { success: false, message: '你还没有店铺' }
-
-        let legacy
-        try {
-          legacy = await db.collection('menu_items').limit(500).get()
-        } catch (e) {
-          console.error('读取 menu_items 失败：', e)
-          return { success: false, message: '找不到旧菜单表 menu_items' }
-        }
-        if (!legacy.data.length) {
-          return { success: false, message: '旧菜单表是空的' }
-        }
-
-        const existing = await db.collection('shop_items')
-          .where({ shop_id: shop._id })
-          .field({ name: true })
-          .limit(500)
-          .get()
-        const taken = new Set(existing.data.map(i => i.name))
-
-        let imported = 0
-        let skipped = 0
-        for (const old of legacy.data) {
-          const name = String(old.name || '').trim()
-          if (!name) { skipped++; continue }
-          if (taken.has(name)) { skipped++; continue }
-
-          // 老数据里价格可能叫 price_after_tax，也可能就叫 price
-          const price = Number(old.price_after_tax != null ? old.price_after_tax : old.price) || 0
-
-          await db.collection('shop_items').add({
-            data: {
-              shop_id: shop._id,
-              owner: openid,
-              name: name,
-              price: price,
-              description: old.description || '',
-              allergens: old.allergens || '',
-              image: old.image || old.image_url || '',
-              category: old.category || '',
-              available: true,
-              created_at: new Date(),
-              updated_at: new Date()
-            }
-          })
-          taken.add(name)
-          imported++
-        }
-
-        return {
-          success: true,
-          imported: imported,
-          skipped: skipped,
-          total: legacy.data.length,
-          // 万一字段名跟我猜的不一样，把源数据的字段列出来方便对照
-          sourceFields: Object.keys(legacy.data[0] || {})
-        }
       }
 
       case 'deleteItem': {

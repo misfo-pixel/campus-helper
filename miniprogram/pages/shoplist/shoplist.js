@@ -1,5 +1,5 @@
 // 校外服务列表。只显示审核通过、且没打烊的店。
-const STATUS_TEXT = { open: '营业中', paused: '暂停接单' }
+const STATUS_TEXT = { open: '营业中', paused: '已打烊' }
 
 Page({
   data: {

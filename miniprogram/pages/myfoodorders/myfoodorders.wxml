@@ -2,6 +2,8 @@
   <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
   <view wx:elif="{{orders.length === 0}}" class="text-light empty">还没有订单</view>
 
+  <view wx:if="{{hasPending}}" class="pay-warn-top">平台只记录下单意向，不参与交易、不提供担保，请直接与商家沟通。</view>
+
   <view wx:for="{{orders}}" wx:key="_id" class="card order">
     <view class="order-head">
       <view class="order-shop">{{item.shop_name}}</view>
@@ -22,16 +24,6 @@
     </view>
 
     <view wx:if="{{item.statusHint}}" class="order-hint">{{item.statusHint}}</view>
-
-    <!-- 待确认：把收款方式亮出来 -->
-    <view wx:if="{{item.status === 'pending'}}" class="pay-box">
-      <view class="pay-label">商家收款方式</view>
-      <view class="pay-row">
-        <text class="pay-note">{{item.payment_note || '请联系商家确认'}}</text>
-        <text wx:if="{{item.payment_note}}" class="pay-copy" bindtap="copyText" data-text="{{item.payment_note}}">复制</text>
-      </view>
-      <view class="pay-warn">平台不经手资金、不提供担保。付款前请核对收款方信息。</view>
-    </view>
 
     <view wx:if="{{item.cancel_reason}}" class="order-cancel">取消原因：{{item.cancel_reason}}</view>
 

@@ -1,5 +1,5 @@
-const { fetchMyProfile, guideProfileSetupOnce } = require('../../utils/user.js')
-const { FOOD_MODULE_ENABLED, SHOP_MODULE_ENABLED } = require('../../config.js')
+const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
+const { SHOP_MODULE_ENABLED } = require('../../config.js')
 
 Page({
   data: {
@@ -10,7 +10,6 @@ Page({
     isSuperAdmin: false,
     canAudit: false,        // 超管 或 饭搭子管理员：能审商家和配送队
     canSeeDelivery: false,  // 饭搭子管理员 / 有店的商家 / 已在队里的人
-    foodEnabled: FOOD_MODULE_ENABLED,
     shopEnabled: SHOP_MODULE_ENABLED,
     pendingReports: 0
   },
@@ -32,9 +31,6 @@ Page({
   goToTeam: function () {
     wx.navigateTo({ url: '/pages/teamdashboard/teamdashboard' })
   },
-  goToDeliveryConfig: function () {
-    wx.navigateTo({ url: '/pages/deliveryconfig/deliveryconfig' })
-  },
   goToShopAudit: function () {
     wx.navigateTo({ url: '/pages/shopaudit/shopaudit' })
   },
@@ -47,7 +43,8 @@ Page({
 
   // 编辑资料返回时会再走一次 onShow，改动就刷新出来了
   onShow: function () {
-    fetchMyProfile().then(profile => {
+    // 读缓存，不再多打一次 login（见 utils/user.js）
+    myProfile().then(profile => {
       const roles = profile.roles
       const isAdmin = roles.includes('food_admin') || roles.includes('market_admin') || roles.includes('super_admin')
       const isFoodAdmin = roles.includes('food_admin')
@@ -98,8 +95,5 @@ Page({
 
   goToMyItems: function () {
     wx.navigateTo({ url: '/pages/myitems/myitems' })
-  },
-  goToMyOrders: function () {
-    wx.navigateTo({ url: '/pages/myorders/myorders' })  // 我的订单(已有)
   }
 })

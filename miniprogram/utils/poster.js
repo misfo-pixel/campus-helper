@@ -195,4 +195,4 @@ function buildPoster(opts) {
   })
 }
 
-module.exports = { buildPoster: buildPoster, POSTER_W: W, POSTER_H: H }
+module.exports = { buildPoster: buildPoster, toLocalPath: toLocalPath, POSTER_W: W, POSTER_H: H }

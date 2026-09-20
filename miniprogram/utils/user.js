@@ -83,6 +83,17 @@ function fetchMyProfile() {
   })
 }
 
+// 页面要「我的资料」时用这个，不要再调 fetchMyProfile：
+// 那会多打一次 login（跨太平洋一趟往返），新用户还可能和 app.js 里那次登录撞车——
+// 两边同时查不到记录、各建一条，同一个人就有了两条 users。
+// 本地缓存优先（app.js 登录回来、editprofile 保存时都会更新它），没有缓存再等 app.js 那一次登录
+function myProfile() {
+  const cached = readCachedProfile()
+  if (cached && cached.openid && cached.uid) return Promise.resolve(cached)
+  const app = getApp()
+  return (app && app.globalData && app.globalData.profileReady) || fetchMyProfile()
+}
+
 // 别人的公开资料（昵称 + 头像），详情页显示发布者用
 function fetchPublicProfile(openid) {
   if (!openid) return Promise.resolve({ nickname: '', avatarUrl: '', uid: '' })
@@ -127,6 +138,7 @@ function guideProfileSetupOnce(profile) {
 
 module.exports = {
   fetchMyProfile: fetchMyProfile,
+  myProfile: myProfile,
   readCachedProfile: readCachedProfile,
   writeCachedProfile: writeCachedProfile,
   fetchPublicProfile: fetchPublicProfile,

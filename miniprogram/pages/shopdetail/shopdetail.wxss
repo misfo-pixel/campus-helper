@@ -152,6 +152,17 @@
   font-size: 30rpx;
 }
 
+/* 转发落地页专用：给没有上一页可退的人一个入口 */
+.detail-more {
+  margin-top: 32rpx;
+  padding: 24rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: var(--color-primary);
+  background: var(--color-card);
+  border-radius: var(--radius);
+}
+
 .cart-spacer {
   height: 140rpx;
 }

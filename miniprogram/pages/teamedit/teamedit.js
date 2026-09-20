@@ -1,6 +1,6 @@
 // 建队 / 队伍设置 / 成员管理。
 //
-// 队伍自己定配送方案：有哪些取餐点、各收多少、每天几班。
+// 队伍自己定配送方案：有哪些服务地点、各收多少、每天几班。
 // 外包给这支队伍的商家，买家看到的就是这套。
 // 除此之外这里管队伍本身：叫什么、找谁、钱打到哪、谁在队里。
 
@@ -85,27 +85,24 @@ Page({
     }
 
     const points = (d.planPoints || []).filter(p => String(p.name || '').trim())
-    const batches = (d.planBatches || []).filter(b => String(b.label || '').trim())
     if (!points.length) {
-      wx.showToast({ title: '至少要设一个取餐点', icon: 'none' })
-      return
-    }
-    if (!batches.length) {
-      wx.showToast({ title: '至少要设一个配送批次', icon: 'none' })
+      wx.showToast({ title: '至少要设一个服务地点', icon: 'none' })
       return
     }
     const names = points.map(p => p.name.trim())
     if (new Set(names).size !== names.length) {
-      wx.showToast({ title: '取餐点名字不能重复', icon: 'none' })
+      wx.showToast({ title: '服务地点名字不能重复', icon: 'none' })
       return
     }
-    const labels = batches.map(b => b.label.trim())
-    if (new Set(labels).size !== labels.length) {
-      wx.showToast({ title: '批次名不能重复', icon: 'none' })
+    // 场次的日期只校验填没填，不校验是不是过去的日子——
+    // 否则场次一过期，队长连改队伍信息、换收款方式都保存不了
+    const batch = (d.planBatches || [])[0]
+    if (!batch || !batch.date) {
+      wx.showToast({ title: '请选择服务时间的日期', icon: 'none' })
       return
     }
-    if (batches.some(b => b.deliver_time <= b.cutoff)) {
-      wx.showToast({ title: '到点时间要晚于截单时间', icon: 'none' })
+    if (batch.deliver_time <= batch.cutoff) {
+      wx.showToast({ title: '送达时间要晚于截单时间', icon: 'none' })
       return
     }
 

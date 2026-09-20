@@ -1,17 +1,19 @@
 // 确认订单。
 //
-// 这一页不做任何支付动作，只是把订单记下来，然后告诉买家该往哪转账。
-// 钱走小程序外，商家收到之后在工作台点「接单」。
+// 这一页只把下单意向记下来：不做支付动作，也不展示任何收款方式。
+// 商家在工作台看到订单后自己通过微信联系买家。
 //
-// 买家到取餐点自取，不送到公寓门口。
-// 取餐点和批次由实际送货的一方定（商家自送用店铺的，外包用配送队的），
+// 买家到服务地点自取，不送到公寓门口。
+// 服务地点和批次由实际送货的一方定（商家自送用店铺的，外包用配送队的），
 // 这里统一通过 shopBrowse 的 plan 拿解析结果，不用关心是哪一方。
 // 商家自己送还是外包给配送队，对买家是透明的——规则完全一样。
 
-const { fetchMyProfile } = require('../../utils/user.js')
+const { myProfile } = require('../../utils/user.js')
 const { ensureContentOk } = require('../../utils/contentCheck.js')
 
 const CART_KEY = 'foodCart'
+
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 Page({
   data: {
@@ -39,7 +41,7 @@ Page({
     if (!cart || !cart.items || cart.items.length === 0) {
       wx.showModal({
         title: '购物车是空的',
-        content: '请先回去选菜',
+        content: '请先回去选商品',
         showCancel: false,
         success: () => wx.navigateBack()
       })
@@ -69,7 +71,7 @@ Page({
         this.setData({ loading: false })
         wx.showModal({
           title: '暂时无法下单',
-          content: '这家店还没设置好取餐点或配送时间，请稍后再试。',
+          content: '这家店暂时没有可约的服务时间，请稍后再试。',
           showCancel: false,
           success: () => wx.navigateBack()
         })
@@ -91,25 +93,35 @@ Page({
     })
 
     // 微信号自动填个人资料里存的那个
-    fetchMyProfile().then(profile => {
+    // 读缓存，不再多打一次 login（见 utils/user.js）
+    myProfile().then(profile => {
       if (profile.wechat && !this.data.contact_wechat) {
         this.setData({ contact_wechat: profile.wechat })
       }
     }).catch(err => console.error('读取微信号失败：', err))
   },
 
-  // 「午餐班 · 今天 12:00 到点（还有 47 分钟截单）」
+  // 「09-20 周日 18:00 送达（当天 08:00 截单）」
   batchLabel: function (b) {
-    const when = b.isToday ? '今天' : '明天'
-    let s = b.label + ' · ' + when + ' ' + b.deliver_time + ' 到点'
+    let s = this.whenText(b) + ' ' + b.deliver_time + ' 送达'
     if (b.isToday && b.minutesLeft != null) {
       s += b.minutesLeft >= 60
         ? '（还有 ' + Math.floor(b.minutesLeft / 60) + ' 小时截单）'
         : '（还有 ' + b.minutesLeft + ' 分钟截单）'
     } else {
-      s += '（' + b.cutoff + ' 截单）'
+      s += '（当天 ' + b.cutoff + ' 截单）'
     }
     return s
+  },
+
+  // 场次是商家指定的某一天，可能在好几天后，「今天/明天」两个词不够用，
+  // 得把日期和星期显示出来
+  whenText: function (b) {
+    if (b.isToday) return '今天'
+    if (b.isTomorrow) return '明天'
+    const d = new Date(b.date + 'T12:00:00')
+    const weekday = isNaN(d.getTime()) ? '' : ' ' + WEEKDAYS[d.getDay()]
+    return b.date.slice(5) + weekday
   },
 
   onInput: function (e) {
@@ -137,7 +149,7 @@ Page({
     if (d.submitting) return
 
     if (d.pointIndex === null) {
-      wx.showToast({ title: '请选择取餐点', icon: 'none' })
+      wx.showToast({ title: '请选择服务地点', icon: 'none' })
       return
     }
     if (!d.contact_wechat.trim()) {
@@ -180,10 +192,9 @@ Page({
 
       wx.showModal({
         title: '订单已提交',
-        content: '请通过 ' + (r.payment_note || '商家提供的方式') +
-                 ' 向商家支付 $' + r.total + '。商家确认收到款后会接单。\n\n' +
-                 '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到取餐点自取（' + r.batch_label + '）。\n\n' +
-                 '平台不经手资金，请自行核对收款方信息。',
+        content: '商家会通过微信与你联系确认。\n\n' +
+                 '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到服务地点自取。\n\n' +
+                 '平台只记录下单意向，不参与交易。',
         showCancel: false,
         confirmText: '知道了',
         success: () => {

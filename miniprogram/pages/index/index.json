@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "外送拼团",
-  "usingComponents": {
-    "cloud-tip-modal": "/components/cloudTipModal/index"
-  }
-}

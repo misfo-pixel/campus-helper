@@ -67,6 +67,7 @@
   margin: 24rpx 0 0;
 }
 
+/* 详情页的删除 / 标记已售等按钮（app.wxss 的 .btn-danger）照着这里的尺寸做的，改这里要一起改 */
 .contact-btn {
   display: flex;
   align-items: center;

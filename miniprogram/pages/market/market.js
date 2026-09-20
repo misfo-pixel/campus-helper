@@ -1,7 +1,9 @@
 const { KINDS, isDemand } = require('../../utils/kinds.js')
+const { stashFrom } = require('../../utils/preview.js')
 const { shouldReload } = require('../../utils/refresh.js')
 const { timedDb, timedCall } = require('../../utils/timing.js')
 const { DEBUG_TIMING } = require('../../config.js')
+const { readCache, writeCache } = require('../../utils/listCache.js')
 
 const CFG = KINDS.item
 const PAGE_SIZE = 20    // 小程序端单次 get 的硬上限就是 20 条，要更多只能分批拿
@@ -12,33 +14,9 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-// 第一页列表在手机本地存一份。下次进来先把这份摆上去，同时后台去拉最新的，
-// 回来了再整页换掉——跟 app.js 里登录资料是同一套 stale-while-revalidate（见 utils/user.js）。
-// 列表数据从国内回到明尼苏达至少一个太平洋往返，物理延迟省不掉，但首屏不必等它。
-//
-// 只缓存「没搜索」时的第一页：搜索词千变万化，命中率低，还会越存越多。
-// key 按出/收分开；列表结构变了就改版本号，老缓存自然读不到。
+// 第一页列表在手机本地存一份，下次进来先摆上去、后台再拉最新的（stale-while-revalidate，见 utils/listCache.js）。
+// 只缓存「没搜索」时的第一页：搜索词千变万化，命中率低，还会越存越多。key 按出/收分开
 const LIST_CACHE_KEY = 'marketFirstPage.v1.'
-// 太旧的不拿出来：一天前的列表里很多已经卖掉了，先闪一屏旧的再大面积替换，比显示「加载中」还难受
-const LIST_CACHE_MAX_AGE = 24 * 60 * 60 * 1000
-
-function readListCache(kind) {
-  try {
-    const c = wx.getStorageSync(LIST_CACHE_KEY + kind)
-    if (!c || !c.items || Date.now() - c.savedAt > LIST_CACHE_MAX_AGE) return null
-    return c.items
-  } catch (e) {
-    return null   // 存储被禁用或读坏了，当没有缓存
-  }
-}
-
-function writeListCache(kind, items) {
-  try {
-    wx.setStorageSync(LIST_CACHE_KEY + kind, { items: items, savedAt: Date.now() })
-  } catch (e) {
-    // 写不进去只是下次少一次秒开，不影响功能
-  }
-}
 
 Page({
   data: {
@@ -88,7 +66,7 @@ Page({
 
   // 从头拿第一页。有缓存就先显示缓存、不出「加载中」，fetch(0) 回来后整页替换。
   reload: function () {
-    const cached = this.data.keyword ? null : readListCache(this.data.kind)
+    const cached = this.data.keyword ? null : readCache(LIST_CACHE_KEY + this.data.kind)
     this.revalidating = !!cached
     this.setData({ items: cached || [], loading: !cached, loadingMore: false, noMore: false })
     this.fetch(0)
@@ -125,7 +103,7 @@ Page({
     // 两种布局用的字段不一样：求购没有图，但要显示描述。只取用得上的。
     const field = this.data.demand
       ? { title: true, price: true, description: true }
-      : { title: true, price: true, images: true }
+      : { title: true, price: true, images: true, thumb: true }
 
     // 同一时刻顺带打一次 ping 作对照。
     // 为什么要「同时」：两个数要在相同的网络条件下测才有可比性。
@@ -150,7 +128,7 @@ Page({
           // 每次从详情页返回都会清空重拉，用户滑到第几页都得从头来
           this.loadedAt = Date.now()
           this.revalidating = false
-          if (cacheable) writeListCache(kind, res.data)
+          if (cacheable) writeCache(LIST_CACHE_KEY + kind, res.data)
         }
         this.setData({
           items: skip === 0 ? res.data : this.data.items.concat(res.data),
@@ -184,6 +162,7 @@ Page({
 
   goToDetail: function (e) {
     const id = e.currentTarget.dataset.id
+    stashFrom('item', this.data.items, id)   // 详情页先拿它画首屏，不白屏等网络
     wx.navigateTo({ url: '/pages/itemdetail/itemdetail?id=' + id })
   }
 })

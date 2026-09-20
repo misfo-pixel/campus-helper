@@ -1,9 +1,8 @@
-.hint {
-  font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 16rpx;
-}
+/* 这个组件用了 card / text-light / subsection-title 三个全局类，自己不重复定义。
+   所以 index.json 里必须是 styleIsolation: apply-shared——默认的 isolated 会把
+   app.wxss 整个挡在外面，卡片会连白底圆角都没有。
+   宿主页（shopedit / teamedit）的类名跟这里零重名，渗进来不会打架；
+   以后给组件加类名时留意别撞上宿主页的。 */
 
 .row {
   padding: 24rpx;
@@ -20,23 +19,10 @@
   font-weight: bold;
 }
 
-.row-name-solo {
-  padding-bottom: 16rpx;
-  border-bottom: 1rpx solid var(--color-border);
-}
-
 .row-del {
   font-size: 26rpx;
   color: #C8102E;
   flex-shrink: 0;
-}
-
-.row-sub {
-  font-size: 26rpx;
-  color: #555;
-  margin-top: 12rpx;
-  padding-top: 12rpx;
-  border-top: 1rpx solid var(--color-border);
 }
 
 .fee-line {
@@ -44,6 +30,8 @@
   align-items: center;
   gap: 8rpx;
   margin-top: 12rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid var(--color-border);
   font-size: 26rpx;
 }
 
@@ -58,13 +46,6 @@
   font-size: 30rpx;
 }
 
-.times {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-top: 16rpx;
-}
-
 .time {
   font-size: 26rpx;
   color: #555;
@@ -73,13 +54,35 @@
   border-radius: 8rpx;
 }
 
-.arrow {
-  color: var(--color-text-light);
-  font-size: 24rpx;
+/* 日期没选或已经过期：把那一格标红，别让商家滑过去 */
+.time-warn {
+  color: #C8102E;
+  background: #fdeaec;
 }
 
-.times .row-del {
-  margin-left: auto;
+.slot-line {
+  display: flex;
+  align-items: center;
+  margin-top: 16rpx;
+}
+
+.slot-line:first-child {
+  margin-top: 0;
+}
+
+.slot-label {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin-right: auto;
+}
+
+.expired {
+  font-size: 24rpx;
+  color: #C8102E;
+  line-height: 1.6;
+  padding-bottom: 16rpx;
+  margin-bottom: 4rpx;
+  border-bottom: 1rpx solid var(--color-border);
 }
 
 .add {

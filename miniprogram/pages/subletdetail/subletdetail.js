@@ -1,4 +1,7 @@
 const { markStale } = require('../../utils/refresh.js')
+const { takePreview } = require('../../utils/preview.js')
+const { prefetchCover, detailShare } = require('../../utils/share.js')
+const { isDemand, closedLabel, reviewHint, rentText } = require('../../utils/kinds.js')
 
 const app = getApp()
 
@@ -7,7 +10,15 @@ Page({
     item: null,
     canDelete: false,
     isOwner: false,
-    seller: { nickname: '', avatarUrl: '' }
+    seller: { nickname: '', avatarUrl: '' },
+    demand: false,       // 求租帖：没有房源照片
+    rentText: '',        // 月租或预算区间，拼法见 utils/kinds.js
+    closed: '',          // 已结束时顶部横幅上的字（已售出 / 已结束 / 已过期…），还开着就是空串
+    loading: true,       // 必须从 true 开始：第一帧 item 还是 null，不写的话 wxml 会直接落到「已下架」分支
+    notFound: false,
+    isRootPage: false,   // 从分享卡片冷启动进来时页面栈只有这一页，没有上一页可返回
+    partial: false,      // 首屏先用列表带过来的数据画，getDetail 回来之前只有图、标题、价格可信
+    shownUpTo: 1         // 轮播只加载到第几张（见 onSwiperChange）
   },
 
   // 点卖家头像进 TA 的主页，直接停在本板块那一页
@@ -23,11 +34,26 @@ Page({
     wx.navigateTo({ url: '/pages/userstore/userstore?uid=' + uid + '&tab=sublet' })
   },
 
+  // 没有这个函数，右上角菜单里的「转发」就是灰的。标题模板和封面预下载见 utils/share.js
+  onShareAppMessage: function () {
+    return detailShare('sublet', this.data.item, this.cover)
+  },
+
+  // 轮播只加载看到的这张和下一张。一进来就同时拉 6 张原图，会和首图抢带宽，首图反而出来得慢
+  onSwiperChange: function (e) {
+    const next = e.detail.current + 1
+    if (next > this.data.shownUpTo) this.setData({ shownUpTo: next })
+  },
+
   onLoad: function (options) {
     this.setData({ isRootPage: getCurrentPages().length === 1 })
 
     const id = options.id
     if (!id) return this.setData({ loading: false, notFound: true })
+
+    // 从列表点进来的，先用列表里那条画首屏（图、标题、价格），不用白屏等下面这趟往返
+    const pre = takePreview('sublet', id)
+    if (pre) this.setData({ item: pre, partial: true, demand: isDemand(pre.kind), rentText: rentText(pre) })
 
     // 一次调用拿齐三样：内容、发布者资料、我能不能删。
     // 原来是三趟串行往返，跨太平洋一趟约 0.3 秒，合并后省掉 0.6 秒。
@@ -35,18 +61,24 @@ Page({
     wx.cloud.callFunction({ name: 'getDetail', data: { type: 'sublet', id: id } })
       .then(res => {
         const r = (res && res.result) || {}
-        if (!r.success) return this.setData({ loading: false, notFound: true })
+        if (!r.success) return this.setData({ item: null, partial: false, loading: false, notFound: true })
         this.setData({
           item: r.item,
+          demand: isDemand(r.item.kind),
+          rentText: rentText(r.item),
+          closed: closedLabel('sublet', r.item),
+          reviewHint: reviewHint(r.item),
           seller: r.seller,
           isOwner: r.isOwner,
           canDelete: r.canDelete,
+          partial: false,
           loading: false
         })
+        this.cover = prefetchCover(r.item, r.isOwner)   // 趁用户还在看，先把转发封面下好
       })
       .catch(err => {
         console.error('加载详情失败：', err)
-        this.setData({ loading: false, notFound: true })
+        this.setData({ item: null, partial: false, loading: false, notFound: true })
       })
   },
 
@@ -62,6 +94,9 @@ Page({
             data: { status: 'rented' }
           }).then(() => {
             markStale('sublet')   // 返回列表时要看到这次改动
+            // 从分享卡片冷启动进来时 navigateBack 退不回去，页面会留在这儿，得当场换成已结束的样子
+            const item = Object.assign({}, this.data.item, { status: 'rented' })
+            this.setData({ item: item, closed: closedLabel('sublet', item) })
             wx.showToast({ title: '已标记租出', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {

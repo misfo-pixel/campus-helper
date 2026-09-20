@@ -1,6 +1,6 @@
 <view class="page-container">
   <view class="list-head">
-    <view class="page-title" style="margin-bottom: 0;">校外服务 🍜</view>
+    <view class="page-title" style="margin-bottom: 0;">校外服务 🏪</view>
     <button class="btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 
@@ -13,7 +13,7 @@
 
   <view wx:for="{{shops}}" wx:key="_id" class="card shop" bindtap="goToShop" data-id="{{item._id}}">
     <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="shop-logo" />
-    <view wx:else class="shop-logo shop-logo-fallback">🍽</view>
+    <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
 
     <view class="shop-meta">
       <view class="shop-name-row">

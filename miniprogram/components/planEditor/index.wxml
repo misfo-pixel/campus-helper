@@ -1,15 +1,11 @@
 <view class="plan-editor">
-  <view class="section-title">取餐点与配送费</view>
-  <view class="hint">买家到点自取，不送到门口。名字会被订单引用，尽量别改已经在用的。</view>
-
+  <view class="subsection-title">服务地点与配送费</view>
   <view wx:for="{{points}}" wx:key="index" class="card row">
     <view class="row-head">
-      <input placeholder="取餐点名称（如 UMN 东岸）" value="{{item.name}}"
+      <input placeholder="服务地点（如 Coffman 门口）" value="{{item.name}}" maxlength="20"
              bindinput="onPointInput" data-index="{{index}}" data-field="name" class="row-name" />
       <text class="row-del" bindtap="removePoint" data-index="{{index}}">删除</text>
     </view>
-    <input placeholder="具体位置（如 Coffman 门口）" value="{{item.address}}"
-           bindinput="onPointInput" data-index="{{index}}" data-field="address" class="row-sub" />
     <view class="fee-line">
       <text class="text-light">配送费</text>
       <text class="dollar">$</text>
@@ -18,25 +14,35 @@
     </view>
   </view>
 
-  <view class="add" bindtap="addPoint">+ 添加取餐点</view>
+  <view class="add" bindtap="addPoint">+ 添加服务地点</view>
 
-  <view class="section-title">配送批次</view>
-  <view class="hint">所有订单按批次统一送。一趟送多单，配送费才压得下来。</view>
+  <view class="subsection-title">服务时间</view>
+  <view class="card row">
+    <!-- 场次过了就没人能下单了，但店还挂在列表里，所以这条提示要显眼 -->
+    <view wx:if="{{expired}}" class="expired">
+      ⚠️ 上一场（{{batch.date}}）已过，买家现在下不了单，换个日期即可。
+    </view>
 
-  <view wx:for="{{batches}}" wx:key="index" class="card row">
-    <input placeholder="批次名（如 午餐班）" value="{{item.label}}"
-           bindinput="onBatchInput" data-index="{{index}}" data-field="label" class="row-name row-name-solo" />
-    <view class="times">
-      <picker mode="time" value="{{item.cutoff}}" bindchange="onBatchInput" data-index="{{index}}" data-field="cutoff">
-        <view class="time">截单 {{item.cutoff}}</view>
+    <view class="slot-line">
+      <text class="slot-label">日期</text>
+      <picker mode="date" start="{{today}}" value="{{batch.date || today}}"
+              bindchange="onBatchInput" data-field="date">
+        <view class="time {{expired || !batch.date ? 'time-warn' : ''}}">{{batch.date || '请选择'}}</view>
       </picker>
-      <text class="arrow">→</text>
-      <picker mode="time" value="{{item.deliver_time}}" bindchange="onBatchInput" data-index="{{index}}" data-field="deliver_time">
-        <view class="time">到点 {{item.deliver_time}}</view>
+    </view>
+
+    <view class="slot-line">
+      <text class="slot-label">截单时间</text>
+      <picker mode="time" value="{{batch.cutoff}}" bindchange="onBatchInput" data-field="cutoff">
+        <view class="time">{{batch.cutoff}}</view>
       </picker>
-      <text class="row-del" bindtap="removeBatch" data-index="{{index}}">删除</text>
+    </view>
+
+    <view class="slot-line">
+      <text class="slot-label">送达时间</text>
+      <picker mode="time" value="{{batch.deliver_time}}" bindchange="onBatchInput" data-field="deliver_time">
+        <view class="time">{{batch.deliver_time}}</view>
+      </picker>
     </view>
   </view>
-
-  <view class="add" bindtap="addBatch">+ 添加批次</view>
 </view>

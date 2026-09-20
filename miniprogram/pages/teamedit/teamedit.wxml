@@ -1,21 +1,19 @@
 <view wx:if="{{!loading}}" class="page-container">
   <view class="page-title">{{isNew ? '创建配送队 🛵' : '队伍设置'}}</view>
 
-  <view wx:if="{{isNew}}" class="field-hint">
-    你们自己定取餐点和配送时间。外包给你们的商家，买家看到的就是这套。
-  </view>
-
   <!-- 队员只能看，改不了 -->
   <block wx:if="{{isNew || role === 'admin'}}">
     <view class="section-title">队伍信息</view>
-    <input placeholder="队伍名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
-    <textarea placeholder="简介（服务范围、时间等，商家挑队伍时会看到）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+    <input placeholder="队伍名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
+    <textarea placeholder="简介（服务范围、时间等，商家挑队伍时会看到）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
 
     <view class="section-title">联系与收款</view>
-    <view class="field-hint">商家按对账结果把配送费结给你们，所以这两项要填能用的。</view>
-    <input placeholder="队长微信（必填，商家结算时联系）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
-    <input placeholder="收款方式（必填，如 Venmo @team-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" class="card" style="padding: 24rpx;" />
+    <view class="field-hint">商家按对账结果把配送费结给你们，这两项要填能用的。</view>
+    <input placeholder="队长微信（必填，商家结算时联系）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+    <input placeholder="收款方式（必填，如 Venmo @team-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" class="card form-card" />
 
+    <view class="section-title">配送方案</view>
+    <view class="field-hint">你们自己定。商家外包给你们之后，买家用的就是这套。</view>
     <plan-editor init-points="{{planPoints}}" init-batches="{{planBatches}}" bind:change="onPlanChange" />
 
     <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">
@@ -35,8 +33,7 @@
   <block wx:if="{{!isNew && role === 'admin'}}">
     <view class="section-title">邀请码</view>
     <view class="field-hint">
-      配送工作台对普通用户是隐藏的，所以新队员一般用不上这个码——直接用下面的「添加队员」把人拉进来更快。
-      这个码留给已经能看到工作台的人（比如商家）自助加入。
+      新队员用下面的「添加队员」更快。这个码留给已经能看到配送工作台的人（比如商家）自助加入。
     </view>
     <view class="card code-card">
       <text class="code-text">{{team.join_code}}</text>
@@ -52,7 +49,7 @@
       <button wx:if="{{role === 'admin'}}" class="btn-primary btn-sm" bindtap="addMember">+ 添加队员</button>
     </view>
     <view wx:if="{{role === 'admin'}}" class="field-hint">
-      按微信号添加。对方要先进过小程序、并在「我的 → 编辑资料」里填了微信号，才能被搜到。
+      按微信号添加。对方要先进过小程序，并在「我的 → 编辑资料」里填了微信号。
     </view>
     <view wx:for="{{members}}" wx:key="_id" class="card member">
       <view class="member-name">

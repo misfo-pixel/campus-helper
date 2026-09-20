@@ -1,6 +1,7 @@
 {
-  "navigationBarTitleText": "点餐",
+  "navigationBarTitleText": "点单",
   "usingComponents": {
-    "disclaimer-bar": "/components/disclaimerBar/index"
+    "disclaimer-bar": "/components/disclaimerBar/index",
+    "report-bar": "/components/reportBar/index"
   }
 }

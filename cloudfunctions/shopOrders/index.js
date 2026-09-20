@@ -6,14 +6,14 @@ const _ = db.command
 // 商家侧的订单：拉列表 + 推进状态。
 //
 // 状态机全部由商家自己推进，平台不介入任何一步——这就是「不需要管理员」的实现方式。
-// 平台也不碰钱：订单里没有任何支付状态，收款是商家在小程序外自己完成的，
-// 商家确认收到钱之后才点「接单」。
+// 平台也不碰钱：订单里没有任何支付状态，小程序里也不展示收款方式。
+// 订单只是买家的下单意向，商家自己联系买家之后再决定接不接。
 
 // 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
 // 免得前端出 bug 时把订单改成乱七八糟的状态。
 const TRANSITIONS = {
   pending: ['accepted', 'cancelled'],     // 待确认 → 接单 / 拒单
-  accepted: ['delivering', 'cancelled'],  // 备餐中 → 开始配送 / 取消
+  accepted: ['delivering', 'cancelled'],  // 准备中 → 开始配送 / 取消
   delivering: ['completed'],              // 配送中 → 已送达
   completed: [],
   cancelled: []

@@ -1,16 +1,18 @@
 // 商家工作台。订单状态全部由商家自己推进，平台不介入任何一步。
-// 平台也不碰钱——订单里没有支付状态，商家是在小程序外收到钱之后才点「接单」的。
+// 平台也不碰钱——订单里没有支付状态，小程序里也不出现任何收款方式。
+// 订单只是买家的下单意向，商家自己通过微信联系买家后再决定接不接。
 
-const SHOP_STATUS_TEXT = { open: '营业中', paused: '暂停接单', closed: '打烊' }
+// 商家只有两态。closed 是系统态（待审 / 被拒 / 重审中），
+// 商家选不到，但显示上也归到「打烊」——他不需要知道这个区别。
+const SHOP_STATUS_TEXT = { open: '营业中', paused: '打烊', closed: '打烊' }
 const SHOP_STATUS_LIST = [
-  { value: 'open', label: '营业中（正常接单）' },
-  { value: 'paused', label: '暂停接单（仍显示在列表，但不能下单）' },
-  { value: 'closed', label: '打烊（不在列表中显示）' }
+  { value: 'open', label: '营业中（接单）' },
+  { value: 'paused', label: '打烊（买家能看商品，但下不了单）' }
 ]
 
 const ORDER_STATUS_TEXT = {
   pending: '待确认',
-  accepted: '备餐中',
+  accepted: '准备中',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
@@ -29,6 +31,8 @@ Page({
     loading: true,
     shop: null,
     shopStatusText: '',
+    slotAlert: false,  // true = 没有可约的服务时间，买家下不了单
+    slotLastDate: '',  // 上一场的日期；空 = 压根还没按日期设过
     summary: { todayCount: 0, pendingCount: 0, revenue: 0 },
     tab: 'pending',
     orders: []
@@ -42,13 +46,16 @@ Page({
     wx.cloud.callFunction({ name: 'shopManage', data: { action: 'getMine' } }).then(res => {
       const r = (res && res.result) || {}
       const shop = r.shop
+      const slot = this.checkSlot(shop)
       this.setData({
         shop: shop || null,
         shopStatusText: shop ? (SHOP_STATUS_TEXT[shop.status] || '') : '',
+        slotAlert: slot.alert,
+        slotLastDate: slot.lastDate,
         loading: false
       })
-      // 审核没过的时候没有订单可看，就别白跑两个云函数了
-      if (shop && shop.audit_status === 'approved') {
+      // 被下架的店没有订单可看，就别白跑两个云函数了
+      if (shop && !shop.takedown) {
         this.loadSummary()
         this.loadOrders()
       }
@@ -56,6 +63,37 @@ Page({
       console.error('读取店铺失败：', err)
       this.setData({ loading: false })
     })
+  },
+
+  // 场次过了就没人下得了单，可店还好端端挂在列表里，商家自己看不出来。
+  //
+  // 没有日期的场次也要报警：那是场次还没按日期填过的老数据，
+  // 买家侧同样一个可选场次都展不出来，而且它比「过期」更隐蔽。
+  //
+  // 外包给配送队的店用的是队伍那份方案，不归他管，就别吓唬他了。
+  checkSlot: function (shop) {
+    if (!shop || shop.takedown) return { alert: false, lastDate: '' }
+    if (shop.delivery_mode === 'outsourced') return { alert: false, lastDate: '' }
+
+    const slot = (shop.batches || [])[0]
+    if (!slot || !slot.date) return { alert: true, lastDate: '' }
+
+    const d = new Date()
+    const pad = n => (n < 10 ? '0' + n : '' + n)
+    const today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+    if (slot.date < today) return { alert: true, lastDate: slot.date }
+
+    // 今天的场次过了截单时刻也算没场次：买家侧同样展不出来。
+    // 这条判断要和 shopManage 的 slotBlocker 对齐，否则会出现
+    // 「工作台没报警，但一点营业中就被拒」的割裂。
+    if (slot.date === today && slot.cutoff) {
+      const bits = String(slot.cutoff).split(':')
+      const cutoffMin = Number(bits[0]) * 60 + Number(bits[1])
+      if (d.getHours() * 60 + d.getMinutes() >= cutoffMin) {
+        return { alert: true, lastDate: slot.date }
+      }
+    }
+    return { alert: false, lastDate: '' }
   },
 
   loadSummary: function () {
@@ -109,6 +147,17 @@ Page({
           if (result.success) {
             wx.showToast({ title: '已切换为' + SHOP_STATUS_TEXT[next], icon: 'none' })
             this.loadShop()
+          } else if (next === 'open') {
+            // 开门被场次拦下了。这时候只弹 toast 等于把人扔在原地，
+            // 直接问他要不要去设置——拦截理由本身已经说清楚该改什么了。
+            wx.showModal({
+              title: '还不能开门',
+              content: result.message || '切换失败',
+              confirmText: '去设置',
+              success: r => {
+                if (r.confirm) wx.navigateTo({ url: '/pages/shopedit/shopedit' })
+              }
+            })
           } else {
             wx.showToast({ title: result.message || '切换失败', icon: 'none' })
           }

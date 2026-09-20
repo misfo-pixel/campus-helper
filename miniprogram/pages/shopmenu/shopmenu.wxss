@@ -9,17 +9,6 @@
   margin-top: 120rpx;
 }
 
-.import-link {
-  text-align: center;
-  font-size: 26rpx;
-  color: var(--color-text-light);
-  padding: 40rpx 0 20rpx;
-}
-
-.import-link:active {
-  opacity: 0.6;
-}
-
 .dish {
   display: flex;
   align-items: center;

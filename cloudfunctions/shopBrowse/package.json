@@ -1,7 +1,7 @@
 {
   "name": "shopBrowse",
   "version": "1.0.0",
-  "description": "买家侧读取店铺列表与菜单",
+  "description": "买家侧读取店铺列表与商品",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

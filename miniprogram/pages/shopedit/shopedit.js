@@ -4,7 +4,17 @@
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
-const CATEGORIES = ['中餐', '奶茶饮品', '烘焙甜点', '快餐简餐', '其他']
+// 分类要能容下非餐饮商家（代购、生活服务），别把模块绑死在餐饮上。
+const CATEGORIES = ['美食', '饮品甜点', '日用百货', '生活服务', '其他']
+
+// 第一版分类全是餐饮口径，老店铺库里存的还是那批值。不映射的话
+// 下面的 indexOf 返回 -1 会静默退回第一项——商家一保存，分类就被悄悄改掉了。
+const LEGACY_CATEGORY = {
+  '中餐': '美食',
+  '快餐简餐': '美食',
+  '奶茶饮品': '饮品甜点',
+  '烘焙甜点': '饮品甜点'
+}
 
 Page({
   data: {
@@ -20,27 +30,23 @@ Page({
     categories: CATEGORIES,
     description: '',
     min_order: '',
-    delivery_area: '',
     business_hours: '',
-    payment_note: '',
     contact_wechat: '',
 
-    auditStatus: '',
-    auditReason: '',
 
-    // 配送：商家只选「自己送」还是「外包给配送队」。
-    // 取餐点费率和批次时间是平台统一维护的，两种方式跑同一套，商家不用填。
+    // 配送：商家先选「自己送」还是「外包给配送队」。
+    // 服务地点和批次归实际送货的一方：自己送就在下面的方案编辑器里填，外包就用队伍那份。
     deliveryMode: 'self',
     teams: [],
     teamNames: [],
     teamIndex: null,
 
-    // 资质：商家自己声明并举证。平台不核实，只是把声明和凭证留档。
-    licenseConfirmed: false,
+    // 资质：凭证选填。平台不核实，传了就留档，不传也能开店——
+    // 商家多是学生，硬卡一道「我已取得资质」的声明只会把人挡在门外。
     licenseImage: '',
     tempLicense: '',
 
-    // 自送时才用：这家店自己的取餐点和批次
+    // 自送时才用：这家店自己的服务地点和批次
     planPoints: [],
     planBatches: []
   },
@@ -59,7 +65,7 @@ Page({
         return
       }
 
-      const idx = CATEGORIES.indexOf(shop.category)
+      const idx = CATEGORIES.indexOf(LEGACY_CATEGORY[shop.category] || shop.category)
       this.setData({
         isNew: false,
         loading: false,
@@ -68,14 +74,9 @@ Page({
         categoryIndex: idx === -1 ? 0 : idx,
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
-        delivery_area: shop.delivery_area || '',
         business_hours: shop.business_hours || '',
-        payment_note: shop.payment_note || '',
         contact_wechat: shop.contact_wechat || '',
-        auditStatus: shop.audit_status || '',
-        auditReason: shop.audit_reason || '',
         deliveryMode: shop.delivery_mode || 'self',
-        licenseConfirmed: !!shop.license_confirmed,
         licenseImage: shop.license_image || '',
         planPoints: shop.pickup_points || [],
         planBatches: shop.batches || []
@@ -111,10 +112,6 @@ Page({
   // 方案编辑器每次改动都把完整的两份数组抛回来
   onPlanChange: function (e) {
     this.setData({ planPoints: e.detail.points, planBatches: e.detail.batches })
-  },
-
-  onLicenseChange: function (e) {
-    this.setData({ licenseConfirmed: e.detail.value.length > 0 })
   },
 
   chooseLicense: function () {
@@ -191,41 +188,40 @@ Page({
       wx.showToast({ title: '请先阅读并同意商家责任告知书', icon: 'none' })
       return
     }
-    if (!d.name || !d.contact_wechat || !d.payment_note) {
-      wx.showToast({ title: '请填完必填项', icon: 'none' })
+    // 分节标题上不再逐个标（必填），所以漏填时要指名道姓，
+    // 而不是甩一句「请填完必填项」让商家自己回去找
+    if (!d.name) {
+      wx.showToast({ title: '请填写店铺名称', icon: 'none' })
+      return
+    }
+    if (!d.contact_wechat) {
+      wx.showToast({ title: '请填写联系微信', icon: 'none' })
       return
     }
     if (d.deliveryMode === 'outsourced' && d.teamIndex === null) {
       wx.showToast({ title: '请选择要外包给哪个配送队', icon: 'none' })
       return
     }
-    if (!d.licenseConfirmed) {
-      wx.showToast({ title: '请确认你已取得所在地要求的食品经营资质', icon: 'none' })
-      return
-    }
     if (d.deliveryMode === 'self') {
       const points = (d.planPoints || []).filter(p => String(p.name || '').trim())
-      const batches = (d.planBatches || []).filter(b => String(b.label || '').trim())
       if (!points.length) {
-        wx.showToast({ title: '自己送的话，至少要设一个取餐点', icon: 'none' })
-        return
-      }
-      if (!batches.length) {
-        wx.showToast({ title: '自己送的话，至少要设一个配送批次', icon: 'none' })
+        wx.showToast({ title: '自己送的话，至少要设一个服务地点', icon: 'none' })
         return
       }
       const names = points.map(p => p.name.trim())
       if (new Set(names).size !== names.length) {
-        wx.showToast({ title: '取餐点名字不能重复', icon: 'none' })
+        wx.showToast({ title: '服务地点名字不能重复', icon: 'none' })
         return
       }
-      const labels = batches.map(b => b.label.trim())
-      if (new Set(labels).size !== labels.length) {
-        wx.showToast({ title: '批次名不能重复', icon: 'none' })
+      // 场次的日期只校验填没填，不校验是不是过去的日子——
+      // 否则场次一过期，商家连改商品、改联系方式都保存不了
+      const batch = (d.planBatches || [])[0]
+      if (!batch || !batch.date) {
+        wx.showToast({ title: '请选择服务时间的日期', icon: 'none' })
         return
       }
-      if (batches.some(b => b.deliver_time <= b.cutoff)) {
-        wx.showToast({ title: '到点时间要晚于截单时间', icon: 'none' })
+      if (batch.deliver_time <= batch.cutoff) {
+        wx.showToast({ title: '送达时间要晚于截单时间', icon: 'none' })
         return
       }
     }
@@ -236,7 +232,7 @@ Page({
     try {
       // 店铺资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.delivery_area, d.business_hours, d.payment_note, d.contact_wechat]
+        texts: [d.name, d.description, d.business_hours, d.contact_wechat]
       }))) return
 
       const logo = await this.uploadLogo()
@@ -258,13 +254,10 @@ Page({
         category: CATEGORIES[d.categoryIndex],
         description: d.description,
         min_order: d.min_order,
-        delivery_area: d.delivery_area,
         business_hours: d.business_hours,
-        payment_note: d.payment_note,
         contact_wechat: d.contact_wechat,
         delivery_mode: d.deliveryMode,
         delivery_team_id: d.teamIndex === null ? '' : d.teams[d.teamIndex]._id,
-        license_confirmed: d.licenseConfirmed,
         license_image: licenseImage,
         pickup_points: d.planPoints,
         batches: d.planBatches
@@ -281,15 +274,8 @@ Page({
 
       if (d.isNew) {
         wx.showModal({
-          title: '已提交',
-          content: '入驻申请已提交，我们会尽快审核。审核通过后就能上架菜品并开始营业。',
-          showCancel: false,
-          success: () => wx.navigateBack()
-        })
-      } else if (r.reaudit) {
-        wx.showModal({
-          title: '已保存',
-          content: '你修改了店铺名称，需要重新审核。审核期间店铺会暂时停业。',
+          title: '开店成功',
+          content: '去工作台上架商品，然后把状态切成「营业中」就能接单了。',
           showCancel: false,
           success: () => wx.navigateBack()
         })

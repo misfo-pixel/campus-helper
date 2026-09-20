@@ -1,18 +1,18 @@
 // 我的服务订单（买家侧）。
-// 待确认的单会把商家收款方式显示出来，方便买家去转账。
+// 订单只展示商家微信，买家自己联系商家。平台不展示收款方式、不引导支付。
 
 const STATUS_TEXT = {
   pending: '待商家确认',
-  accepted: '备餐中',
+  accepted: '准备中',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
 }
 
-// 待确认的单要提示去付款，其余状态给一句状态说明
+// 每个状态给一句说明。待确认的单只说「等商家联系」，不出现任何付款指引。
 const STATUS_HINT = {
-  pending: '请按下面的方式付款给商家，商家确认收款后会接单',
-  accepted: '商家已接单，正在备餐',
+  pending: '已提交，等商家确认。商家会通过微信与你联系',
+  accepted: '商家已接单，正在准备',
   delivering: '商家正在配送',
   completed: '订单已完成',
   cancelled: '订单已取消'
@@ -29,7 +29,8 @@ function formatTime(value) {
 Page({
   data: {
     loading: true,
-    orders: []
+    orders: [],
+    hasPending: false
   },
 
   onShow: function () {
@@ -55,7 +56,11 @@ Page({
         timeText: formatTime(o.created_at),
         shortId: (o._id || '').slice(-6).toUpperCase()
       }))
-      this.setData({ orders: orders, loading: false })
+      this.setData({
+        orders: orders,
+        hasPending: orders.some(o => o.status === 'pending'),
+        loading: false
+      })
       if (done) done()
     }).catch(err => {
       console.error('读取订单失败：', err)

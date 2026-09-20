@@ -20,9 +20,10 @@
 
 见 `miniprogram/config.js`：
 
-- `SHOP_MODULE_ENABLED = false` — 校外服务（商家自营）。首次提审关闭：个人主体报不了餐饮类目，且「按商家收款方式在小程序外付款」同样属于引导站外支付。关掉后首页入口消失，其余模块不受影响。
-- `FOOD_MODULE_ENABLED = false` — 老的外卖拼团，提审期间下线，页面也被 `project.config.json` 的 `packOptions.ignore` 排除在上传包外。**恢复前必须先替换掉「上传付款截图 + 管理员确认收款」的流程**，引导站外支付是明确违规。恢复步骤写在 `config.js` 注释里。
+- `SHOP_MODULE_ENABLED = true` — 校外服务（商家自营）。关掉后首页入口消失，其余模块不受影响。**提审前需先解决**：「按商家收款方式在小程序外付款」属于引导站外支付。
 - `DEBUG_TIMING = false` — 请求延迟测量，开着时打印 `[timing]` 日志并在市场页显示测试按钮。**提审前必须关掉。**
+
+老的外卖拼团模块（`FOOD_MODULE_ENABLED`、`pages/index`、`pages/myorders`）已于 2026-09-19 删除，功能由校外服务完整覆盖，需要时从 git 历史取回。配套的一次性迁移入口（商家菜单页「从旧外卖菜单导入」+ `shopManage` 的 `importLegacyMenu`）已于同日移除，`menu_items` 集合在代码里已无任何引用，可在云开发控制台删除。
 
 ## 本地运行
 
@@ -36,14 +37,16 @@
 
 ## 角色
 
-用户角色存在 `users.roles` 数组里，新用户默认 `['student']`。管理权限在云函数内校验（见 `auditShop`、`handleReport`、`deliveryManage`），不依赖前端判断：
+用户角色存在 `users.roles` 数组里，新用户默认 `['student']`。管理权限在云函数内校验（见 `handleReport`、`deliveryManage`），不依赖前端判断：
 
 - `super_admin` — 全部权限
 - `market_admin` — 二手市场：删帖、处理举报
-- `food_admin` — 商家审核、配送配置
+- `food_admin` — 配送队核对、配送配置（商家不再审核，提交即开店）
 - `sublet_admin` / `task_admin` — 对应板块的删帖权限
 
-管理入口在「我的」页面按角色显示：商家审核 `pages/shopaudit`、举报处理 `pages/reports`、配送配置 `pages/deliveryconfig`、结算 `pages/settlement`。
+管理入口在「我的」页面按角色显示：配送队核对 `pages/shopaudit`、举报处理 `pages/reports`、结算 `pages/settlement`。
+
+**商家没有事前审核**：填完资料提交就有店，默认打烊，自己切「营业中」才上架。内容治理走事后路线——机检（`contentCheck`）+ 用户举报（`submitReport`）+ 人工复核下架（`handleReport`）。店铺被判违规时不删记录，而是强制 `status: 'closed'` 并打 `takedown` 标记，商家自己切不回营业。配送队仍需核对，因为队伍会接触到别人的订单、买家联系方式和结算。
 
 ## 目录
 

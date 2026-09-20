@@ -11,26 +11,33 @@
     </view>
   </view>
 
+  <view class="section-title">基本信息（必填）</view>
+
   <!-- 图片上传区。求购没有实物可拍，整块收起来 -->
-  <view wx:if="{{!demand}}" class="section-title">商品图片</view>
   <view wx:if="{{!demand}}" style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
     <!-- 已选的图片 -->
-    <image wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill" style="width: 200rpx; height: 200rpx; border-radius: 12rpx;"></image>
+    <view wx:for="{{images}}" wx:key="*this" style="position: relative; width: 200rpx; height: 200rpx;">
+      <image src="{{item}}" mode="aspectFill" style="width: 200rpx; height: 200rpx; border-radius: 12rpx;"></image>
+      <!-- 右上角删除：外层透明 padding 把点击区域放大，圆点本身只画 40rpx -->
+      <view catchtap="removeImage" data-index="{{index}}" style="position: absolute; top: -20rpx; right: -20rpx; padding: 12rpx;">
+        <view style="width: 40rpx; height: 40rpx; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 30rpx; line-height: 40rpx; text-align: center;">×</view>
+      </view>
+    </view>
     <!-- 添加按钮 -->
     <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 200rpx; height: 200rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
   </view>
 
-  <view class="section-title">{{demand ? '求购信息' : '商品信息'}}</view>
   <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
   <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
-  <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
   <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
-  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
+  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号</view>
 
-  <view class="section-title">下架日期</view>
+  <view class="section-title">详细信息（选填）</view>
+  <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
+  <!-- 不填就一直挂着，直到自己标已售。没有单独的小标题了，选完日期后要带上「自动下架」，光一个日期看不出是什么 -->
   <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">
     <view class="card" style="padding: 24rpx; color: {{expire_date ? '#333' : '#999'}};">
-      {{expire_date || '选择自动下架日期（如离美日期）'}}
+      {{expire_date ? expire_date + ' 自动下架' : '自动下架日期（如离美日期）'}}
     </view>
   </picker>
 

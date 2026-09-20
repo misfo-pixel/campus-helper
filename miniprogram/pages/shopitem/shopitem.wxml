@@ -1,5 +1,5 @@
 <view wx:if="{{!loading}}" class="page-container">
-  <view class="section-title">菜品图片</view>
+  <view class="section-title">商品图片</view>
   <view class="img-row" bindtap="chooseImage">
     <image wx:if="{{image}}" src="{{image}}" mode="aspectFill" class="dish-img" />
     <view wx:else class="dish-img dish-img-placeholder">+</view>
@@ -7,13 +7,13 @@
   </view>
 
   <view class="section-title">基本信息</view>
-  <input placeholder="菜品名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
+  <input placeholder="商品名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
   <input placeholder="价格（美元，必填）" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
   <input placeholder="分类（如 主食 / 小食 / 饮品）" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
-  <textarea placeholder="菜品描述（口味、分量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+  <textarea placeholder="商品描述（规格、分量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
   <view class="section-title">过敏原与成分</view>
-  <view class="field-hint">如实填写可能引发过敏的成分。隐瞒或错填造成的后果由你承担，详见《商家责任告知书》。</view>
+  <view class="field-hint">如实填写可能引发过敏的成分，隐瞒或错填的后果由你承担，详见《商家责任告知书》。</view>
   <textarea placeholder="如：含花生、乳制品、鸡蛋、麸质、海鲜…" value="{{allergens}}" bindinput="onInput" data-field="allergens" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
 
   <view class="card avail-row">

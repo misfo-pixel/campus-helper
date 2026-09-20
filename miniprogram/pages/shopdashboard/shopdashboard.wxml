@@ -3,39 +3,43 @@
   <!-- 还没开店 -->
   <block wx:if="{{!shop}}">
     <view class="empty-apply">
-      <view class="empty-emoji">🍜</view>
+      <view class="empty-emoji">🏪</view>
       <view class="empty-title">你还没有店铺</view>
-      <view class="text-light empty-desc">申请入驻后可以上架菜品、接收订单，自己管理营业状态。</view>
+      <view class="text-light empty-desc">入驻后就能上架商品、接收订单。</view>
       <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">申请入驻</button>
     </view>
   </block>
 
   <block wx:else>
-    <!-- 审核中 / 未通过 -->
-    <view wx:if="{{shop.audit_status === 'pending'}}" class="audit-box audit-pending">
-      <view class="audit-title">店铺审核中</view>
-      <view class="audit-desc">我们会尽快处理。通过之后就能上架菜品并开始营业。</view>
+    <!-- 被举报下架。平台不做事前审核，但举报核实后会强制关店 -->
+    <view wx:if="{{shop.takedown}}" class="audit-box audit-rejected">
+      <view class="audit-title">店铺已被下架</view>
+      <view class="audit-desc">你的店铺因违规被下架，无法继续营业。如有异议，请通过「意见反馈」联系我们。</view>
     </view>
-    <view wx:elif="{{shop.audit_status === 'rejected'}}" class="audit-box audit-rejected">
-      <view class="audit-title">审核未通过</view>
-      <view class="audit-desc">{{shop.audit_reason || '请检查店铺信息是否完整、真实'}}</view>
-      <view class="audit-action" bindtap="goToSettings">去修改店铺信息 ›</view>
+
+    <!-- 没有可约场次：店还在列表里，但买家一下单就被拦，商家自己看不出来 -->
+    <view wx:if="{{slotAlert}}" class="audit-box audit-rejected">
+      <view class="audit-title">{{slotLastDate ? '服务时间已过期' : '还没设置服务时间'}}</view>
+      <view class="audit-desc">
+        {{slotLastDate ? '上一场是 ' + slotLastDate + '，' : ''}}买家现在下不了单，选个新日期就能继续接单。
+      </view>
+      <view class="audit-action" bindtap="goToSettings">去设置新的服务时间 ›</view>
     </view>
 
     <!-- 店头 + 营业状态开关 -->
     <view class="shop-head card">
       <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
-      <view wx:else class="shop-logo shop-logo-fallback">🍽</view>
+      <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
       <view class="shop-meta">
         <view class="shop-name">{{shop.name}}</view>
         <view class="text-light shop-cat">{{shop.category}}</view>
       </view>
-      <view wx:if="{{shop.audit_status === 'approved'}}"
+      <view wx:if="{{!shop.takedown}}"
             class="status-pill status-{{shop.status}}"
             bindtap="changeShopStatus">{{shopStatusText}} ▾</view>
     </view>
 
-    <block wx:if="{{shop.audit_status === 'approved'}}">
+    <block wx:if="{{!shop.takedown}}">
       <!-- 今日数据 -->
       <view class="summary card">
         <view class="summary-cell">
@@ -114,8 +118,8 @@
 
     <view class="entries">
       <view class="entry card" bindtap="goToMenu">
-        <view class="entry-icon">🍜</view>
-        <view class="entry-label">菜单管理</view>
+        <view class="entry-icon">🏪</view>
+        <view class="entry-label">商品管理</view>
       </view>
       <view class="entry card" bindtap="goToSettings">
         <view class="entry-icon">⚙️</view>

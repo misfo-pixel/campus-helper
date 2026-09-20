@@ -5,14 +5,15 @@ const _ = db.command
 
 // 买家侧订单：下单、看自己的单、取消。
 //
-// 配送模型：全部走批次，买家到取餐点自取（不送到公寓门口）。
-// 取餐点和批次由实际送货的那一方定：商家自送就用店铺自己的，外包就用配送队的。
+// 配送模型：全部走服务时间，买家到服务地点自取（不送到公寓门口）。
+// 服务地点和场次由实际送货的那一方定：商家自送就用店铺自己的，外包就用配送队的。
 // 商家自己送和外包给配送队跑同一套规则，区别只在配送费最后归谁。
 //
-// 平台不经手资金：买家一次性把「餐费 + 配送费」付给商家。
-// 外包的话，那笔配送费是商家替配送队代收的，事后按对账结果结给队伍。
+// 平台不经手资金，也不展示收款方式：订单只是买家的下单意向，
+// 商品费和配送费怎么收由商家和买家自己在小程序外约定。
+// 外包的话，那笔配送费算商家替配送队收的，事后按对账结果结给队伍。
 
-// 用户在明尼苏达，批次截没截单必须按当地时间判断。
+// 用户在明尼苏达，场次截没截单必须按当地时间判断。
 // 这段逻辑和 deliveryManage 里的是同一份——云函数之间没法共享代码，只能各存一份。
 const TZ = 'America/Chicago'
 
@@ -38,26 +39,24 @@ function toMinutes(hhmm) {
   return Number(bits[0]) * 60 + Number(bits[1])
 }
 
-function addDays(dateStr, n) {
-  const d = new Date(dateStr + 'T12:00:00Z')
-  d.setUTCDate(d.getUTCDate() + n)
-  return d.toISOString().slice(0, 10)
-}
 
+// 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开。
+// 这里必须和 shopBrowse 里那份保持一致：买家看到什么场次由那边算，
+// 能不能下单由这边算，两边算法一旦错开就会出现「选得到但下不了」。
 function expandBatches(batches) {
   const now = nowInTZ()
   return (batches || []).map(b => {
-    const cutoffMin = toMinutes(b.cutoff)
-    const isToday = now.minutes < cutoffMin
-    const date = isToday ? now.date : addDays(now.date, 1)
+    if (!b.date) return null
+    if (b.date < now.date) return null
+    if (b.date === now.date && now.minutes >= toMinutes(b.cutoff)) return null
     return {
-      key: date + '#' + b.label,
-      label: b.label,
-      date: date,
+      key: b.date + '#' + b.deliver_time,
+      label: '',
+      date: b.date,
       cutoff: b.cutoff,
       deliver_time: b.deliver_time
     }
-  })
+  }).filter(Boolean)
 }
 
 // 这家店的配送方案归谁：外包用配送队的，否则用店铺自己的。
@@ -85,7 +84,7 @@ async function resolvePlan(shop) {
 }
 
 // 金额一律用数据库里的当前价重算，绝不采信前端传来的价格和总价。
-// 不然改一下请求就能一分钱买走整个菜单。
+// 不然改一下请求就能一分钱买走整份商品列表。
 async function buildOrderItems(shopId, rawItems) {
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
     return { error: '购物车是空的' }
@@ -107,12 +106,12 @@ async function buildOrderItems(shopId, rawItems) {
 
   for (const raw of rawItems) {
     const doc = byId[raw.item_id]
-    if (!doc) return { error: '有菜品已经下架了，请重新选择' }
+    if (!doc) return { error: '有商品已经下架了，请重新选择' }
     if (doc.available === false) return { error: '「' + doc.name + '」已售罄，请重新选择' }
 
     const count = Math.floor(Number(raw.count))
-    if (!(count > 0)) return { error: '菜品数量不正确' }
-    if (count > 50) return { error: '单个菜品一次最多下 50 份' }
+    if (!(count > 0)) return { error: '商品数量不正确' }
+    if (count > 50) return { error: '单个商品一次最多下 50 份' }
 
     // 存快照：商家之后改价或下架，历史订单还得是当时的样子
     items.push({ item_id: doc._id, name: doc.name, price: doc.price, count: count })
@@ -132,7 +131,7 @@ exports.main = async (event) => {
       case 'create': {
         const shopDoc = await db.collection('shops').doc(event.shopId).get()
         const shop = shopDoc.data
-        if (!shop || shop.audit_status !== 'approved') {
+        if (!shop) {
           return { success: false, message: '店铺不存在' }
         }
         if (shop.status !== 'open') {
@@ -147,21 +146,27 @@ exports.main = async (event) => {
           return { success: false, message: '还没到起送价 $' + minOrder }
         }
 
-        // ---- 配送：取餐点决定费率，批次决定什么时候到 ----
-        // 不送到公寓门口，买家到点自取，所以不需要房间号
+        // ---- 配送：服务地点决定费率，场次决定什么时候送到 ----
+        // 不送到公寓门口，买家到服务地点自取，所以不需要房间号
         const plan = await resolvePlan(shop)
         if (!plan.pickup_points.length || !plan.batches.length) {
-          return { success: false, message: '这家店还没设置好取餐点或配送时间，暂时不能下单' }
+          return { success: false, message: '这家店还没设置好服务地点或服务时间，暂时不能下单' }
         }
 
         const pointName = (event.pickup_point || '').trim()
         const point = plan.pickup_points.find(p => p.name === pointName)
-        if (!point) return { success: false, message: '请选择取餐点' }
+        if (!point) return { success: false, message: '请选择服务地点' }
 
-        const batch = expandBatches(plan.batches).find(b => b.key === event.batch_key)
+        const available = expandBatches(plan.batches)
+        if (!available.length) {
+          // 商家设的那一场已经过去了，他还没回来开新的
+          return { success: false, message: '这家店现在没有可约的服务时间，等商家开放新的服务时间再来' }
+        }
+
+        const batch = available.find(b => b.key === event.batch_key)
         if (!batch) {
-          // 前端页面开太久，选的那班已经截单了
-          return { success: false, message: '这个配送场次已经截单，请重新选择' }
+          // 前端页面开太久，选的那场已经截单了
+          return { success: false, message: '这一场已经截单，请重新选择' }
         }
 
         const contactWechat = (event.contact_wechat || '').trim()
@@ -198,7 +203,6 @@ exports.main = async (event) => {
             subtotal: built.subtotal,
 
             pickup_point: point.name,
-            pickup_address: point.address || '',
             pickup_info: point.name,   // 商家工作台和订单列表直接显示这个
             batch_key: batch.key,
             batch_label: batch.label,
@@ -230,7 +234,6 @@ exports.main = async (event) => {
           batch_label: batch.label,
           deliver_time: batch.deliver_time,
           batch_date: batch.date,
-          payment_note: shop.payment_note,
           contact_wechat: shop.contact_wechat
         }
       }
@@ -242,28 +245,27 @@ exports.main = async (event) => {
           .limit(50)
           .get()
 
-        // 每单带上商家的收款方式，买家在订单里就能看到该往哪转账
+        // 每单带上商家微信，买家在订单里就能直接联系上商家
         const shopIds = [...new Set(res.data.map(o => o.shop_id))]
         const shopMap = {}
         if (shopIds.length > 0) {
           const shops = await db.collection('shops')
             .where({ _id: _.in(shopIds) }).limit(100).get()
           shops.data.forEach(s => {
-            shopMap[s._id] = { payment_note: s.payment_note, contact_wechat: s.contact_wechat }
+            shopMap[s._id] = { contact_wechat: s.contact_wechat }
           })
         }
 
         return {
           success: true,
           orders: res.data.map(o => Object.assign({}, o, {
-            payment_note: (shopMap[o.shop_id] || {}).payment_note || '',
             shop_wechat: (shopMap[o.shop_id] || {}).contact_wechat || ''
           }))
         }
       }
 
       // 商家还没接单之前买家可以自己取消；接单之后就得直接找商家谈了，
-      // 因为那时候钱可能已经转过去、菜可能已经在做了
+      // 因为那时候商家可能已经开始准备了
       case 'cancel': {
         const doc = await db.collection('food_orders').doc(event.orderId).get()
         const order = doc.data

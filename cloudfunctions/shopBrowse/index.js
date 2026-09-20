@@ -3,10 +3,10 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 买家侧读店铺、菜单和配送方案。
+// 买家侧读店铺、商品和配送方案。
 //
 // 走云函数而不是让小程序端直接查库，是因为 shops / shop_items 的集合权限
-// 设成了「所有用户不可读写」——这样商家的收款方式、联系方式这些字段就不会
+// 设成了「所有用户不可读写」——这样商家的联系方式这些字段就不会
 // 被人绕过界面直接拖库。买家需要看到的字段在这里显式挑出来。
 
 // 批次要按明尼苏达当地时间判断截没截单。这段和 deliveryManage / buyerOrders
@@ -41,22 +41,34 @@ function addDays(dateStr, n) {
   return d.toISOString().slice(0, 10)
 }
 
+// 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开——
+// 买家看不到一个已经过去的场次，哪怕商家还没回来改。
+//
+// key 用 日期#送达时间：同一支配送队名下的商家天然共用一个 key，
+// 配送队工作台按它分组，正好是「这一趟」。
+//
+// isToday / isTomorrow 给买家端拼文案用——场次可能在好几天后，
+// 光靠「今天/明天」两个词表达不了。
 function expandBatches(batches) {
   const now = nowInTZ()
+  const tomorrow = addDays(now.date, 1)
   return (batches || []).map(b => {
+    if (!b.date) return null
     const cutoffMin = toMinutes(b.cutoff)
-    const isToday = now.minutes < cutoffMin
-    const date = isToday ? now.date : addDays(now.date, 1)
+    if (b.date < now.date) return null
+    if (b.date === now.date && now.minutes >= cutoffMin) return null
+    const isToday = b.date === now.date
     return {
-      key: date + '#' + b.label,
-      label: b.label,
-      date: date,
+      key: b.date + '#' + b.deliver_time,
+      label: '',
+      date: b.date,
       cutoff: b.cutoff,
       deliver_time: b.deliver_time,
       isToday: isToday,
+      isTomorrow: b.date === tomorrow,
       minutesLeft: isToday ? cutoffMin - now.minutes : null
     }
-  })
+  }).filter(Boolean)
 }
 
 // 这家店的配送方案由谁提供：外包就用配送队的，否则用店铺自己的。
@@ -85,10 +97,11 @@ async function resolvePlan(shop) {
   }
 }
 
-// 只有审核通过、且不是「打烊」状态的店才出现在列表里
+// 只列商家自己开着的店。被举报下架时 handleReport 会把 status 强制改成
+// closed，所以这一条同时挡掉了下架的店，不需要再单独查 takedown。
 async function listShops() {
   const res = await db.collection('shops')
-    .where({ audit_status: 'approved', status: _.in(['open', 'paused']) })
+    .where({ status: _.in(['open', 'paused']) })
     .limit(100)
     .get()
 
@@ -117,7 +130,6 @@ exports.main = async (event) => {
             description: s.description,
             delivery_mode: s.delivery_mode || 'self',
             min_order: s.min_order,
-            delivery_area: s.delivery_area,
             business_hours: s.business_hours,
             status: s.status
           }))
@@ -129,7 +141,7 @@ exports.main = async (event) => {
 
         const doc = await db.collection('shops').doc(event.shopId).get()
         const shop = doc.data
-        if (!shop || shop.audit_status !== 'approved' || shop.status === 'closed') {
+        if (!shop || shop.status === 'closed') {
           return { success: false, message: '店铺不存在或已打烊' }
         }
 
@@ -157,13 +169,11 @@ exports.main = async (event) => {
             description: shop.description,
             delivery_mode: shop.delivery_mode || 'self',
             min_order: shop.min_order,
-            delivery_area: shop.delivery_area,
             business_hours: shop.business_hours,
-            payment_note: shop.payment_note,     // 买家要按这个付款
             contact_wechat: shop.contact_wechat,
             status: shop.status
           },
-          // 售罄的菜也返回，买家端灰掉展示，不然商家会被问「那道菜呢」
+          // 售罄的商品也返回，买家端灰掉展示，不然商家会被问「那件呢」
           items: itemsRes.data.map(i => ({
             _id: i._id,
             name: i.name,
@@ -177,12 +187,12 @@ exports.main = async (event) => {
         }
       }
 
-      // 结算页只要方案，不需要整份菜单
+      // 结算页只要方案，不需要整份商品列表
       case 'plan': {
         if (!event.shopId) return { success: false, message: '缺少店铺 ID' }
         const doc = await db.collection('shops').doc(event.shopId).get()
         const shop = doc.data
-        if (!shop || shop.audit_status !== 'approved') {
+        if (!shop || shop.status === 'closed') {
           return { success: false, message: '店铺不存在' }
         }
         const plan = await resolvePlan(shop)

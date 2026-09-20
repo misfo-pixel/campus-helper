@@ -1,22 +1,19 @@
 <view class="page-container">
   <view class="menu-head">
-    <view class="page-title" style="margin-bottom: 0;">菜单管理</view>
-    <button class="btn-primary btn-sm" bindtap="addItem">+ 添加菜品</button>
+    <view class="page-title" style="margin-bottom: 0;">商品管理</view>
+    <button class="btn-primary btn-sm" bindtap="addItem">+ 添加商品</button>
   </view>
 
   <view wx:if="{{!loading && groups.length === 0}}" class="text-light empty">
-    还没有菜品，点右上角添加第一道菜
+    还没有商品，点右上角添加第一件
   </view>
-
-  <!-- 老外卖模块的菜单迁移入口，导完就用不到了 -->
-  <view wx:if="{{!loading}}" class="import-link" bindtap="importLegacy">从旧外卖菜单导入 ›</view>
 
   <block wx:for="{{groups}}" wx:key="category">
     <view class="section-title">{{item.category}}</view>
 
     <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="_id" class="card dish">
       <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" class="dish-img" />
-      <view wx:else class="dish-img dish-img-fallback">🍽</view>
+      <view wx:else class="dish-img dish-img-fallback">📦</view>
 
       <view class="dish-meta">
         <view class="dish-name {{dish.available ? '' : 'dish-off'}}">{{dish.name}}</view>

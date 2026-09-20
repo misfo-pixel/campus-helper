@@ -93,9 +93,3 @@
   font-size: 36rpx;
 }
 
-.field-hint {
-  font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 16rpx;
-}

@@ -1,9 +1,21 @@
 <!--pages/itemdetail/itemdetail.wxml-->
 <view wx:if="{{item}}">
+  <!-- 分享卡片会在群里躺很久，点开时东西可能早就卖了。不放这一条的话，
+       页面跟还开着时一模一样，就会有人白白去加发布者微信。放在最顶上，进来第一眼就看到。 -->
+  <view wx:if="{{closed}}" class="closed-banner">
+    <view class="closed-banner-label">{{closed}}</view>
+    <view class="closed-banner-hint">{{reviewHint || (isOwner ? '别人点开时也会先看到这一条' : '不用再联系发布者了')}}</view>
+  </view>
+
   <!-- 图片轮播（多张图可滑动） -->
-  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 600rpx;" indicator-dots circular>
+  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 600rpx;" indicator-dots circular bindchange="onSwiperChange">
     <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
-      <image src="{{img}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+      <!-- swiper-item 是 swiper 自己绝对定位的，不能直接改它的 position，所以再包一层 -->
+      <view style="position: relative; width: 100%; height: 100%; background: #f0f0f0;">
+        <!-- 首张先垫一层缩略图：列表页刚显示过它，多半还在缓存里，一进来就有图；原图下完盖在上面 -->
+        <image wx:if="{{index === 0 && item.thumb}}" src="{{item.thumb}}" mode="aspectFill" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></image>
+        <image wx:if="{{index <= shownUpTo}}" src="{{img}}" mode="aspectFill" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></image>
+      </view>
     </swiper-item>
   </swiper>
 
@@ -11,19 +23,27 @@
     <view style="font-size: 40rpx; font-weight: bold;">{{item.title}}</view>
     <view class="price" style="font-size: 44rpx; margin: 16rpx 0;">${{item.price}}</view>
 
-    <view class="section-title">物品描述</view>
-    <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+    <!-- 从列表秒开时手上只有列表那几个字段，下面这些（描述、名片、按钮…）等 getDetail 回来再画。
+         不能拿不全的数据先画：比如列表没查「带不带家具」，先画出来就成了错误的「不带家具」 -->
+    <block wx:if="{{!partial}}">
 
-    <view class="text-light" style="margin-top: 32rpx;">下架日期：{{item.expire_date}}</view>
+    <!-- 描述和下架日期都是选填，没填就整行不显示，免得留一个空标题 -->
+    <view wx:if="{{item.description}}">
+      <view class="section-title">物品描述</view>
+      <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+    </view>
 
-    <!-- 卖家名片 -->
-    <contact-card avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.seller_wechat}}"
+    <view wx:if="{{item.expire_date}}" class="text-light" style="margin-top: 32rpx;">下架日期：{{item.expire_date}}</view>
+
+    <!-- 卖家名片。已结束的帖子不给别人亮联系方式：横幅写着结束了，底下还摆着「复制微信号」，照样有人去加。
+         发布者自己看的是自己的名片，不受影响。 -->
+    <contact-card wx:if="{{!closed || isOwner}}" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.seller_wechat}}"
       link-to-store="{{true}}" bindviewstore="goToSellerStore" />
 
-    <button wx:if="{{canDelete}}" bindtap="deleteItem" style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">删除商品</button>
+    <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger" style="margin-top: 24rpx;">删除商品</button>
 
-    <button wx:if="{{isOwner}}" bindtap="markSold"
-    style="margin-top: 24rpx; background: #fff; color: #C8102E; border: 1rpx solid #C8102E;">标记已售</button>
+    <!-- 已经结束的（包括过期下架的）不用再标 -->
+    <button wx:if="{{isOwner && !closed}}" bindtap="markSold" class="btn-danger" style="margin-top: 24rpx;">标记已售</button>
 
     <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
@@ -32,6 +52,8 @@
     <disclaimer-bar type="trade" />
 
     <report-bar target-type="item" target-id="{{item._id}}" />
+    </block>
+    <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
   </view>
 </view>
 

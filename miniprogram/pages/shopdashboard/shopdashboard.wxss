@@ -104,8 +104,8 @@
 }
 
 .status-paused {
-  background: #fff4e0;
-  color: #b8860b;
+  background: #f2f2f2;
+  color: #888;
 }
 
 .status-closed {

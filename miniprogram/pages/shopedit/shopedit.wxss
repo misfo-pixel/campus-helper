@@ -25,11 +25,11 @@
   font-size: 28rpx;
 }
 
-.field-hint {
-  font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 16rpx;
+/* 表单输入框。正文 30rpx，比 28rpx 的小标题大一点没关系——
+   小标题是加粗的，字重拉开了层级，不用再靠字号压它。 */
+.form-card {
+  padding: 24rpx;
+  font-size: 30rpx;
 }
 
 .reject-box {

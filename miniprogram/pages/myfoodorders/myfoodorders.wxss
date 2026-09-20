@@ -124,13 +124,6 @@
   flex-shrink: 0;
 }
 
-.pay-warn {
-  font-size: 22rpx;
-  color: #8a8a8a;
-  margin-top: 12rpx;
-  line-height: 1.6;
-}
-
 .order-cancel {
   font-size: 26rpx;
   color: #999;
@@ -149,4 +142,13 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 20rpx;
+}
+
+/* 待付款时列表顶部的一条免责提示。原来挂在每张订单卡里，
+   有几笔待付款就重复几遍，提上来只说一次 */
+.pay-warn-top {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+  margin-bottom: 20rpx;
 }

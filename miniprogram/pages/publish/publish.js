@@ -1,7 +1,7 @@
 const { markStale } = require('../../utils/refresh.js')
 // pages/publish.js
-const { fetchMyProfile } = require('../../utils/user.js')
-const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { myProfile } = require('../../utils/user.js')
+const { createUploader, requestReview } = require('../../utils/publish.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
 
 const CFG = KINDS.item
@@ -22,13 +22,21 @@ Page({
 
   // 微信号自动填个人资料里存的那个，没存过就留空手填
   onLoad: function () {
-    fetchMyProfile().then(profile => {
+    // 选图即上传：选完就在后台传，点发布时多半已经传完（见 utils/publish.js）
+    this.uploader = createUploader('secondhand')
+    // 读缓存，不再多打一次 login（见 utils/user.js）
+    myProfile().then(profile => {
       if (profile.wechat && !this.data.seller_wechat) {
         this.setData({ seller_wechat: profile.wechat, wechatAutoFilled: true })
       }
     }).catch(err => {
       console.error('读取微信号失败：', err)
     })
+  },
+
+  // 没发布就走了，后台已经传上去的图要清掉。发布成功的已经 commit 过，这里什么都不删
+  onUnload: function () {
+    this.uploader.discard()
   },
 
   onTapKind: function (e) {
@@ -46,6 +54,14 @@ Page({
     this.setData({ expire_date: e.detail.value })
   },
 
+  // 删掉一张已选的图
+  removeImage: function (e) {
+    const images = this.data.images.slice()
+    images.splice(e.currentTarget.dataset.index, 1)
+    this.setData({ images: images })
+    this.uploader.sync(images)   // 删掉的那张如果已经传上去了，顺手清掉
+  },
+
   // 选图片（可多选）
   chooseImages: function () {
     wx.chooseMedia({
@@ -57,8 +73,16 @@ Page({
         this.setData({
           images: this.data.images.concat(newImages)  // 追加到已有的
         })
+        this.uploader.sync(this.data.images)   // 马上开始后台上传
       }
     })
+  },
+
+  // 继续发下一件：清掉这件商品本身的内容。
+  // 卖/收、微信号、下架日期（多半就是离美日期）大概率跟上一件一样，留着不用重填
+  resetForm: function () {
+    this.setData({ images: [], title: '', price: '', description: '' })
+    wx.pageScrollTo({ scrollTop: 0, duration: 0 })
   },
 
   // 发布
@@ -76,48 +100,49 @@ Page({
       return
     }
 
-    wx.showLoading({ title: '发布中...' })
-
-    // 文字先过内容安全检测。放在上传之前，违规的话能省掉传图那一步
-    if (!(await ensureContentOk({ texts: [title, description, seller_wechat] }))) return
+    wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
 
     try {
-      // 1. 先把所有图片上传到云存储，收集它们的 fileID
-      const imageUrls = []
-      for (let i = 0; i < images.length; i++) {
-        const uploadRes = await wx.cloud.uploadFile({
-          cloudPath: 'secondhand/' + Date.now() + '_' + i + '.jpg',
-          filePath: images[i]
-        })
-        imageUrls.push(uploadRes.fileID)
-      }
+      // 1. 拿图片的 fileID。选图时就开始在后台传了，这里多半直接拿到；没传完的等一等，失败过的重传
+      const up = await this.uploader.collect(images)
 
-      // 2. 图片也要过检测，没过就把刚传上去的清掉
-      if (!(await ensureContentOk({ fileIDs: imageUrls }))) {
-        await deleteCloudFiles(imageUrls)
-        return
-      }
-
-      // 3. 把商品信息写进数据库
+      // 2. 以「审核中」写库。市场页只查 on_sale，审核通过之前别人看不到
       const db = wx.cloud.database()
-      await db.collection('secondhand_items').add({
+      const added = await db.collection('secondhand_items').add({
         data: {
           title: title,
           price: Number(price),
           description: description,
-          images: imageUrls,       // 存的是所有图片地址的数组
+          images: up.images,       // 存的是所有图片地址的数组
+          thumb: up.thumb,         // 列表页只下载这张小图
           seller_wechat: seller_wechat,
           expire_date: expire_date,
           kind: this.data.kind,     // sell / want，决定它出现在市场页的哪一面
-          status: 'on_sale',
+          status: 'reviewing',
           created_at: new Date()
         }
       })
+      this.uploader.commit()   // 图已经归这条帖子了，离开页面时别当成没用的删掉
+
+      // 3. 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
+      requestReview('item', added._id, title)
 
       wx.hideLoading()
       markStale('item')   // 列表页返回时会看到这条新发布的
-      wx.showToast({ title: '发布成功！', icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 1500)  // 发布后返回上一页
+      // 搬家清仓常常一次要发好几件，问一句，省得每件都退回列表再点进来
+      wx.showModal({
+        title: '已提交，审核通过后自动公开',
+        content: this.data.demand ? '还有别的想收吗？' : '还有别的闲置要一起发吗？',
+        confirmText: '继续发布',
+        cancelText: '返回',
+        success: (res) => {
+          if (res.confirm) {
+            this.resetForm()
+          } else {
+            wx.navigateBack()
+          }
+        }
+      })
 
     } catch (err) {
       wx.hideLoading()

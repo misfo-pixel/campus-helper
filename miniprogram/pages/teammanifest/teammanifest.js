@@ -1,7 +1,7 @@
 // 汇总清单：一趟活的全部信息。
 //
-// 上半是取餐清单——直接念给商家报单，不用一单一单翻。
-// 下半是交付清单，按取餐点分组：拉到点上，照着名字把餐发给来取的人。
+// 上半是取货清单——直接念给商家报单，不用一单一单翻。
+// 下半是交付清单，按服务地点分组：到了点上，照着名字把东西发给来取的人。
 //
 // 这两张表是老饭搭子汇总页的核心，批次配送要的正是它，直接迁过来。
 // （老页面 pages/summary 已删除，实现在 git 历史里。）
@@ -65,7 +65,7 @@ Page({
     })
   },
 
-  // 在店里取到餐了：整批一次性标记，同时商家那边自动变成「配送中」
+  // 在商家取到货了：整批一次性标记，同时商家那边自动变成「配送中」
   markPicked: function () {
     wx.showLoading({ title: '处理中', mask: true })
     wx.cloud.callFunction({
@@ -75,14 +75,14 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: '已标记取餐', icon: 'success' })
+        wx.showToast({ title: '已标记取货', icon: 'success' })
         this.load()
       } else {
         wx.showToast({ title: r.message || '操作失败', icon: 'none' })
       }
     }).catch(err => {
       wx.hideLoading()
-      console.error('标记取餐失败：', err)
+      console.error('标记取货失败：', err)
       wx.showToast({ title: '操作失败', icon: 'none' })
     })
   },

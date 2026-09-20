@@ -1,8 +1,21 @@
-const { KINDS, isDemand } = require('../../utils/kinds.js')
+const { KINDS, isDemand, closedLabel, openLabel, rentText } = require('../../utils/kinds.js')
+const { stashFrom } = require('../../utils/preview.js')
+const { retryStuckReviews } = require('../../utils/publish.js')
 const { shouldReload } = require('../../utils/refresh.js')
+const { readCache, writeCache } = require('../../utils/listCache.js')
 
 const CFG = KINDS.sublet
 const PAGE_SIZE = 20
+const CACHE_KEY = 'mySublets.v1.'   // 按页签分开存第一页，先显示再刷新（见 utils/listCache.js）
+
+// 库里的 status 是英文枚举（on_sale 之类），原样显示用户看不懂，这里换成中文。
+// 缓存里存原始字段，派生字段每次现算，缓存和新数据走同一条路
+function decorate(list) {
+  return list.map(it => Object.assign({}, it, {
+      statusText: closedLabel('sublet', it) || openLabel('sublet', it),
+      rentText: rentText(it)
+  }))
+}
 const app = getApp()
 
 Page({
@@ -42,13 +55,17 @@ Page({
     this.reload()
   },
 
+  // 有缓存就先摆上去、不出「加载中」，fetch(0) 回来后整页替换
   reload: function () {
-    this.setData({ items: [], loading: true, loadingMore: false, noMore: false })
+    const cached = readCache(CACHE_KEY + this.data.kind)
+    this.revalidating = !!cached
+    this.setData({ items: cached ? decorate(cached) : [], loading: !cached, loadingMore: false, noMore: false })
     this.fetch(0)
   },
 
   onReachBottom: function () {
-    if (this.data.loading || this.data.loadingMore || this.data.noMore) return
+    // 后台刷新还没回来时不翻页：手里的第一页是缓存，拿它的条数去 skip 会跟新数据错位
+    if (this.data.loading || this.data.loadingMore || this.data.noMore || this.revalidating) return
     this.setData({ loadingMore: true })
     this.fetch(this.data.items.length)
   },
@@ -72,8 +89,18 @@ Page({
         .get()
         .then(res => {
           if (seq !== this.seq) return
+          // 卡在审核中的（送审请求没发出去之类）补审一次，没通过会弹窗
+          retryStuckReviews('sublet', res.data)
+          if (skip === 0) {
+            // 原来从没给 loadedAt 赋过值，onShow 里 shouldReload 永远以为「从没加载过」，
+            // 每次从详情页返回都清空重拉，滑到第几页都得从头来（市场页修过同一个 bug）
+            this.loadedAt = Date.now()
+            this.revalidating = false
+            writeCache(CACHE_KEY + kind, res.data)
+          }
+          const rows = decorate(res.data)
           this.setData({
-            items: skip === 0 ? res.data : this.data.items.concat(res.data),
+            items: skip === 0 ? rows : this.data.items.concat(rows),
             loading: false,
             loadingMore: false,
             noMore: res.data.length < PAGE_SIZE
@@ -82,12 +109,17 @@ Page({
     }).catch(err => {
       console.error('加载失败：', err)
       if (seq !== this.seq) return
+      if (skip === 0) {
+        this.loadedAt = Date.now()
+        this.revalidating = false   // 网络挂了，缓存留在屏幕上继续用
+      }
       this.setData({ loading: false, loadingMore: false })
     })
   },
 
   goToDetail: function (e) {
     const id = e.currentTarget.dataset.id
+    stashFrom('sublet', this.data.items, id)   // 详情页先拿它画首屏，不白屏等网络
     wx.navigateTo({ url: '/pages/subletdetail/subletdetail?id=' + id })
   }
 })

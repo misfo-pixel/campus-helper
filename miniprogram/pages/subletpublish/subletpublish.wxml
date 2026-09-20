@@ -1,3 +1,20 @@
+<!-- 卧室/卫生间两个下拉。转租时放在「基本信息」里必填，求租时放在「详细信息」里选填，两处共用这一份。
+     求租的下拉最前面多一个「不限」，下标怎么错开见 subletpublish.js 的 pickedIndex -->
+<template name="rooms">
+  <view style="display: flex; gap: 20rpx;">
+    <picker mode="selector" range="{{demand ? bedroomsAny : bedrooms}}" value="{{demand ? (bedroomIndex === null ? 0 : bedroomIndex + 1) : bedroomIndex}}" bindchange="onBedroomChange" style="flex: 1;">
+      <view class="card" style="padding: 24rpx; color: {{bedroomIndex === null ? '#999' : '#000'}};">
+        {{bedroomIndex === null ? (demand ? '卧室数：不限' : '卧室数') : (bedrooms[bedroomIndex] === 'Studio' ? 'Studio' : bedrooms[bedroomIndex] + ' 室')}}
+      </view>
+    </picker>
+    <picker mode="selector" range="{{demand ? bathroomsAny : bathrooms}}" value="{{demand ? (bathroomIndex === null ? 0 : bathroomIndex + 1) : bathroomIndex}}" bindchange="onBathroomChange" style="flex: 1;">
+      <view class="card" style="padding: 24rpx; color: {{bathroomIndex === null ? '#999' : '#000'}};">
+        {{bathroomIndex === null ? (demand ? '卫生间数：不限' : '卫生间数') : bathrooms[bathroomIndex] + ' 卫'}}
+      </view>
+    </picker>
+  </view>
+</template>
+
 <view class="page-container">
   <view class="page-title">{{demand ? '发布求租 🔎' : '发布你的转租 🏠'}}</view>
 
@@ -10,26 +27,23 @@
   </view>
 
   <view class="section-title">基本信息（必填）</view>
-  <input placeholder="{{demand ? '求租标题（如 求 Dinkytown 单间）' : '房源标题（如 Radius 单间转租）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
-  <input placeholder="{{demand ? '预算月租（美元）' : '月租（美元）'}}" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="card" style="padding: 24rpx;" />
-  <input placeholder="{{demand ? '想找的区域（如 Dinkytown 附近）' : '详细地址 / 公寓名'}}" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
-  <input placeholder="{{demand ? '你的微信号（房东联系用）' : '你的微信号（租客联系用）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
-  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号，可直接改</view>
-
-  <view style="display: flex; gap: 20rpx;">
-    <picker mode="selector" range="{{bedrooms}}" value="{{bedroomIndex}}" bindchange="onBedroomChange" style="flex: 1;">
-      <view class="card" style="padding: 24rpx; color: {{bedroomIndex === null ? '#999' : '#000'}};">
-        {{bedroomIndex === null ? '卧室数' : (bedrooms[bedroomIndex] === 'Studio' ? 'Studio' : bedrooms[bedroomIndex] + ' 室')}}
-      </view>
-    </picker>
-    <picker mode="selector" range="{{bathrooms}}" value="{{bathroomIndex}}" bindchange="onBathroomChange" style="flex: 1;">
-      <view class="card" style="padding: 24rpx; color: {{bathroomIndex === null ? '#999' : '#000'}};">
-        {{bathroomIndex === null ? '卫生间数' : bathrooms[bathroomIndex] + ' 卫'}}
-      </view>
-    </picker>
+  <input placeholder="{{demand ? '求租标题（如 找3-5月学校附近转租）' : '房源标题（如 Radius 单间转租）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
+  <input wx:if="{{!demand}}" placeholder="月租（美元）" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="card" style="padding: 24rpx;" />
+  <!-- 找房的人预算往往说不死一个数，给个区间 -->
+  <view wx:else style="display: flex; gap: 20rpx;">
+    <input placeholder="最低月租（美元）" type="digit" value="{{rent_min}}" bindinput="onInput" data-field="rent_min" class="card" style="flex: 1; min-width: 0; padding: 24rpx;" />
+    <input placeholder="最高月租（美元）" type="digit" value="{{rent_max}}" bindinput="onInput" data-field="rent_max" class="card" style="flex: 1; min-width: 0; padding: 24rpx;" />
   </view>
+  <input wx:if="{{!demand}}" placeholder="详细地址 / 公寓名" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{demand ? '你的微信号（房东联系用）' : '你的微信号（租客联系用）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
+  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号</view>
 
-  <view class="section-title">（⚠️ 起租日到将自动下架）</view>
+  <block wx:if="{{!demand}}">
+    <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex}}" />
+  </block>
+
+  <view class="section-title">租期</view>
+  <view class="field-hint">租期结束日到了，房源会自动下架。</view>
   <picker mode="date" value="{{start_date}}" bindchange="onStartDateChange">
     <view class="card" style="padding: 24rpx; color: {{start_date ? '#000' : '#999'}};">
       {{start_date || '起租日期（可入住时间）'}}
@@ -43,8 +57,20 @@
 
   <view class="section-title">详细信息（选填）</view>
 
+  <!-- 找房的人常常是「学校附近都行」，区域和房型不强求，放到这一节 -->
+  <block wx:if="{{demand}}">
+    <input placeholder="想找的区域（如 Dinkytown 附近）" value="{{address}}" bindinput="onInput" data-field="address" class="card" style="padding: 24rpx;" />
+    <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex}}" />
+  </block>
+
   <view style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
-    <image wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill" style="width: 160rpx; height: 160rpx; border-radius: 12rpx;"></image>
+    <view wx:for="{{images}}" wx:key="*this" style="position: relative; width: 160rpx; height: 160rpx;">
+      <image src="{{item}}" mode="aspectFill" style="width: 160rpx; height: 160rpx; border-radius: 12rpx;"></image>
+      <!-- 右上角删除：外层透明 padding 把点击区域放大，圆点本身只画 40rpx -->
+      <view catchtap="removeImage" data-index="{{index}}" style="position: absolute; top: -20rpx; right: -20rpx; padding: 12rpx;">
+        <view style="width: 40rpx; height: 40rpx; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 30rpx; line-height: 40rpx; text-align: center;">×</view>
+      </view>
+    </view>
     <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 160rpx; height: 160rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
   </view>
 
@@ -54,8 +80,8 @@
     <switch checked="{{furnished}}" bindchange="onFurnishedChange" color="#7A0019" />
   </view>
 
-  <input placeholder="每月水电费（美元，选填）" type="digit" value="{{utilities}}" bindinput="onInput" data-field="utilities" class="card" style="padding: 24rpx;" />
-  <input placeholder="押金（美元，选填）" type="digit" value="{{deposit}}" bindinput="onInput" data-field="deposit" class="card" style="padding: 24rpx;" />
+  <input placeholder="每月水电费（美元）" type="digit" value="{{utilities}}" bindinput="onInput" data-field="utilities" class="card" style="padding: 24rpx;" />
+  <input placeholder="押金（美元）" type="digit" value="{{deposit}}" bindinput="onInput" data-field="deposit" class="card" style="padding: 24rpx;" />
   <textarea placeholder="室友情况（几人合租、性别、作息等）" value="{{roommate_info}}" bindinput="onInput" data-field="roommate_info" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
   <textarea placeholder="其他说明" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
 

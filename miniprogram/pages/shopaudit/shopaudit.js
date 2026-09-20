@@ -1,6 +1,10 @@
-// 商家入驻审核（超管）。
-// 整个外卖模块只有这一处需要管理员，而且一家店一辈子审一次。
-// 日常订单流转完全不经过这里。
+// 配送队核对（超管 / 饭搭子管理员）。
+//
+// 商家那一半已经拆掉了：平台不做事前审核，商家提交即开店，违规走
+// 「用户举报 → 人工复核 → 强制下架」那条线（submitReport / handleReport）。
+//
+// 配送队留着核对，因为它不是内容问题：队伍会拿到别人的订单、买家的联系方式，
+// 还要跟商家对账收钱。谁能站到这个位置上，得有一道门。
 
 function formatTime(value) {
   if (!value) return ''
@@ -12,17 +16,9 @@ function formatTime(value) {
 
 Page({
   data: {
-    kind: 'shop',      // shop 商家 | team 配送队
     status: 'pending',
-    shops: [],
     teams: [],
     loading: true
-  },
-
-  switchKind: function (e) {
-    const kind = e.currentTarget.dataset.kind
-    if (kind === this.data.kind) return
-    this.setData({ kind: kind, shops: [], teams: [], status: 'pending', loading: true }, () => this.load())
   },
 
   onShow: function () {
@@ -32,14 +28,10 @@ Page({
   switchStatus: function (e) {
     const status = e.currentTarget.dataset.status
     if (status === this.data.status) return
-    this.setData({ status: status, shops: [], teams: [], loading: true }, () => this.load())
+    this.setData({ status: status, teams: [], loading: true }, () => this.load())
   },
 
   load: function () {
-    return this.data.kind === 'team' ? this.loadTeams() : this.loadShops()
-  },
-
-  loadTeams: function () {
     wx.cloud.callFunction({
       name: 'deliveryManage',
       data: { action: 'listForAudit', status: this.data.status }
@@ -94,75 +86,6 @@ Page({
     }).catch(err => {
       wx.hideLoading()
       console.error('审核队伍失败：', err)
-      wx.showToast({ title: '处理失败', icon: 'none' })
-    })
-  },
-
-  loadShops: function () {
-    wx.cloud.callFunction({
-      name: 'auditShop',
-      data: { action: 'list', status: this.data.status }
-    }).then(res => {
-      const r = (res && res.result) || {}
-      if (!r.success) {
-        this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
-        return
-      }
-      const shops = (r.shops || []).map(s => Object.assign({}, s, {
-        timeText: formatTime(s.created_at)
-      }))
-      this.setData({ shops: shops, loading: false })
-    }).catch(err => {
-      console.error('读取待审店铺失败：', err)
-      this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
-    })
-  },
-
-  approve: function (e) {
-    const id = e.currentTarget.dataset.id
-    const name = e.currentTarget.dataset.name
-    wx.showModal({
-      title: '核对通过',
-      content: '确认「' + name + '」填写的信息完整、看起来是真实的？通过后该店即可营业。\n\n' +
-               '这一步只是核对信息填得全不全，不是对该商家的经营资质、食品安全或菜品质量做任何检查或认可。' +
-               '这些由商家自己负责，他们在入驻时已书面承诺。',
-      success: res => {
-        if (res.confirm) this.handle('approve', id)
-      }
-    })
-  },
-
-  reject: function (e) {
-    const id = e.currentTarget.dataset.id
-    wx.showModal({
-      title: '驳回',
-      editable: true,
-      placeholderText: '填写驳回原因，商家能看到',
-      success: res => {
-        if (res.confirm) this.handle('reject', id, res.content || '')
-      }
-    })
-  },
-
-  handle: function (action, shopId, reason) {
-    wx.showLoading({ title: '处理中', mask: true })
-    wx.cloud.callFunction({
-      name: 'auditShop',
-      data: { action: action, shopId: shopId, reason: reason || '' }
-    }).then(res => {
-      wx.hideLoading()
-      const r = (res && res.result) || {}
-      if (r.success) {
-        wx.showToast({ title: '已处理', icon: 'success' })
-        this.load()
-      } else {
-        wx.showToast({ title: r.message || '处理失败', icon: 'none' })
-      }
-    }).catch(err => {
-      wx.hideLoading()
-      console.error('审核失败：', err)
       wx.showToast({ title: '处理失败', icon: 'none' })
     })
   }

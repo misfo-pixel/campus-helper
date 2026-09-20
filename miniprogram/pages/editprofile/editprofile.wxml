@@ -15,7 +15,6 @@
 
   <view class="section-title">微信号</view>
   <input placeholder="填你的微信号（发布时自动填入）" value="{{wechat}}" bindinput="onInput" data-field="wechat" class="card" style="padding: 24rpx;" />
-  <view class="text-light" style="margin-top: 12rpx;">存一次，以后发布二手/转租/委托时自动填好联系方式</view>
 
   <button class="btn-primary" bindtap="save" style="margin-top: 40rpx;">保存</button>
 </view>

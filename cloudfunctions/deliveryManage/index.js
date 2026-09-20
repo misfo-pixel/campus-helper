@@ -2,71 +2,22 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
-// 配送域：配送队管理 + 平台侧的单量统计。
+// 配送域：配送队管理 + 队伍审核。
 //
-// 定价不归平台。配送方案（取餐点 + 批次时间）属于实际执行配送的那一方：
+// 定价不归平台。配送方案（服务地点 + 服务时间）属于实际执行配送的那一方：
 //   商家自送   → 存在 shops 上，商家在店铺设置里自己填
 //   外包给队伍 → 存在 delivery_teams 上，队长自己填
 //
-// 取餐点和批次必须同属一方——一趟配送就是「这些点、这个时间」，
-// 拆开会出现商家想 13:00 送但只有 12:00 班次可选的情况。
+// 服务地点和场次必须同属一方——一趟配送就是「这些点、这个时间」，
+// 拆开会出现商家想 13:00 送但只有 12:00 场次可选的情况。
 //
 // 钱也不经过平台：买家一次性付给商家，商家事后按对账结果结给配送队。
+//
+// 注意这里没有 expandBatches：把场次展开成「买家能选的具体日期」是买家侧的事，
+// 那份逻辑住在 shopBrowse 和 buyerOrders 里。这里曾经留过第三份拷贝，
+// 早就没人调用，却在场次模型改掉之后变成了一份会误导人的旧规则，所以删了。
 
-// 用户都在明尼苏达，批次的「今天还赶不赶得上」必须按当地时间算，
-// 不能用服务器时间（云函数跑在 UTC / 上海）。Intl 会自己处理夏令时。
-const TZ = 'America/Chicago'
-
-function nowInTZ() {
-  const parts = {}
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false
-  }).formatToParts(new Date()).forEach(p => {
-    if (p.type !== 'literal') parts[p.type] = p.value
-  })
-  let hour = Number(parts.hour)
-  if (hour === 24) hour = 0     // 某些 locale 的 hourCycle 会把午夜给成 24
-  return {
-    date: parts.year + '-' + parts.month + '-' + parts.day,
-    minutes: hour * 60 + Number(parts.minute)
-  }
-}
-
-function toMinutes(hhmm) {
-  const bits = String(hhmm).split(':')
-  return Number(bits[0]) * 60 + Number(bits[1])
-}
-
-function addDays(dateStr, n) {
-  // 取当天正午再加减，避免时区把日期推过头
-  const d = new Date(dateStr + 'T12:00:00Z')
-  d.setUTCDate(d.getUTCDate() + n)
-  return d.toISOString().slice(0, 10)
-}
-
-// 把批次模板展开成「买家现在能选的具体场次」。
-// 今天这班还没截单就是今天的，截了就顺延到明天。
-function expandBatches(batches) {
-  const now = nowInTZ()
-  return (batches || []).map(b => {
-    const cutoffMin = toMinutes(b.cutoff)
-    const isToday = now.minutes < cutoffMin
-    const date = isToday ? now.date : addDays(now.date, 1)
-    return {
-      key: date + '#' + b.label,
-      label: b.label,
-      date: date,
-      cutoff: b.cutoff,
-      deliver_time: b.deliver_time,
-      isToday: isToday,
-      minutesLeft: isToday ? cutoffMin - now.minutes : null
-    }
-  })
-}
-
-// 取餐点。不是送到公寓门口，而是买家到点自取——所以点位是可增删的，
+// 服务地点。不是送到公寓门口，而是买家到服务地点自取——所以点位是可增删的，
 // 一个校区一个点，哪天在 Link 公寓门口加一个也只是多一条记录。
 // name 会被订单引用，改名会让历史订单在汇总里单独归一组，尽量别改。
 function cleanPickupPoints(raw) {
@@ -74,23 +25,26 @@ function cleanPickupPoints(raw) {
   return raw
     .filter(p => p && String(p.name || '').trim())
     .map(p => ({
-      name: String(p.name).trim(),
-      address: String(p.address || '').trim(),
+      // 一句话就是服务地点（「Coffman 门口」），不再拆名称 + 具体位置两格。
+      // 它同时是订单里引用的标识符，所以限长，别让它长成一段描述。
+      name: String(p.name).trim().slice(0, 20),
       fee: Math.max(0, Number(p.fee) || 0)
     }))
 }
 
+// 场次每次只开一场，所以这里只认第一条。
+// 结构保持数组：将来要恢复「上午班 / 下午班」两趟只需放开界面，不用迁移数据。
+//
+// 过去的日期照样存下来——场次一过期就拒绝保存的话，队长连改收款方式都改不了。
+// 该不该给买家看，由 expandBatches 决定。
 function cleanBatches(raw) {
   if (!Array.isArray(raw)) return []
   const isTime = s => /^([01]\d|2[0-3]):[0-5]\d$/.test(s)
-  return raw
-    .filter(b => b && b.label && isTime(b.cutoff) && isTime(b.deliver_time))
-    .map(b => ({
-      label: String(b.label).trim(),
-      cutoff: b.cutoff,
-      deliver_time: b.deliver_time
-    }))
-    .sort((a, b) => toMinutes(a.cutoff) - toMinutes(b.cutoff))
+  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s)
+  const b = raw[0]
+  if (!b || !isDate(b.date) || !isTime(b.cutoff) || !isTime(b.deliver_time)) return []
+  if (b.deliver_time <= b.cutoff) return []
+  return [{ date: b.date, cutoff: b.cutoff, deliver_time: b.deliver_time }]
 }
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'   // 去掉了 0/O/1/I/l
@@ -345,73 +299,6 @@ exports.main = async (event) => {
           }
         })
         return { success: true, nickname: target.nickname || '未设昵称' }
-      }
-
-      // 调价要有依据。这里把最近 N 天的单量按批次和取餐点摊开，
-      // 让管理员看着真实数据改费率，而不是拍脑袋。
-      case 'stats': {
-        if (!(await canAudit(openid))) return { success: false, message: '没有权限' }
-
-        const days = Math.min(Math.max(Number(event.days) || 30, 7), 90)
-        const since = new Date(Date.now() - days * 24 * 3600 * 1000)
-
-        const res = await db.collection('food_orders')
-          .where({ created_at: db.command.gte(since) })
-          .limit(1000)
-          .get()
-
-        // 取消的单不算进量，否则会高估需求
-        const orders = res.data.filter(o => o.status !== 'cancelled')
-
-        const byBatch = {}
-        const byPoint = {}
-        const activeDates = {}
-
-        orders.forEach(o => {
-          const b = o.batch_label || '未知批次'
-          if (!byBatch[b]) byBatch[b] = { label: b, count: 0, dates: {} }
-          byBatch[b].count++
-          if (o.batch_date) byBatch[b].dates[o.batch_date] = true
-
-          const p = o.pickup_point || o.building || '未知取餐点'
-          if (!byPoint[p]) byPoint[p] = { name: p, count: 0, fee_sum: 0 }
-          byPoint[p].count++
-          byPoint[p].fee_sum += Number(o.delivery_fee_owed) || 0
-
-          if (o.batch_date) activeDates[o.batch_date] = true
-        })
-
-        const total = orders.length
-        const batches = Object.keys(byBatch).map(k => {
-          const b = byBatch[k]
-          const dayCount = Object.keys(b.dates).length || 1
-          return {
-            label: b.label,
-            count: b.count,
-            // 平均单量按「这个批次实际开过的天数」算，没开的天不该拉低平均
-            avg: Math.round(b.count / dayCount * 10) / 10,
-            days: dayCount
-          }
-        }).sort((a, b) => b.count - a.count)
-
-        const points = Object.keys(byPoint).map(k => {
-          const p = byPoint[k]
-          return {
-            name: p.name,
-            count: p.count,
-            share: total ? Math.round(p.count / total * 100) : 0,
-            fee_total: Math.round(p.fee_sum * 100) / 100
-          }
-        }).sort((a, b) => b.count - a.count)
-
-        return {
-          success: true,
-          days: days,
-          total: total,
-          activeDays: Object.keys(activeDates).length,
-          batches: batches,
-          points: points
-        }
       }
 
       // ---- 审核队伍 ----

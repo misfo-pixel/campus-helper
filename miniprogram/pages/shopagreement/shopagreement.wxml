@@ -1,11 +1,11 @@
 <view class="page-container agreement">
   <view class="agreement-intro">
-    本告知书适用于在「明尼助手」上开设店铺、发布菜品并接收订单的商家。提交入驻申请即表示你已完整阅读并同意以下全部条款。
+    本告知书适用于在「明尼助手」上开设店铺、发布商品并接收订单的商家。提交入驻申请即表示你已完整阅读并同意以下全部条款。
   </view>
 
   <view class="section-title">一、你与平台的关系</view>
   <view class="para">你是<text class="strong">独立的经营者</text>。你不是本平台的员工、雇员、代理人、承包商或合作方，平台与你之间不构成劳动关系、雇佣关系、合伙关系或代理关系。</view>
-  <view class="para">平台只提供信息展示和订单记录的技术服务：把你填写的店铺资料和菜品信息展示给用户，把用户的下单意向记录下来传达给你。平台不制作食品、不配送、不参与定价、不介入你和用户之间的交易，也不对你的经营行为作任何背书或担保。</view>
+  <view class="para">平台只提供信息展示和订单记录的技术服务：把你填写的店铺资料和商品信息展示给用户，把用户的下单意向记录下来传达给你。平台不制作食品、不配送、不参与定价、不介入你和用户之间的交易，也不对你的经营行为作任何背书或担保。</view>
   <view class="para">你自主决定卖什么、卖多少钱、什么时候营业、接不接某一单。平台不对你的经营作出任何指示。</view>
 
   <view class="section-title">二、经营资质</view>
@@ -16,16 +16,16 @@
   <view class="section-title">三、食品安全</view>
   <view class="para">食品安全的<text class="strong">全部责任由你承担</text>。这包括但不限于：原材料来源与新鲜度、制作过程的卫生条件、储存温度、餐具与包装的清洁、配送过程中的保温与防污染。</view>
   <view class="para">如果发生食物中毒、过敏反应、异物、变质等食品安全事件，由你直接对消费者负责。平台不承担任何责任，但会配合提供订单记录等必要信息。</view>
-  <view class="para">你应当在菜品信息中如实标注可能引发过敏的成分（如花生、坚果、乳制品、鸡蛋、大豆、小麦、海鲜等），并在用户询问时如实告知。隐瞒或错误标注过敏原可能造成严重后果，责任全部由你承担。</view>
+  <view class="para">你应当在商品信息中如实标注可能引发过敏的成分（如花生、坚果、乳制品、鸡蛋、大豆、小麦、海鲜等），并在用户询问时如实告知。隐瞒或错误标注过敏原可能造成严重后果，责任全部由你承担。</view>
 
-  <view class="section-title">四、菜品信息真实性</view>
-  <view class="para">你必须保证发布的菜品名称、图片、价格、分量、成分描述真实准确，不得使用与实物明显不符的图片，不得虚构原材料或产地。</view>
+  <view class="section-title">四、商品信息真实性</view>
+  <view class="para">你必须保证发布的商品名称、图片、价格、分量、成分描述真实准确，不得使用与实物明显不符的图片，不得虚构原材料或产地。</view>
   <view class="para">价格必须是用户实际需要支付的金额。如果有配送费、起送价、包装费，请在店铺设置中明确写出，不得在用户下单后临时加价。</view>
 
   <view class="section-title">五、禁止销售的商品</view>
   <view class="para">以下商品一律禁止在平台上销售：</view>
   <view class="list">
-    <view class="li">酒精饮料（含酒精的饮品、含酒菜品需明确标注且不得单独售酒）</view>
+    <view class="li">酒精饮料（含酒精的饮品、含酒商品需明确标注且不得单独售酒）</view>
     <view class="li">大麻及任何含大麻成分的食品，无论当地是否合法</view>
     <view class="li">烟草及电子烟</view>
     <view class="li">处方药、保健品、声称有疗效的食品</view>
@@ -35,9 +35,9 @@
   </view>
 
   <view class="section-title">六、收款、退款与纠纷</view>
-  <view class="para">平台<text class="strong">不提供支付功能，不经手任何资金</text>。用户按你在店铺设置中填写的收款方式，在平台外直接付款给你。</view>
+  <view class="para">平台<text class="strong">不提供支付功能，不经手任何资金</text>。平台只把用户的下单意向记录下来传达给你，交易和收款如何进行由你与用户自行约定，平台不展示、不引导任何收款方式。</view>
   <view class="para">收款、对账、退款、开具收据或发票，全部由你自行处理。平台不作担保、不做资金托管、不介入退款。</view>
-  <view class="para">如果用户与你就订单产生纠纷（未收到餐、餐品与描述不符、要求退款等），由你与用户自行协商解决。平台不是纠纷的当事方，也不承担居中裁决的义务，但在收到举报时有权依据本告知书对你的店铺采取措施。</view>
+  <view class="para">如果用户与你就订单产生纠纷（未收到商品、商品与描述不符、要求退款等），由你与用户自行协商解决。平台不是纠纷的当事方，也不承担居中裁决的义务，但在收到举报时有权依据本告知书对你的店铺采取措施。</view>
 
   <view class="section-title">七、税务</view>
   <view class="para">因你的经营收入产生的一切税务义务（包括所得税、销售税等）由你自行申报和缴纳。平台不代扣代缴、不提供税务凭证、不提供税务咨询。</view>
@@ -47,15 +47,15 @@
   <view class="para">如果你委托他人配送，你仍然对该次配送的结果向用户负责。</view>
 
   <view class="section-title">九、用户信息</view>
-  <view class="para">你会看到下单用户的昵称、联系方式和取餐信息。这些信息<text class="strong">只能用于履行该笔订单</text>。</view>
+  <view class="para">你会看到下单用户的昵称、联系方式和自取信息。这些信息<text class="strong">只能用于履行该笔订单</text>。</view>
   <view class="para">禁止将用户信息用于营销推广、转售、提供给第三方，或在订单完成后继续骚扰用户。违反的，平台将直接关停你的店铺，并保留追究责任的权利。</view>
 
   <view class="section-title">十、违规处理</view>
-  <view class="para">出现以下情况时，平台有权在不事先通知的情况下暂停或永久关闭你的店铺、下架你的菜品：</view>
+  <view class="para">出现以下情况时，平台有权在不事先通知的情况下暂停或永久关闭你的店铺、下架你的商品：</view>
   <view class="list">
     <view class="li">被用户举报且经核实存在食品安全问题</view>
     <view class="li">销售禁售商品</view>
-    <view class="li">菜品信息虚假、图文不符、虚假宣传</view>
+    <view class="li">商品信息虚假、图文不符、虚假宣传</view>
     <view class="li">收款后不发货、长期不处理订单</view>
     <view class="li">滥用用户个人信息</view>
     <view class="li">冒用他人身份或资质入驻</view>

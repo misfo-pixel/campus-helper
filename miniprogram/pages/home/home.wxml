@@ -32,20 +32,10 @@
 
   <!-- 校外服务（商家自营）：由 config.js 的 SHOP_MODULE_ENABLED 控制 -->
   <view wx:if="{{shopEnabled}}" bindtap="goToShops" class="card" style="display: flex; align-items: center; padding: 32rpx;">
-    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🍜</view>
+    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🏪</view>
     <view style="flex: 1;">
       <view style="font-size: 32rpx; font-weight: bold;">校外服务</view>
-      <view class="text-light">拼饭、拼团，校外更多选择</view>
-    </view>
-    <view style="color: #ccc; font-size: 40rpx;">›</view>
-  </view>
-
-  <!-- 外卖拼团：由 config.js 的 FOOD_MODULE_ENABLED 控制，提审期间整块不渲染 -->
-  <view wx:if="{{foodEnabled}}" bindtap="goToFood" class="card" style="display: flex; align-items: center; padding: 32rpx;">
-    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🍱</view>
-    <view style="flex: 1;">
-      <view style="font-size: 32rpx; font-weight: bold;">外卖拼团</view>
-      <view class="text-light">和同学一起点，配送费平摊</view>
+      <view class="text-light">校外商家入驻，更多选择</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>

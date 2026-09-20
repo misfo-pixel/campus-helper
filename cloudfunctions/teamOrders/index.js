@@ -3,11 +3,11 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 配送队的工作台：看批次、领活、取餐、送达。
+// 配送队的工作台：看批次、领活、取货、送达。
 //
 // 领活的单位是「批次 × 商家」——一个人跑一趟，去一家店把这一批取了，
-// 再拉到取餐点发给等着的人。按单领没意义（没人会为一单专门跑一趟），
-// 按整批领又不对（一批里可能有好几家店的餐）。
+// 再拉到服务地点发给等着的人。按单领没意义（没人会为一单专门跑一趟），
+// 按整批领又不对（一批里可能有好几家店的货）。
 //
 // 配送员推进状态时会顺带把商家那边的订单状态也改掉，
 // 这样商家外包出去之后就真的不用再管了 —— 这才叫外包。
@@ -83,7 +83,7 @@ exports.main = async (event) => {
         return { success: true, groups: groups, me: openid }
       }
 
-      // 汇总清单：给商家报单的取餐清单 + 按取餐点分组的交付清单。
+      // 汇总清单：给商家报单的取货清单 + 按服务地点分组的交付清单。
       // 这两张表就是老饭搭子 summary 页做的事，批次配送需要的正是它。
       case 'manifest': {
         const res = await db.collection('food_orders')
@@ -99,7 +99,7 @@ exports.main = async (event) => {
         const orders = res.data
         if (!orders.length) return { success: true, pickup: [], points: [], shopName: '' }
 
-        // 取餐清单：所有单的菜品按名字合并计数
+        // 取货清单：所有单的商品按名字合并计数
         const dishMap = {}
         orders.forEach(o => {
           (o.items || []).forEach(it => {
@@ -108,10 +108,10 @@ exports.main = async (event) => {
         })
         const pickup = Object.keys(dishMap).map(name => ({ name: name, count: dishMap[name] }))
 
-        // 交付清单：按取餐点分组。买家到点自取，配送员在点上按名字发餐。
+        // 交付清单：按服务地点分组。买家到服务地点自取，配送员在点上按名字分发。
         const pointMap = {}
         orders.forEach(o => {
-          const p = o.pickup_point || o.building || '未填取餐点'
+          const p = o.pickup_point || o.building || '未填服务地点'
           if (!pointMap[p]) pointMap[p] = { address: o.pickup_address || '', orders: [] }
           pointMap[p].orders.push({
             order_id: o._id,
@@ -171,7 +171,7 @@ exports.main = async (event) => {
         return { success: true, claimed: res.stats.updated }
       }
 
-      // 取到餐了：整批标记 picked，同时把商家那边推进到「配送中」
+      // 取到货了：整批标记 picked，同时把商家那边推进到「配送中」
       case 'markPicked': {
         const res = await db.collection('food_orders')
           .where({

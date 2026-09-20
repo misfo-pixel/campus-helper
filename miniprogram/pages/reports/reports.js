@@ -2,7 +2,7 @@
 // 有这个页面，提审时才说得出「举报有人工复核」这句话。
 // 权限在 getReports / handleReport 两个云函数里服务端校验，前端这层只是入口。
 
-const TYPE_TEXT = { item: '闲置', sublet: '转租', task: '委托' }
+const TYPE_TEXT = { item: '闲置', sublet: '转租', task: '委托', shop: '店铺' }
 
 function formatTime(value) {
   if (!value) return ''

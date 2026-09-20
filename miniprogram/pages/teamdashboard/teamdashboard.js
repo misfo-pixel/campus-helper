@@ -53,7 +53,7 @@ Page({
       this.setData({ groups: groups, me: r.me })
       if (done) done()
     }).catch(err => {
-      console.error('读取配送批次失败：', err)
+      console.error('读取服务时间失败：', err)
       if (done) done()
     })
   },

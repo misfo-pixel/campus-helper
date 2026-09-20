@@ -1,4 +1,4 @@
-const { fetchMyProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
+const { myProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
@@ -12,7 +12,8 @@ Page({
 
   onLoad: function () {
     // 读取当前用户已有信息，预填
-    fetchMyProfile().then(profile => {
+    // 读缓存，不再多打一次 login（见 utils/user.js）
+    myProfile().then(profile => {
       this.setData({
         nickname: profile.nickname,
         wechat: profile.wechat,

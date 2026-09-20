@@ -91,11 +91,26 @@
     color: var(--color-text);
     margin: 24rpx 0 16rpx;
   }
+  /* 分节标题下面还要再分小节时用这个。
+     比 section-title 小一档、同样加粗——层级靠字重和位置区分,
+     所以它比 30rpx 的表单正文小也不会读成正文。 */
+  .subsection-title {
+    font-size: 28rpx; font-weight: 700;
+    color: var(--color-text);
+    margin: 24rpx 0 12rpx;
+  }
   /* 小节标题前加栗色竖条,更有设计感 */
   .section-title-bar {
     padding-left: 20rpx;
     border-left: 8rpx solid var(--color-primary);
     line-height: 1.2;
+  }
+  /* 分节标题下面的小字说明 */
+  .field-hint {
+    font-size: 24rpx;
+    color: var(--color-text-light);
+    line-height: 1.6;
+    margin-bottom: 16rpx;
   }
   .text-light { color: var(--color-text-light); font-size: 26rpx; }
   .price { color: #C8102E; font-weight: 700; }
@@ -125,7 +140,27 @@
     border: 2rpx solid var(--color-primary);
   }
   .btn-outline:active { background: rgba(122, 0, 25, .05); }
-  
+
+  /* 详情页联系卡片下面的红框按钮：删除、标记已售 / 已租出 / 已完成。
+     尺寸照着卡片里的「复制微信号」做：80rpx 高、30rpx 字、600 字重、胶囊圆角。
+     宽度不用写：v2 基础库的 wx-button:not([size=mini]) 把普通按钮定死 184px，两个按钮天然一样宽。
+     联系卡片是组件，样式隔离拿不到这个 class，改尺寸时同步 components/contactCard/index.wxss 的 .contact-btn */
+  .btn-danger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80rpx;
+    padding: 0;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    line-height: normal;
+    background: #fff;
+    color: #C8102E;
+    border: 1rpx solid #C8102E;
+  }
+  .btn-danger:active { background: rgba(200, 16, 46, .05); }
+
   /* ==================== 徽标 / 标签 ==================== */
   
   .badge {
@@ -231,4 +266,28 @@
     color: var(--color-text-light);
     font-size: 24rpx;
     padding: 32rpx 0 8rpx;
+  }
+
+  /* ==================== 详情页：已结束横幅 ==================== */
+
+  /* 帖子卖掉 / 租出 / 完成 / 过期后，三个详情页最顶上那一整条。
+     用深灰，不用栗色也不用红：栗色的意思是「可以点」，红色是价钱和删除，
+     这里要说的是「这条不用管了」。 */
+  .closed-banner {
+    display: flex;
+    align-items: baseline;
+    padding: 24rpx 32rpx;
+    background: #4a4a4a;
+    color: #fff;
+  }
+  .closed-banner-label {
+    flex-shrink: 0;
+    font-size: 32rpx;
+    font-weight: 700;
+  }
+  .closed-banner-hint {
+    flex: 1;
+    margin-left: 20rpx;
+    font-size: 24rpx;
+    color: rgba(255, 255, 255, .8);
   }

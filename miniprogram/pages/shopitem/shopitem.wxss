@@ -23,13 +23,6 @@
   font-size: 26rpx;
 }
 
-.field-hint {
-  font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 16rpx;
-}
-
 .avail-row {
   display: flex;
   justify-content: space-between;

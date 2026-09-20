@@ -68,17 +68,7 @@
   "compileType": "miniprogram",
   "srcMiniprogramRoot": "miniprogram/",
   "packOptions": {
-    "comment": "以下内容留在仓库里但不打进上传包。恢复外卖时把对应项从 ignore 里删掉即可，详见 miniprogram/config.js",
-    "ignore": [
-      {
-        "type": "folder",
-        "value": "pages/index"
-      },
-      {
-        "type": "folder",
-        "value": "pages/myorders"
-      }
-    ],
+    "ignore": [],
     "include": []
   },
   "editorSetting": {

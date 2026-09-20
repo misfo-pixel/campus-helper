@@ -10,6 +10,6 @@
       <view style="font-size: 30rpx; font-weight: bold; flex: 1;">{{item.title}}</view>
       <view class="price" style="margin-left: 20rpx;">${{item.reward}}</view>
     </view>
-    <view class="text-light" style="font-size: 24rpx; margin-top: 8rpx;">状态：{{item.status}}</view>
+    <view class="text-light" style="font-size: 24rpx; margin-top: 8rpx;">状态：{{item.statusText}}</view>
   </view>
 </view>

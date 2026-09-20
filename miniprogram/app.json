@@ -56,7 +56,6 @@
     "pages/shopmenu/shopmenu",
     "pages/shopitem/shopitem",
     "pages/shopaudit/shopaudit",
-    "pages/deliveryconfig/deliveryconfig",
     "pages/teamdashboard/teamdashboard",
     "pages/teamedit/teamedit",
     "pages/teammanifest/teammanifest",

@@ -1,7 +1,7 @@
 {
   "name": "shopManage",
   "version": "1.0.0",
-  "description": "商家自助管理店铺资料与菜单",
+  "description": "商家自助管理店铺资料与商品",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

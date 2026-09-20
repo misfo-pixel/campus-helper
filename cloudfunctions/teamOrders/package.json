@@ -1,7 +1,7 @@
 {
   "name": "teamOrders",
   "version": "1.0.0",
-  "description": "配送队工作台：批次、汇总清单、取餐与送达",
+  "description": "配送队工作台：批次、汇总清单、取货与送达",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
