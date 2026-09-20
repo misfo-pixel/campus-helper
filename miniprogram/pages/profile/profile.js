@@ -1,5 +1,5 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
-const { SHOP_MODULE_ENABLED } = require('../../config.js')
+const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED } = require('../../config.js')
 
 Page({
   data: {
@@ -8,9 +8,10 @@ Page({
     roles: [],
     isAdmin: false,
     isSuperAdmin: false,
-    canAudit: false,        // 超管 或 饭搭子管理员：能审商家和配送队
-    canSeeDelivery: false,  // 饭搭子管理员 / 有店的商家 / 已在队里的人
+    canAudit: false,        // 超管 或 饭搭子管理员：能审店长和配送队
+    canSeeDelivery: false,  // 饭搭子管理员 / 有店的店长 / 已在队里的人
     shopEnabled: SHOP_MODULE_ENABLED,
+    teamEnabled: TEAM_MODULE_ENABLED,
     pendingReports: 0
   },
   goToEdit: function () {
@@ -30,6 +31,9 @@ Page({
   },
   goToTeam: function () {
     wx.navigateTo({ url: '/pages/teamdashboard/teamdashboard' })
+  },
+  goToFeedbacks: function () {
+    wx.navigateTo({ url: '/pages/feedbacks/feedbacks' })
   },
   goToShopAudit: function () {
     wx.navigateTo({ url: '/pages/shopaudit/shopaudit' })
@@ -62,13 +66,13 @@ Page({
       })
       guideProfileSetupOnce(profile)
       if (isAdmin) this.loadPendingReports()
-      if (SHOP_MODULE_ENABLED && !this.data.canSeeDelivery) this.checkDeliveryAccess()
+      if (TEAM_MODULE_ENABLED && SHOP_MODULE_ENABLED && !this.data.canSeeDelivery) this.checkDeliveryAccess()
     }).catch(err => {
       console.error('加载个人资料失败：', err)
     })
   },
 
-  // 配送工作台不对普通用户开放，但商家和已经在队里的人得能进去。
+  // 配送工作台不对普通用户开放，但店长和已经在队里的人得能进去。
   // 角色判断不出来的这两种情况，只能实际查一下。
   checkDeliveryAccess: function () {
     Promise.all([

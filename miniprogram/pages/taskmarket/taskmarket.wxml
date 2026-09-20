@@ -18,7 +18,7 @@
         <view class="price" style="font-size: 34rpx; margin-left: 20rpx;">${{item.reward}}</view>
       </view>
       <view class="text-light" style="margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{item.description}}</view>
-      <view wx:if="{{item.deadline}}" class="text-light" style="font-size: 24rpx; margin-top: 12rpx;">⏰ 截止：{{item.deadline}}</view>
+      <view wx:if="{{item.deadline}}" class="text-light" style="margin-top: 12rpx;">⏰ 截止：{{item.deadline}}</view>
     </view>
   </view>
 </view>

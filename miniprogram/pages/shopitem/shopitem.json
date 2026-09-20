@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "商品",
-  "usingComponents": {}
+  "usingComponents": {
+    "ban-bar": "/components/banBar/index"
+  }
 }

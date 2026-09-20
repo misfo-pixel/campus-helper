@@ -5,13 +5,13 @@ const db = cloud.database()
 // 配送域：配送队管理 + 队伍审核。
 //
 // 定价不归平台。配送方案（服务地点 + 服务时间）属于实际执行配送的那一方：
-//   商家自送   → 存在 shops 上，商家在店铺设置里自己填
+//   店长自送   → 存在 shops 上，店长在店铺设置里自己填
 //   外包给队伍 → 存在 delivery_teams 上，队长自己填
 //
 // 服务地点和场次必须同属一方——一趟配送就是「这些点、这个时间」，
-// 拆开会出现商家想 13:00 送但只有 12:00 场次可选的情况。
+// 拆开会出现店长想 13:00 送但只有 12:00 场次可选的情况。
 //
-// 钱也不经过平台：买家一次性付给商家，商家事后按对账结果结给配送队。
+// 钱也不经过平台：买家一次性付给店长，店长事后按对账结果结给配送队。
 //
 // 注意这里没有 expandBatches：把场次展开成「买家能选的具体日期」是买家侧的事，
 // 那份逻辑住在 shopBrowse 和 buyerOrders 里。这里曾经留过第三份拷贝，
@@ -101,7 +101,7 @@ exports.main = async (event) => {
         return { success: true, team: team, role: mine.role, members: members.data }
       }
 
-      // 商家在店铺设置里挑队伍时看的列表
+      // 店长在店铺设置里挑队伍时看的列表
       case 'listApproved': {
         const res = await db.collection('delivery_teams')
           .where({ audit_status: 'approved' }).limit(50).get()
@@ -126,8 +126,8 @@ exports.main = async (event) => {
         const contactWechat = (event.contact_wechat || '').trim()
         const paymentNote = (event.payment_note || '').trim()
         if (!name) return { success: false, message: '请填写队伍名称' }
-        if (!contactWechat) return { success: false, message: '请填写队长微信，商家结算时要联系你' }
-        if (!paymentNote) return { success: false, message: '请填写收款方式，商家按这个结配送费' }
+        if (!contactWechat) return { success: false, message: '请填写队长微信，店长结算时要联系你' }
+        if (!paymentNote) return { success: false, message: '请填写收款方式，店长按这个结配送费' }
 
         let nickname = ''
         try {
@@ -324,7 +324,7 @@ exports.main = async (event) => {
           }
         })
 
-        // 队伍被驳回，把绑了它的商家退回自送，免得订单派不出去
+        // 队伍被驳回，把绑了它的店长退回自送，免得订单派不出去
         if (!approved) {
           await db.collection('shops')
             .where({ delivery_team_id: event.teamId })

@@ -32,7 +32,49 @@ exports.main = async (event, context) => {
       expiredCount++
     }
 
-    return { success: true, expiredCount: expiredCount }
+    // 3. 到期前一天提醒发帖人。
+    //    放在下架之后跑：先把今天该下的下掉，再看明天该提醒谁，
+    //    两批数据不会重叠。发不出去（没授权、票用完）一律忽略。
+    const tomorrow = new Date(today.getTime() + 86400000)
+    const tomorrowStr = tomorrow.getFullYear() + '-' +
+      String(tomorrow.getMonth() + 1).padStart(2, '0') + '-' +
+      String(tomorrow.getDate()).padStart(2, '0')
+
+    let notified = 0
+    const SOON = [
+      { collection: 'secondhand_items', dateField: 'expire_date', kind: '二手' },
+      { collection: 'sublet_items', dateField: 'end_date', kind: '转租' }
+    ]
+    for (const cfg of SOON) {
+      const where = { status: 'on_sale' }
+      where[cfg.dateField] = tomorrowStr
+      const soon = await db.collection(cfg.collection).where(where).limit(100).get()
+
+      for (const post of soon.data) {
+        if (!post._openid) continue
+        try {
+          await cloud.callFunction({
+            name: 'sendSubscribe',
+            data: {
+              tpl: 'expiring',
+              toUser: post._openid,
+              page: 'pages/profile/profile',
+              data: {
+                title: post.title || '你发布的内容',
+                kind: cfg.kind,
+                expireAt: tomorrowStr,
+                tip: '想继续展示，去「我的发布」改一下日期'
+              }
+            }
+          })
+          notified++
+        } catch (e) {
+          console.warn('到期提醒发送失败：', cfg.collection, post._id, e)
+        }
+      }
+    }
+
+    return { success: true, expiredCount: expiredCount, notified: notified }
   } catch (err) {
     return { success: false, error: err }
   }

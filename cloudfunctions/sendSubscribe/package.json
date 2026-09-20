@@ -1,0 +1,9 @@
+{
+  "name": "sendSubscribe",
+  "version": "1.0.0",
+  "description": "发订阅消息：模板字段映射集中在这里",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

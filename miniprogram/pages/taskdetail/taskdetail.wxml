@@ -53,6 +53,8 @@
          给一个往下逛的出口，别让人看完就退出小程序。 -->
     <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">逛逛更多委托 ›</view>
 
+    <message-board target-type="task" target-id="{{item._id}}" />
+
     <disclaimer-bar type="task" />
 
     <report-bar target-type="task" target-id="{{item._id}}" />

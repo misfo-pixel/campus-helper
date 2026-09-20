@@ -49,6 +49,8 @@
          给一个往下逛的出口，别让人看完就退出小程序。 -->
     <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">逛逛更多闲置 ›</view>
 
+    <message-board target-type="item" target-id="{{item._id}}" />
+
     <disclaimer-bar type="trade" />
 
     <report-bar target-type="item" target-id="{{item._id}}" />

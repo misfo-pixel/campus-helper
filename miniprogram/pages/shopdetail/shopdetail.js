@@ -107,8 +107,16 @@ Page({
     const shop = this.data.shop || {}
     const reachMin = subtotal >= (Number(shop.min_order) || 0)
 
+    // 小店没开分类展示时，所有商品归成一条无标题的列表。
+    // 一件商品都没有时要给空数组——否则 groups.length 恒为 1，空状态永远不显示。
+    const grouped = order.length === 0
+      ? []
+      : (shop.use_category
+          ? order.map(cat => ({ category: cat, items: map[cat] }))
+          : [{ category: '', items: order.reduce((all, cat) => all.concat(map[cat]), []) }])
+
     this.setData({
-      groups: order.map(cat => ({ category: cat, items: map[cat] })),
+      groups: grouped,
       cartCount: count,
       cartSubtotal: subtotal,
       reachMin: reachMin,
@@ -158,7 +166,10 @@ Page({
     const cart = this.data.cart
     const chosen = this.data.items
       .filter(i => cart[i._id] > 0)
-      .map(i => ({ item_id: i._id, name: i.name, price: i.price, count: cart[i._id] }))
+      .map(i => ({
+        item_id: i._id, name: i.name, price: i.price,
+        unit: i.unit || '', count: cart[i._id]
+      }))
 
     wx.setStorageSync(CART_KEY, {
       shopId: this.data.shop._id,
@@ -184,12 +195,12 @@ Page({
     this.cover = toLocalPath(this.coverID)
   },
 
-  // 商家把自家店发到群里拉客，买家也会顺手转给室友——标题第一位是店名，
+  // 店长把自家店发到群里拉客，买家也会顺手转给室友——标题第一位是店名，
   // 第二位就是截单时间：群里的人要先确定「今天还赶得上吗」才会点进来。
   onShareAppMessage: function () {
     const shop = this.data.shop
-    // 商品还没加载出来就点了转发，只能先转发商家列表
-    if (!shop) return { title: '明尼助手 · 校外服务', path: '/pages/shoplist/shoplist' }
+    // 商品还没加载出来就点了转发，只能先转发店长列表
+    if (!shop) return { title: '明尼助手 · 校外小店', path: '/pages/shoplist/shoplist' }
 
     const tail = shop.status === 'paused'
       ? '已打烊，可以先看看商品'

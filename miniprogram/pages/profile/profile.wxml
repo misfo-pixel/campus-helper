@@ -30,31 +30,31 @@
 
   <!-- ========== 校外服务 ==========
        「我的订单」是买家视角（我在别人店里点的），
-       「我的服务」是商家视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
+       「我的小店」是店长视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
   <view wx:if="{{shopEnabled}}" class="profile-group">校外服务</view>
 
   <view wx:if="{{shopEnabled}}" bindtap="goToFoodOrders" class="card card-tap profile-row">
-    <view class="profile-row-label">🏪 我的订单</view>
+    <view class="profile-row-label">🧾 我的订单</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view wx:if="{{shopEnabled}}" bindtap="goToShop" class="card card-tap profile-row">
-    <view class="profile-row-label">💁 我的服务</view>
+    <view class="profile-row-label">🏪 我的小店</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
-  <!-- 配送工作台：饭搭子管理员 / 有店的商家 / 已在队里的人才看得到 -->
-  <view wx:if="{{shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card card-tap profile-row">
+  <!-- 配送工作台：饭搭子管理员 / 有店的店长 / 已在队里的人才看得到 -->
+  <view wx:if="{{teamEnabled && shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card card-tap profile-row">
     <view class="profile-row-label">🛵 饭搭子工作台</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- ========== 管理 ==========
        标题本身也要跟着权限走，否则普通用户会看到一个空标题 -->
-  <view wx:if="{{(shopEnabled && canAudit) || isAdmin}}" class="profile-group">管理</view>
+  <view wx:if="{{(teamEnabled && shopEnabled && canAudit) || isAdmin}}" class="profile-group">管理</view>
 
-  <!-- 配送队核对：超管和饭搭子管理员都能审。商家已经不审了，提交即开店 -->
-  <view wx:if="{{shopEnabled && canAudit}}" bindtap="goToShopAudit" class="card card-tap profile-row">
+  <!-- 配送队核对：超管和饭搭子管理员都能审。店长已经不审了，提交即开店 -->
+  <view wx:if="{{teamEnabled && shopEnabled && canAudit}}" bindtap="goToShopAudit" class="card card-tap profile-row">
     <view class="profile-row-label">🛵 配送队核对</view>
     <view class="profile-row-arrow">›</view>
   </view>
@@ -63,6 +63,12 @@
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">
     <view class="profile-row-label">🛡️ 举报处理</view>
     <view wx:if="{{pendingReports > 0}}" class="profile-row-badge">{{pendingReports}}</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <!-- 意见反馈处理：只有管理员看得到 -->
+  <view wx:if="{{isAdmin}}" bindtap="goToFeedbacks" class="card card-tap profile-row">
+    <view class="profile-row-label">💬 意见反馈</view>
     <view class="profile-row-arrow">›</view>
   </view>
 

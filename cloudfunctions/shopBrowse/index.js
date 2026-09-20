@@ -6,7 +6,7 @@ const _ = db.command
 // 买家侧读店铺、商品和配送方案。
 //
 // 走云函数而不是让小程序端直接查库，是因为 shops / shop_items 的集合权限
-// 设成了「所有用户不可读写」——这样商家的联系方式这些字段就不会
+// 设成了「所有用户不可读写」——这样店长的联系方式这些字段就不会
 // 被人绕过界面直接拖库。买家需要看到的字段在这里显式挑出来。
 
 // 批次要按明尼苏达当地时间判断截没截单。这段和 deliveryManage / buyerOrders
@@ -42,9 +42,9 @@ function addDays(dateStr, n) {
 }
 
 // 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开——
-// 买家看不到一个已经过去的场次，哪怕商家还没回来改。
+// 买家看不到一个已经过去的场次，哪怕店长还没回来改。
 //
-// key 用 日期#送达时间：同一支配送队名下的商家天然共用一个 key，
+// key 用 日期#送达时间：同一支配送队名下的店长天然共用一个 key，
 // 配送队工作台按它分组，正好是「这一趟」。
 //
 // isToday / isTomorrow 给买家端拼文案用——场次可能在好几天后，
@@ -97,7 +97,7 @@ async function resolvePlan(shop) {
   }
 }
 
-// 只列商家自己开着的店。被举报下架时 handleReport 会把 status 强制改成
+// 只列店长自己开着的店。被举报下架时 handleReport 会把 status 强制改成
 // closed，所以这一条同时挡掉了下架的店，不需要再单独查 takedown。
 async function listShops() {
   const res = await db.collection('shops')
@@ -129,6 +129,7 @@ exports.main = async (event) => {
             category: s.category,
             description: s.description,
             delivery_mode: s.delivery_mode || 'self',
+            needs_delivery: s.needs_delivery !== false,
             min_order: s.min_order,
             business_hours: s.business_hours,
             status: s.status
@@ -170,14 +171,18 @@ exports.main = async (event) => {
             delivery_mode: shop.delivery_mode || 'self',
             min_order: shop.min_order,
             business_hours: shop.business_hours,
+            order_notice: shop.order_notice || '',
+            use_category: shop.use_category === true,
+            needs_delivery: shop.needs_delivery !== false,
             contact_wechat: shop.contact_wechat,
             status: shop.status
           },
-          // 售罄的商品也返回，买家端灰掉展示，不然商家会被问「那件呢」
+          // 售罄的商品也返回，买家端灰掉展示，不然店长会被问「那件呢」
           items: itemsRes.data.map(i => ({
             _id: i._id,
             name: i.name,
             price: i.price,
+            unit: i.unit || '',
             description: i.description,
             allergens: i.allergens || '',
             image: i.image,
@@ -198,6 +203,8 @@ exports.main = async (event) => {
         const plan = await resolvePlan(shop)
         return {
           success: true,
+          // 不配送的店没有方案，结算页据此整段隐藏地点和时间的选择
+          needs_delivery: shop.needs_delivery !== false,
           pickup_points: plan.pickup_points,
           availableBatches: expandBatches(plan.batches),
           provider: plan.provider,

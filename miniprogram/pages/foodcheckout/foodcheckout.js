@@ -1,14 +1,15 @@
 // 确认订单。
 //
 // 这一页只把下单意向记下来：不做支付动作，也不展示任何收款方式。
-// 商家在工作台看到订单后自己通过微信联系买家。
+// 店长在工作台看到订单后自己通过微信联系买家。
 //
 // 买家到服务地点自取，不送到公寓门口。
-// 服务地点和批次由实际送货的一方定（商家自送用店铺的，外包用配送队的），
+// 服务地点和批次由实际送货的一方定（店长自送用店铺的，外包用配送队的），
 // 这里统一通过 shopBrowse 的 plan 拿解析结果，不用关心是哪一方。
-// 商家自己送还是外包给配送队，对买家是透明的——规则完全一样。
+// 店长自己送还是外包给配送队，对买家是透明的——规则完全一样。
 
 const { myProfile } = require('../../utils/user.js')
+const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk } = require('../../utils/contentCheck.js')
 
 const CART_KEY = 'foodCart'
@@ -19,6 +20,9 @@ Page({
   data: {
     cart: null,
     loading: true,
+
+    // 店铺不配送时（顾客上门、到店自提）整块地点 / 时间都不出现
+    needsDelivery: true,
 
     points: [],
     pointLabels: [],
@@ -62,6 +66,12 @@ Page({
       if (!r.success) {
         this.setData({ loading: false })
         wx.showToast({ title: '读取配送配置失败', icon: 'none' })
+        return
+      }
+
+      // 不配送的店没有地点和场次可选，直接进到「填微信 + 提交」
+      if (r.needs_delivery === false) {
+        this.setData({ needsDelivery: false, loading: false }, () => this.recalc())
         return
       }
 
@@ -114,7 +124,7 @@ Page({
     return s
   },
 
-  // 场次是商家指定的某一天，可能在好几天后，「今天/明天」两个词不够用，
+  // 场次是店长指定的某一天，可能在好几天后，「今天/明天」两个词不够用，
   // 得把日期和星期显示出来
   whenText: function (b) {
     if (b.isToday) return '今天'
@@ -148,7 +158,7 @@ Page({
     const d = this.data
     if (d.submitting) return
 
-    if (d.pointIndex === null) {
+    if (d.needsDelivery && d.pointIndex === null) {
       wx.showToast({ title: '请选择服务地点', icon: 'none' })
       return
     }
@@ -157,11 +167,14 @@ Page({
       return
     }
 
+    // 正要提交订单，这一刻用户最想知道后续进展，授权成功率最高
+    await ask('orderProgress')
+
     this.setData({ submitting: true })
     wx.showLoading({ title: '提交中...', mask: true })
 
     try {
-      // 备注会被商家和配送员看到，属于 UGC
+      // 备注会被店长和配送员看到，属于 UGC
       if (!(await ensureContentOk({
         texts: [d.note, d.contact_wechat],
         scene: 2
@@ -192,8 +205,10 @@ Page({
 
       wx.showModal({
         title: '订单已提交',
-        content: '商家会通过微信与你联系确认。\n\n' +
-                 '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到服务地点自取。\n\n' +
+        content: '店长会通过微信与你联系确认。\n\n' +
+                 (r.needs_delivery === false
+                   ? '具体时间和地点请与店长约定。\n\n'
+                   : '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到服务地点自取。\n\n') +
                  '平台只记录下单意向，不参与交易。',
         showCancel: false,
         confirmText: '知道了',

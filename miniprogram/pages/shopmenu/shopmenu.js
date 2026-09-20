@@ -1,11 +1,13 @@
 // 商品管理。
 // 「今天这件卖完了」是每天要点好几次的操作，所以上架开关直接放在列表行上，
-// 不要求商家点进编辑页再保存。
+// 不要求店长点进编辑页再保存。
 
 Page({
   data: {
     loading: true,
-    groups: []   // [{ category, items: [...] }]
+    useCategory: false,   // 关着的时候商品排成一条平铺列表，不分组
+    itemCount: 0,         // 平铺时 groups 恒为长度 1，判空只能看这个
+    groups: []            // [{ category, items: [...] }]
   },
 
   onShow: function () {
@@ -20,7 +22,16 @@ Page({
         wx.showToast({ title: r.message || '读取失败', icon: 'none' })
         return
       }
-      this.setData({ groups: this.groupByCategory(r.items || []), loading: false })
+      const items = r.items || []
+      const useCategory = r.useCategory === true
+      this.setData({
+        useCategory: useCategory,
+        itemCount: items.length,
+        groups: items.length === 0
+          ? []
+          : (useCategory ? this.groupByCategory(items) : [{ category: '', items: items }]),
+        loading: false
+      })
     }).catch(err => {
       console.error('读取商品失败：', err)
       this.setData({ loading: false })
@@ -46,6 +57,28 @@ Page({
       return 0
     })
     return order.map(cat => ({ category: cat, items: map[cat] }))
+  },
+
+  // 分类开关。切完重新拉一次，分组结构跟着变。
+  toggleCategory: function () {
+    const use = !this.data.useCategory
+    this.setData({ useCategory: use })
+    wx.cloud.callFunction({
+      name: 'shopManage',
+      data: { action: 'setUseCategory', use: use }
+    }).then(res => {
+      const r = (res && res.result) || {}
+      if (r.success) {
+        this.load()
+      } else {
+        this.setData({ useCategory: !use })
+        wx.showToast({ title: r.message || '设置失败', icon: 'none' })
+      }
+    }).catch(err => {
+      console.error('切换分类开关失败：', err)
+      this.setData({ useCategory: !use })
+      wx.showToast({ title: '设置失败', icon: 'none' })
+    })
   },
 
   // 上架 / 售罄
@@ -100,10 +133,11 @@ Page({
   },
 
   editItem: function (e) {
-    wx.navigateTo({ url: '/pages/shopitem/shopitem?id=' + e.currentTarget.dataset.id })
+    wx.navigateTo({ url: '/pages/shopitem/shopitem?id=' + e.currentTarget.dataset.id + (this.data.useCategory ? '&cat=1' : '') })
   },
 
+  // cat=1 让商品编辑页显示「分类」输入框；关着就别让店长填一个不展示的字段
   addItem: function () {
-    wx.navigateTo({ url: '/pages/shopitem/shopitem' })
+    wx.navigateTo({ url: '/pages/shopitem/shopitem' + (this.data.useCategory ? '?cat=1' : '') })
   }
 })

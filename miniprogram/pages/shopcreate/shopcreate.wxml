@@ -1,0 +1,143 @@
+<view class="page-container wizard">
+  <!-- 进度条：让人知道还有几步，不至于填到一半跑掉 -->
+  <view class="steps">
+    <view class="step-dot {{step >= 1 ? 'on' : ''}}">1</view>
+    <view class="step-bar {{step >= 2 ? 'on' : ''}}"></view>
+    <view class="step-dot {{step >= 2 ? 'on' : ''}}">2</view>
+    <view class="step-bar {{step >= 3 ? 'on' : ''}}"></view>
+    <view class="step-dot {{step >= 3 ? 'on' : ''}}">3</view>
+  </view>
+
+  <!-- ========== 第 1 步：这家店是什么 ========== -->
+  <block wx:if="{{step === 1}}">
+    <view class="wizard-title">你的小店叫什么？</view>
+    <view class="wizard-sub">这些会显示在小店列表上，之后都能改。</view>
+
+    <ban-bar />
+
+    <input placeholder="小店名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
+
+    <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
+      <view class="card form-card picker-row">
+        <text>分类：{{categories[categoryIndex]}}</text>
+        <text class="picker-arrow">›</text>
+      </view>
+    </picker>
+
+    <textarea placeholder="一句话介绍（选填，做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
+  </block>
+
+  <!-- ========== 第 2 步：要不要配送 ========== -->
+  <block wx:if="{{step === 2}}">
+    <view class="wizard-title">需要配送吗？</view>
+    <view class="wizard-sub">选错了也没关系，开店后在小店设置里能改。</view>
+
+    <view class="pick {{needsDelivery === true ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="1">
+      <view class="pick-emoji">🚚</view>
+      <view class="pick-body">
+        <view class="pick-name">需要配送</view>
+        <view class="pick-desc">要把东西送到约定地点。可以自己送，也可以外包给配送队。</view>
+      </view>
+    </view>
+
+    <view class="pick {{needsDelivery === false ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="0">
+      <view class="pick-emoji">🙋</view>
+      <view class="pick-body">
+        <view class="pick-name">不需要配送</view>
+        <view class="pick-desc">顾客上门，或者到店自提。买家下单后你们自己约时间地点。</view>
+      </view>
+    </view>
+
+    <block wx:if="{{needsDelivery === true}}">
+      <!-- 配送队模块关掉时不出现「谁来送」这一问，直接当自己送 -->
+      <block wx:if="{{teamEnabled}}">
+        <view class="section-title">谁来送</view>
+
+        <view class="pick pick-sm {{deliveryMode === 'self' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="self">
+          <view class="pick-body">
+            <view class="pick-name">我自己送</view>
+            <view class="pick-desc">自己定服务地点、配送费和服务时间。</view>
+          </view>
+        </view>
+
+        <view class="pick pick-sm {{deliveryMode === 'outsourced' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="outsourced">
+          <view class="pick-body">
+            <view class="pick-name">外包给配送队</view>
+            <view class="pick-desc">用配送队那套地点和时间，你不用填。</view>
+          </view>
+        </view>
+
+        <block wx:if="{{deliveryMode === 'outsourced'}}">
+          <view wx:if="{{teamNames.length === 0}}" class="field-hint">
+            目前还没有通过核对的配送队，暂时只能自己送。
+          </view>
+          <picker wx:else mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
+            <view class="card form-card picker-row">
+              <text class="{{teamIndex === null ? 'placeholder' : ''}}">
+                {{teamIndex === null ? '选择配送队' : teamNames[teamIndex]}}
+              </text>
+              <text class="picker-arrow">›</text>
+            </view>
+          </picker>
+        </block>
+      </block>
+
+      <!-- 自己送的服务地点和时间：不管队伍模块开没开，只要是自送就得填 -->
+      <plan-editor wx:if="{{deliveryMode === 'self'}}"
+                   init-points="{{planPoints}}" init-batches="{{planBatches}}"
+                   bind:change="onPlanChange" />
+    </block>
+  </block>
+
+  <!-- ========== 第 3 步：怎么找到你 ========== -->
+  <block wx:if="{{step === 3}}">
+    <view class="wizard-title">买家怎么找到你？</view>
+    <view class="wizard-sub">只有微信号是必填的，其余可以之后再补。</view>
+
+    <input placeholder="联系微信（必填，买家下单后联系你）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+
+    <view class="section-title">详细信息（选填）</view>
+
+    <view class="logo-row card" bindtap="chooseLogo">
+      <image wx:if="{{logo}}" src="{{logo}}" mode="aspectFill" class="logo-img" />
+      <view wx:else class="logo-img logo-placeholder">+</view>
+      <view class="logo-hint">
+        <view>小店 Logo</view>
+        <view class="text-light">点击{{logo ? '更换' : '上传'}}，建议正方形</view>
+      </view>
+    </view>
+
+    <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
+    <input placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
+    <textarea placeholder="下单须知（买家在小店页会看到，如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
+
+    <view class="card license-row" bindtap="chooseLicense">
+      <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />
+      <view wx:else class="license-img license-placeholder">+</view>
+      <view class="license-hint">
+        <view>许可证 / 资质凭证</view>
+        <view class="text-light">点击{{licenseImage ? '更换' : '上传'}}。是否需要许可证，以你所在地的规定为准</view>
+      </view>
+    </view>
+
+    <disclaimer-bar type="apply" full="{{true}}" />
+
+    <view class="agree-row">
+      <checkbox-group bindchange="onAgreeChange">
+        <label class="agree-label">
+          <checkbox value="1" checked="{{agreed}}" color="#7A0019" />
+          <text class="agree-text">我已阅读并同意</text>
+        </label>
+      </checkbox-group>
+      <text class="agree-link" catchtap="openAgreement">《店长责任告知书》</text>
+    </view>
+  </block>
+
+  <!-- 底部固定操作栏 -->
+  <view class="wizard-spacer"></view>
+  <view class="wizard-bar">
+    <button wx:if="{{step > 1}}" class="btn-outline wizard-btn" bindtap="prev">上一步</button>
+    <button wx:if="{{step < 3}}" class="btn-primary wizard-btn" bindtap="next">下一步</button>
+    <button wx:else class="btn-primary wizard-btn" bindtap="submit" loading="{{saving}}">开店</button>
+  </view>
+</view>

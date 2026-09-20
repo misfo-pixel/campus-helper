@@ -1,41 +1,52 @@
 <view class="page-container agreement">
   <view class="agreement-intro">
-    本告知书适用于在「明尼助手」上开设店铺、发布商品并接收订单的商家。提交入驻申请即表示你已完整阅读并同意以下全部条款。
+    本告知书适用于在「明尼助手」上开设店铺、发布商品并接收订单的店长。提交开店申请即表示你已完整阅读并同意以下全部条款。
   </view>
 
   <view class="section-title">一、你与平台的关系</view>
   <view class="para">你是<text class="strong">独立的经营者</text>。你不是本平台的员工、雇员、代理人、承包商或合作方，平台与你之间不构成劳动关系、雇佣关系、合伙关系或代理关系。</view>
-  <view class="para">平台只提供信息展示和订单记录的技术服务：把你填写的店铺资料和商品信息展示给用户，把用户的下单意向记录下来传达给你。平台不制作食品、不配送、不参与定价、不介入你和用户之间的交易，也不对你的经营行为作任何背书或担保。</view>
+  <view class="para">平台只提供信息展示和订单记录的技术服务：把你填写的店铺资料和商品信息展示给用户，把用户的下单意向记录下来传达给你。平台不生产、不制作、不配送、不参与定价、不介入你和用户之间的交易，也不对你的经营行为作任何背书或担保。</view>
+  <view class="para"><text class="strong">平台不对你发布的内容做事前审核。</text>你提交后即可开店，内容是否合规完全由你负责。平台在收到用户举报并核实后，会下架违规内容或关停店铺。</view>
   <view class="para">你自主决定卖什么、卖多少钱、什么时候营业、接不接某一单。平台不对你的经营作出任何指示。</view>
 
   <view class="section-title">二、经营资质</view>
-  <view class="para">你必须自行确认并持续满足你所在地法律法规对食品制作与销售的全部要求，包括但不限于食品经营许可、卫生许可、场地要求、从业人员健康证明、家庭厨房经营的相关登记或豁免条件等。</view>
-  <view class="para">各州、各县对家庭厨房和小规模食品销售的规定差异很大，且会变化。平台无法也不会替你判断你的经营是否合法，请你自行向当地主管部门核实。</view>
-  <view class="para">如果你不具备相应资质，请不要入驻。因缺乏资质导致的任何后果由你自行承担。</view>
+  <view class="para">你必须自行确认并持续满足你所在地法律法规对你所经营的商品或服务的全部要求，包括但不限于营业登记、行业许可、从业资格、场地与保险要求等。平台无法也不会替你判断你的经营是否合法，请你自行向当地主管部门核实。</view>
+  <view class="para"><text class="strong">如果你销售食品</text>，这还包括食品经营许可、卫生许可、场地要求、从业人员健康证明、家庭厨房经营的相关登记或豁免条件等。各州、各县对家庭厨房和小规模食品销售的规定差异很大，且会变化。</view>
+  <view class="para">如果你不具备相应资质，请不要开店。因缺乏资质导致的任何后果由你自行承担。</view>
+  <view class="para">平台<text class="strong">不承担主动审核你资质的义务</text>。但为配合监管机构调查、处理用户投诉或履行法律法规规定的义务，平台有权要求你提供资质证明材料，你应当配合提供。材料仅用于前述目的，平台不对其真实性、合法性承担保证责任，也不因收取过材料而对你的资质问题承担任何责任。</view>
 
-  <view class="section-title">三、食品安全</view>
-  <view class="para">食品安全的<text class="strong">全部责任由你承担</text>。这包括但不限于：原材料来源与新鲜度、制作过程的卫生条件、储存温度、餐具与包装的清洁、配送过程中的保温与防污染。</view>
-  <view class="para">如果发生食物中毒、过敏反应、异物、变质等食品安全事件，由你直接对消费者负责。平台不承担任何责任，但会配合提供订单记录等必要信息。</view>
-  <view class="para">你应当在商品信息中如实标注可能引发过敏的成分（如花生、坚果、乳制品、鸡蛋、大豆、小麦、海鲜等），并在用户询问时如实告知。隐瞒或错误标注过敏原可能造成严重后果，责任全部由你承担。</view>
+  <view class="section-title">三、商品与服务安全</view>
+  <view class="para">你交付的商品或服务的安全性，<text class="strong">全部责任由你承担</text>。如果因此对用户造成人身伤害或财产损失，由你直接对用户负责。平台不承担任何责任，但会配合提供订单记录等必要信息。</view>
+  <view class="para"><text class="strong">如果你销售食品</text>，这包括但不限于：原材料来源与新鲜度、制作过程的卫生条件、储存温度、餐具与包装的清洁、配送过程中的保温与防污染。发生食物中毒、过敏反应、异物、变质等事件的，责任全部在你。</view>
+  <view class="para"><text class="strong">销售食品的，你必须在商品信息中如实标注可能引发过敏的成分</text>（如花生、坚果、乳制品、鸡蛋、大豆、小麦、海鲜等），并在用户询问时如实告知。隐瞒或错误标注过敏原可能造成严重后果，责任全部由你承担。</view>
 
   <view class="section-title">四、商品信息真实性</view>
-  <view class="para">你必须保证发布的商品名称、图片、价格、分量、成分描述真实准确，不得使用与实物明显不符的图片，不得虚构原材料或产地。</view>
+  <view class="para">你必须保证发布的商品名称、图片、价格、规格、成分描述真实准确，不得使用与实物明显不符的图片，不得虚构原材料或产地。</view>
   <view class="para">价格必须是用户实际需要支付的金额。如果有配送费、起送价、包装费，请在店铺设置中明确写出，不得在用户下单后临时加价。</view>
 
-  <view class="section-title">五、禁止销售的商品</view>
-  <view class="para">以下商品一律禁止在平台上销售：</view>
+  <view class="section-title">五、禁售清单</view>
+  <view class="para">不论你经营什么品类，以下内容一律禁止在平台上<text class="strong">发布或销售</text>。这里的「发布」包括小店名称、简介、Logo、商品名称、商品图片、商品描述、下单须知——凡是会展示给用户的地方都算，不只是你实际卖的东西。</view>
   <view class="list">
     <view class="li">酒精饮料（含酒精的饮品、含酒商品需明确标注且不得单独售酒）</view>
-    <view class="li">大麻及任何含大麻成分的食品，无论当地是否合法</view>
-    <view class="li">烟草及电子烟</view>
-    <view class="li">处方药、保健品、声称有疗效的食品</view>
-    <view class="li">野生动物及其制品</view>
-    <view class="li">任何当地法律禁止或限制销售的食品</view>
+    <view class="li">烟草、电子烟及其配件</view>
+    <view class="li">大麻及任何含大麻成分的商品，无论当地是否合法</view>
+    <view class="li">处方药、医疗器械、保健品，以及任何声称有疗效的商品</view>
+    <view class="li">色情低俗内容及相关服务</view>
+    <view class="li">烟花爆竹、易燃易爆及危险化学品</view>
+    <view class="li">武器、弹药、管制刀具</view>
+    <view class="li">野生动物及其制品、活体动物</view>
+    <view class="li">假冒仿品及任何侵犯他人知识产权的商品</view>
+    <view class="li">他人的个人信息、账号、证件</view>
+    <view class="li">彩票、赌博、代写代考、金融理财与贷款服务</view>
+    <view class="li">任何当地法律禁止或限制销售的商品与服务</view>
     <view class="li">超出你实际经营能力、无法按时交付的商品</view>
   </view>
+  <view class="para"><text class="strong">以上只是列举，不是全部。</text>法律法规和平台规则都会变，某样东西算不算禁售，由平台结合当时的法律要求和实际情况判定，并动态调整这份清单。平台会尽量提前告知，但你同意接受判定结果和相应的处理措施。拿不准的，发布前先问我们。</view>
 
   <view class="section-title">六、收款、退款与纠纷</view>
-  <view class="para">平台<text class="strong">不提供支付功能，不经手任何资金</text>。平台只把用户的下单意向记录下来传达给你，交易和收款如何进行由你与用户自行约定，平台不展示、不引导任何收款方式。</view>
+  <view class="para">平台<text class="strong">不提供支付功能，不经手任何资金</text>。交易和收款如何进行，由你与用户自行约定。</view>
+  <view class="para">平台提供一个<text class="strong">可选的</text>收款方式展示位：你可以把自己的收款方式填进来，用户下单后会看到。平台只是把你填的内容原样显示——不验证收款账户是否属于你、不经手款项、不担保交易、不处理退款。是否使用、填什么，完全由你决定，默认是关闭的。</view>
+  <view class="para">如果你填写的收款信息有误或被冒用，由此产生的损失由你自行承担。</view>
   <view class="para">收款、对账、退款、开具收据或发票，全部由你自行处理。平台不作担保、不做资金托管、不介入退款。</view>
   <view class="para">如果用户与你就订单产生纠纷（未收到商品、商品与描述不符、要求退款等），由你与用户自行协商解决。平台不是纠纷的当事方，也不承担居中裁决的义务，但在收到举报时有权依据本告知书对你的店铺采取措施。</view>
 
@@ -43,32 +54,46 @@
   <view class="para">因你的经营收入产生的一切税务义务（包括所得税、销售税等）由你自行申报和缴纳。平台不代扣代缴、不提供税务凭证、不提供税务咨询。</view>
 
   <view class="section-title">八、配送</view>
-  <view class="para">如果你选择自行配送，配送过程中的一切风险和责任由你承担，包括交通安全、送达时效、食品在途状态。</view>
+  <view class="para">如果你选择自行配送，配送过程中的一切风险和责任由你承担，包括交通安全、送达时效、商品在途状态。</view>
   <view class="para">如果你委托他人配送，你仍然对该次配送的结果向用户负责。</view>
 
   <view class="section-title">九、用户信息</view>
   <view class="para">你会看到下单用户的昵称、联系方式和自取信息。这些信息<text class="strong">只能用于履行该笔订单</text>。</view>
+  <view class="para">就这些信息而言，<text class="strong">你是独立的个人信息处理者</text>：由你决定怎么用、用多久、什么时候删。平台只提供把信息展示给你的技术通道，不控制、不干预你的处理行为，也不因此成为共同处理者。你应当自行遵守所在地关于个人信息保护的法律，并独立承担相应责任。</view>
   <view class="para">禁止将用户信息用于营销推广、转售、提供给第三方，或在订单完成后继续骚扰用户。违反的，平台将直接关停你的店铺，并保留追究责任的权利。</view>
 
-  <view class="section-title">十、违规处理</view>
+  <view class="section-title">十、信息披露</view>
+  <view class="para">发生交易纠纷时，应用户的合理请求，你应当向其提供有效的联系方式，以便协商或通过法律途径解决。</view>
+  <view class="para">出现下列情形之一时，为保护用户的合法权益，<text class="strong">平台有权向该用户、监管机构或司法机关披露你的身份与联系信息，无须另行取得你的同意</text>：</view>
+  <view class="list">
+    <view class="li">收款后失联——联系方式失效或长期不回应</view>
+    <view class="li">收款后不交付，且拒不退款</view>
+    <view class="li">存在欺诈、跑路等严重侵害用户权益的行为</view>
+    <view class="li">被多名用户投诉且拒不处理</view>
+    <view class="li">行政机关、司法机关依法要求披露</view>
+  </view>
+  <view class="para">披露范围以解决该问题所必需为限，通常是你在平台登记的名称和联系方式。你在此对上述披露给予授权。</view>
+
+  <view class="section-title">十一、违规处理</view>
   <view class="para">出现以下情况时，平台有权在不事先通知的情况下暂停或永久关闭你的店铺、下架你的商品：</view>
   <view class="list">
-    <view class="li">被用户举报且经核实存在食品安全问题</view>
-    <view class="li">销售禁售商品</view>
+    <view class="li">被用户举报且经核实存在安全或质量问题</view>
+    <view class="li">发布或销售禁售清单上的内容</view>
     <view class="li">商品信息虚假、图文不符、虚假宣传</view>
     <view class="li">收款后不发货、长期不处理订单</view>
     <view class="li">滥用用户个人信息</view>
-    <view class="li">冒用他人身份或资质入驻</view>
+    <view class="li">冒用他人身份或资质开店</view>
     <view class="li">其他违反本告知书或平台规则的行为</view>
   </view>
 
-  <view class="section-title">十一、赔偿</view>
-  <view class="para">如果因为你的经营行为（包括食品安全事故、资质缺失、虚假信息、侵权等）导致平台或平台运营者遭受第三方索赔、行政处罚、诉讼或其他损失，你应当全额赔偿平台由此产生的全部损失，包括合理的法律费用。</view>
+  <view class="section-title">十二、赔偿</view>
+  <view class="para">如果因为你的经营行为（包括安全事故、资质缺失、虚假信息、侵权等）导致平台或平台运营者遭受第三方索赔、行政处罚、诉讼或其他损失，你应当全额赔偿平台由此产生的全部损失，包括合理的法律费用。</view>
 
-  <view class="section-title">十二、审核与变更</view>
-  <view class="para">入驻申请需要经过平台审核。审核只核对信息完整性和基本合理性，<text class="strong">不构成对你经营资质、食品安全或商品质量的任何认可或保证</text>。通过审核不代表平台为你背书。</view>
-  <view class="para">修改店铺名称后需要重新审核，审核期间店铺会自动停业。</view>
-  <view class="para">平台可能不定期更新本告知书。更新后你继续使用商家功能，即视为接受更新后的条款。</view>
+  <view class="section-title">十三、平台不做事前审核</view>
+  <view class="para">平台<text class="strong">不对你的店铺资料和商品信息做事前人工审核</text>。你提交后店铺即成立，改资料也即时生效。店铺出现在平台上，<text class="strong">不构成对你经营资质、商品安全或服务质量的任何认可或保证</text>。</view>
+  <view class="para">平台会对发布内容做机器安全检测，但那只拦明显违规的文字和图片，不构成对内容真实性或合法性的审查。</view>
+  <view class="para">平台在收到用户举报并核实后，会下架你的商品或关停你的店铺。被关停的店铺你无法自行恢复营业，如有异议请通过「意见反馈」联系我们。</view>
+  <view class="para">平台可能不定期更新本告知书。更新后你继续使用店长功能，即视为接受更新后的条款。</view>
 
-  <view class="updated">最后更新：2026 年 8 月</view>
+  <view class="updated">最后更新：2026 年 9 月</view>
 </view>

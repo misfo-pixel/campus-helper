@@ -47,3 +47,29 @@
 .disclaimer-link:active {
   opacity: 0.6;
 }
+
+/* 默认形态：一行灰字。不占视觉重量，需要的人点进去看全文 */
+.brief {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin: 16rpx 0;
+}
+
+.brief-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #aaa;
+}
+
+.brief-link {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+.brief:active {
+  opacity: 0.6;
+}

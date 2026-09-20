@@ -4,11 +4,10 @@
     <button class="btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 
-  <disclaimer-bar type="buyer" />
 
   <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
   <view wx:elif="{{shops.length === 0}}" class="text-light empty">
-    还没有商家入驻，晚点再来看看
+    还没有小店开张，晚点再来看看
   </view>
 
   <view wx:for="{{shops}}" wx:key="_id" class="card shop" bindtap="goToShop" data-id="{{item._id}}">
@@ -22,7 +21,7 @@
       </view>
       <view wx:if="{{item.description}}" class="text-light shop-desc">{{item.description}}</view>
       <view class="text-light shop-info">
-        {{item.category}} · 起送 ${{item.min_order}}{{item.delivery_mode === 'outsourced' ? ' · 饭搭子配送' : ' · 商家自送'}}
+        {{item.category}} · 起送 ${{item.min_order}}{{item.needs_delivery === false ? ' · 不配送' : (item.delivery_mode === 'outsourced' ? ' · 饭搭子配送' : ' · 店长自送')}}
       </view>
       <view wx:if="{{item.business_hours}}" class="text-light shop-info">{{item.business_hours}}</view>
     </view>

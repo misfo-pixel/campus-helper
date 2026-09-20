@@ -1,19 +1,20 @@
 // 我的服务订单（买家侧）。
-// 订单只展示商家微信，买家自己联系商家。平台不展示收款方式、不引导支付。
+// 订单展示店长微信；店长自己开了收款展示位的话，待确认的单里还会显示
+// 他填的收款方式和收款码。平台只原样展示，不经手资金、不验证账户归属。
 
 const STATUS_TEXT = {
-  pending: '待商家确认',
+  pending: '待店长确认',
   accepted: '准备中',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
 }
 
-// 每个状态给一句说明。待确认的单只说「等商家联系」，不出现任何付款指引。
+// 每个状态给一句说明。待确认的单只说「等店长联系」，不出现任何付款指引。
 const STATUS_HINT = {
-  pending: '已提交，等商家确认。商家会通过微信与你联系',
-  accepted: '商家已接单，正在准备',
-  delivering: '商家正在配送',
+  pending: '已提交，等店长确认。店长会通过微信与你联系',
+  accepted: '店长已接单，正在准备',
+  delivering: '店长正在配送',
   completed: '订单已完成',
   cancelled: '订单已取消'
 }
@@ -70,6 +71,13 @@ Page({
     })
   },
 
+  // 点开大图，用户可以长按保存收款码
+  previewQr: function (e) {
+    const url = e.currentTarget.dataset.url
+    if (!url) return
+    wx.previewImage({ urls: [url], current: url })
+  },
+
   copyText: function (e) {
     const text = e.currentTarget.dataset.text
     if (!text) return
@@ -83,7 +91,7 @@ Page({
     const id = e.currentTarget.dataset.id
     wx.showModal({
       title: '取消订单',
-      content: '确定取消这笔订单吗？如果你已经付过款，取消后需要自己联系商家退款。',
+      content: '确定取消这笔订单吗？如果你已经付过款，取消后需要自己联系店长退款。',
       success: res => {
         if (!res.confirm) return
         wx.showLoading({ title: '处理中', mask: true })

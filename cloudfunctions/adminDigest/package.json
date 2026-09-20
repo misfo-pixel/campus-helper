@@ -1,0 +1,9 @@
+{
+  "name": "adminDigest",
+  "version": "1.0.0",
+  "description": "每日汇总待处理的举报和反馈，推给管理员",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

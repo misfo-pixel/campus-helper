@@ -1,0 +1,34 @@
+/* 一条窄提示带，不是一个方框。
+   放在发布页最上面让人扫一眼就过，需要全清单的点进去看。 */
+.ban {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  background: #fff8f8;
+  border-radius: 8rpx;
+  padding: 14rpx 18rpx;
+  margin: 16rpx 0;
+}
+
+.ban-icon {
+  font-size: 22rpx;
+  flex-shrink: 0;
+}
+
+.ban-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #a86b6b;
+}
+
+.ban-link {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: #c08a8a;
+}
+
+.ban:active {
+  opacity: 0.6;
+}

@@ -5,12 +5,12 @@ const _ = db.command
 
 // 配送队的工作台：看批次、领活、取货、送达。
 //
-// 领活的单位是「批次 × 商家」——一个人跑一趟，去一家店把这一批取了，
+// 领活的单位是「批次 × 店长」——一个人跑一趟，去一家店把这一批取了，
 // 再拉到服务地点发给等着的人。按单领没意义（没人会为一单专门跑一趟），
 // 按整批领又不对（一批里可能有好几家店的货）。
 //
-// 配送员推进状态时会顺带把商家那边的订单状态也改掉，
-// 这样商家外包出去之后就真的不用再管了 —— 这才叫外包。
+// 配送员推进状态时会顺带把店长那边的订单状态也改掉，
+// 这样店长外包出去之后就真的不用再管了 —— 这才叫外包。
 
 const VISIBLE_STATUS = ['accepted', 'delivering']
 
@@ -43,7 +43,7 @@ exports.main = async (event) => {
 
     switch (action) {
 
-      // 批次列表：按「批次 → 商家」两层分组
+      // 批次列表：按「批次 → 店长」两层分组
       case 'groups': {
         const orders = await loadLiveOrders(teamId)
 
@@ -83,7 +83,7 @@ exports.main = async (event) => {
         return { success: true, groups: groups, me: openid }
       }
 
-      // 汇总清单：给商家报单的取货清单 + 按服务地点分组的交付清单。
+      // 汇总清单：给店长报单的取货清单 + 按服务地点分组的交付清单。
       // 这两张表就是老饭搭子 summary 页做的事，批次配送需要的正是它。
       case 'manifest': {
         const res = await db.collection('food_orders')
@@ -99,14 +99,17 @@ exports.main = async (event) => {
         const orders = res.data
         if (!orders.length) return { success: true, pickup: [], points: [], shopName: '' }
 
-        // 取货清单：所有单的商品按名字合并计数
+        // 取货清单：所有单的商品按名字合并计数，单位跟着名字走
         const dishMap = {}
         orders.forEach(o => {
           (o.items || []).forEach(it => {
-            dishMap[it.name] = (dishMap[it.name] || 0) + it.count
+            if (!dishMap[it.name]) dishMap[it.name] = { count: 0, unit: it.unit || '' }
+            dishMap[it.name].count += it.count
           })
         })
-        const pickup = Object.keys(dishMap).map(name => ({ name: name, count: dishMap[name] }))
+        const pickup = Object.keys(dishMap).map(name => ({
+          name: name, count: dishMap[name].count, unit: dishMap[name].unit
+        }))
 
         // 交付清单：按服务地点分组。买家到服务地点自取，配送员在点上按名字分发。
         const pointMap = {}
@@ -139,7 +142,7 @@ exports.main = async (event) => {
         }
       }
 
-      // 领活：把这个「批次 × 商家」的单都挂到自己名下
+      // 领活：把这个「批次 × 店长」的单都挂到自己名下
       case 'claim': {
         let nickname = ''
         try {
@@ -171,7 +174,7 @@ exports.main = async (event) => {
         return { success: true, claimed: res.stats.updated }
       }
 
-      // 取到货了：整批标记 picked，同时把商家那边推进到「配送中」
+      // 取到货了：整批标记 picked，同时把店长那边推进到「配送中」
       case 'markPicked': {
         const res = await db.collection('food_orders')
           .where({
@@ -191,7 +194,7 @@ exports.main = async (event) => {
         return { success: true, updated: res.stats.updated }
       }
 
-      // 单个送达：配送和商家两条状态一起收尾
+      // 单个送达：配送和店长两条状态一起收尾
       case 'markDelivered': {
         const doc = await db.collection('food_orders').doc(event.orderId).get()
         const order = doc.data
@@ -209,6 +212,34 @@ exports.main = async (event) => {
             updated_at: new Date()
           }
         })
+
+        // 这条路径直接把订单推成 completed，没走 shopOrders.updateStatus，
+        // 所以买家的到货通知得在这里单独发一次，不然这一类单永远收不到。
+        try {
+          const first = (order.items || [])[0] || {}
+          const more = (order.items || []).length > 1
+            ? ' 等 ' + order.items.length + ' 件' : ''
+          const pad = n => (n < 10 ? '0' + n : '' + n)
+          const now = new Date()
+          await cloud.callFunction({
+            name: 'sendSubscribe',
+            data: {
+              tpl: 'orderProgress',
+              toUser: order.buyer,
+              page: 'pages/myfoodorders/myfoodorders',
+              data: {
+                status: '已送达',
+                item: (first.name || '你的订单') + more,
+                time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                      ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
+                tip: '到 ' + (order.pickup_point || '服务地点') + ' 取一下'
+              }
+            }
+          })
+        } catch (e) {
+          console.warn('送达通知发送失败（不影响状态）：', e)
+        }
+
         return { success: true }
       }
 

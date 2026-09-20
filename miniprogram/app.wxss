@@ -28,6 +28,12 @@
   
     color: var(--color-text);
     font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+
+    /* 正文基准。以前没设这一行，没显式写字号的文字就落到浏览器默认 16px
+       （≈32rpx），比 28rpx 的 subsection-title 还大——标题反而比正文小。
+       字号体系现在是：40 页标题 / 32 分节 / 30 小节 = 30 正文 / 26 次要 / 24 提示。
+       小节标题和正文同号，靠字重区分，不靠字号。 */
+    font-size: 30rpx;
     line-height: 1.5;
     display: flex;
     flex-direction: column;
@@ -92,10 +98,10 @@
     margin: 24rpx 0 16rpx;
   }
   /* 分节标题下面还要再分小节时用这个。
-     比 section-title 小一档、同样加粗——层级靠字重和位置区分,
-     所以它比 30rpx 的表单正文小也不会读成正文。 */
+     和正文同号（30rpx）但加粗——层级靠字重和位置区分，不靠字号。
+     原来是 28rpx，比正文还小，读起来像是正文缩了一圈。 */
   .subsection-title {
-    font-size: 28rpx; font-weight: 700;
+    font-size: 30rpx; font-weight: 700;
     color: var(--color-text);
     margin: 24rpx 0 12rpx;
   }

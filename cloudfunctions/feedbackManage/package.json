@@ -1,0 +1,9 @@
+{
+  "name": "feedbackManage",
+  "version": "1.0.0",
+  "description": "意见反馈：管理员拉列表、回复",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

@@ -1,0 +1,69 @@
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.fb {
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+}
+
+.fb-head {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 12rpx;
+}
+
+.fb-type {
+  font-size: 24rpx;
+  color: var(--color-primary);
+  background: #f7ecef;
+  border-radius: 6rpx;
+  padding: 4rpx 14rpx;
+}
+
+.fb-time {
+  margin-left: auto;
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+.fb-content {
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.fb-contact {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.fb-copy {
+  font-size: 24rpx;
+  color: var(--color-primary);
+}
+
+/* 回复内容：缩进 + 竖条，一眼看出是平台说的话 */
+.fb-reply {
+  margin-top: 20rpx;
+  padding: 16rpx 20rpx;
+  background: #f7f8fa;
+  border-left: 6rpx solid var(--color-primary);
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.fb-reply-label {
+  font-size: 22rpx;
+  color: var(--color-text-light);
+  margin-bottom: 6rpx;
+}
+
+.fb-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20rpx;
+}

@@ -10,15 +10,18 @@ Page({
 
     name: '',
     price: '',
+    unit: '',
     description: '',
     allergens: '',
     category: '',
+    useCategory: false,   // 小店关了分类展示时，这个输入框整个不出现
     image: '',
     tempImage: '',
     available: true
   },
 
   onLoad: function (options) {
+    this.setData({ useCategory: options.cat === '1' })
     if (!options.id) {
       wx.setNavigationBarTitle({ title: '添加商品' })
       return
@@ -40,6 +43,7 @@ Page({
         loading: false,
         name: item.name || '',
         price: String(item.price),
+        unit: item.unit || '',
         description: item.description || '',
         allergens: item.allergens || '',
         category: item.category || '',
@@ -102,7 +106,7 @@ Page({
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.allergens, d.category]
+        texts: [d.name, d.description, d.allergens, d.category, d.unit]
       }))) return
 
       const image = await this.uploadImage()
@@ -121,6 +125,7 @@ Page({
           itemId: d.itemId || undefined,
           name: d.name,
           price: d.price,
+          unit: d.unit,
           description: d.description,
           allergens: d.allergens,
           category: d.category,

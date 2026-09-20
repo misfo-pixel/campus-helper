@@ -1,4 +1,5 @@
 const { ensureContentOk } = require('../../utils/contentCheck.js')
+const { ask } = require('../../utils/subscribe.js')
 
 Page({
   data: {
@@ -23,6 +24,9 @@ Page({
     try {
       // 反馈也是用户产生的内容，一样要过内容安全检测
       if (!(await ensureContentOk({ texts: [content, this.data.contact], scene: 2 }))) return
+
+      // 提反馈的人正等着回音，这一刻要授权最自然
+      await ask('feedbackReply')
 
       const db = wx.cloud.database()
       await db.collection('feedback').add({

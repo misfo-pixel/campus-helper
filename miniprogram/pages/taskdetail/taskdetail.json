@@ -3,6 +3,7 @@
   "usingComponents": {
     "contact-card": "/components/contactCard/index",
     "report-bar": "/components/reportBar/index",
-    "disclaimer-bar": "/components/disclaimerBar/index"
+    "disclaimer-bar": "/components/disclaimerBar/index",
+    "message-board": "/components/messageBoard/index"
   }
 }

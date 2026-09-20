@@ -6,7 +6,7 @@ Page({
   },
 
   goToShops: function () {
-    wx.navigateTo({ url: '/pages/shoplist/shoplist' })   // 校外服务（商家自营）
+    wx.navigateTo({ url: '/pages/shoplist/shoplist' })   // 校外服务（店长自营）
   },
   goToMarket: function () {
     wx.navigateTo({ url: '/pages/market/market' })  // 二手市场

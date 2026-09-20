@@ -3,18 +3,18 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 商家 ←→ 配送队 的配送费对账。
+// 店长 ←→ 配送队 的配送费对账。
 //
 // 平台不经手资金，所以这里唯一的作用是：让两边看到同一个数。
 // 没有这份账，队长和老板每周各数一遍单，数不一样就开始扯皮；
 // 有了它，微信里的对话从「我算 104 你算多少」变成「确认 104，转了」。
 //
 // 关键：金额一律按 delivery_fee_owed 算，不是 delivery_fee_charged。
-// 商家将来搞「满 X 免配送费」时买家实付会变 0，但配送队该拿的一分不少。
+// 店长将来搞「满 X 免配送费」时买家实付会变 0，但配送队该拿的一分不少。
 //
 // 状态机（钱在小程序外走，这里只记录双方的确认）：
-//   pending  已生成账单，等商家转账
-//   paid     商家说转了，等队伍确认收到
+//   pending  已生成账单，等店长转账
+//   paid     店长说转了，等队伍确认收到
 //   settled  队伍确认收到，这一笔结清
 //
 // 任一方都能发起，因为谁先想起来对账都行。
@@ -62,7 +62,7 @@ exports.main = async (event) => {
 
     switch (action) {
 
-      // 待结算汇总：商家看「我欠哪些队多少」，队伍看「哪些商家欠我多少」
+      // 待结算汇总：店长看「我欠哪些队多少」，队伍看「哪些店长欠我多少」
       case 'summary': {
         const res = await db.collection('food_orders')
           .where(unsettledWhere(actor)).limit(1000).get()
@@ -80,7 +80,7 @@ exports.main = async (event) => {
           map[k].orders.push(o)
         })
 
-        // 商家视角要补队伍名（订单里只存了 team_id）
+        // 店长视角要补队伍名（订单里只存了 team_id）
         if (actor.kind === 'shop') {
           const ids = Object.keys(map)
           if (ids.length) {
@@ -197,9 +197,9 @@ exports.main = async (event) => {
         }
       }
 
-      // 商家：我转过去了
+      // 店长：我转过去了
       case 'markPaid': {
-        if (actor.kind !== 'shop') return { success: false, message: '只有商家能标记已转账' }
+        if (actor.kind !== 'shop') return { success: false, message: '只有店长能标记已转账' }
 
         const doc = await db.collection('settlements').doc(event.settlementId).get()
         const bill = doc.data

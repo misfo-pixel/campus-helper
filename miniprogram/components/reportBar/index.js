@@ -2,6 +2,8 @@
 // 微信要求 UGC 小程序必须让用户能就地举报，且举报要有人处理——
 // 处理端在 pages/reports，云函数是 submitReport / getReports / handleReport。
 
+const { ask } = require('../../utils/subscribe.js')
+
 const REASONS = [
   '虚假信息 / 诈骗',
   '色情低俗',
@@ -27,6 +29,8 @@ Component({
     },
 
     submitReport: function (reason) {
+      // 举报的人是最想知道后续的，这一刻要授权成功率最高
+      ask('reportResult')
       wx.showLoading({ title: '提交中', mask: true })
       wx.cloud.callFunction({
         name: 'submitReport',

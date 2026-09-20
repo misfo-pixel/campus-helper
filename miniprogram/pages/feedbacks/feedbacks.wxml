@@ -1,0 +1,32 @@
+<view class="page-container">
+  <view class="tabs">
+    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">待回复</view>
+    <view class="tab {{status === 'replied' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="replied">已回复</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <view wx:elif="{{items.length === 0}}" class="text-light empty">没有记录</view>
+
+  <view wx:for="{{items}}" wx:key="_id" class="card fb">
+    <view class="fb-head">
+      <text class="fb-type">{{item.type || '其他'}}</text>
+      <text class="fb-time">{{item.timeText}}</text>
+    </view>
+
+    <view class="fb-content">{{item.content}}</view>
+
+    <view wx:if="{{item.contact}}" class="fb-contact">
+      <text class="text-light">联系方式：{{item.contact}}</text>
+      <text class="fb-copy" bindtap="copyContact" data-text="{{item.contact}}">复制</text>
+    </view>
+
+    <view wx:if="{{item.reply}}" class="fb-reply">
+      <view class="fb-reply-label">已回复 · {{item.replyTimeText}}</view>
+      <view>{{item.reply}}</view>
+    </view>
+
+    <view wx:if="{{!item.replied}}" class="fb-actions">
+      <button class="btn-primary btn-sm" bindtap="reply" data-id="{{item._id}}">回复</button>
+    </view>
+  </view>
+</view>

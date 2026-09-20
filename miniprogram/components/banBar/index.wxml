@@ -1,0 +1,5 @@
+<view class="ban" bindtap="openFull">
+  <text class="ban-icon">⛔</text>
+  <text class="ban-text">禁止发布{{banned}}等违规内容</text>
+  <text class="ban-link">详情 ›</text>
+</view>

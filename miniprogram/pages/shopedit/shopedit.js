@@ -1,27 +1,19 @@
-// 入驻申请 + 店铺设置。
-// 两个场景表单完全一样，只是一个 add 一个 update，所以合成一个页面用 isNew 区分，
-// 免得维护两份长得一模一样的表单。
+// 小店设置。只给已经有店的人用——开店走的是 pages/shopcreate 那个向导。
+//
+// 分开是有意的：开店的人还不知道要填什么，得被引着一步步走；
+// 已经开了店的人通常只想改一个字段，一张长表单比三屏向导快。
+// 两边共用的分类口径、老数据映射、图片上传、方案校验在 utils/shopForm.js。
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
-
-// 分类要能容下非餐饮商家（代购、生活服务），别把模块绑死在餐饮上。
-const CATEGORIES = ['美食', '饮品甜点', '日用百货', '生活服务', '其他']
-
-// 第一版分类全是餐饮口径，老店铺库里存的还是那批值。不映射的话
-// 下面的 indexOf 返回 -1 会静默退回第一项——商家一保存，分类就被悄悄改掉了。
-const LEGACY_CATEGORY = {
-  '中餐': '美食',
-  '快餐简餐': '美食',
-  '奶茶饮品': '饮品甜点',
-  '烘焙甜点': '饮品甜点'
-}
+const { TEAM_MODULE_ENABLED } = require('../../config.js')
+const {
+  CATEGORIES, categoryIndexOf, uploadShopImage, validatePlan
+} = require('../../utils/shopForm.js')
 
 Page({
   data: {
-    isNew: true,
     loading: true,
     saving: false,
-    agreed: false,
 
     name: '',
     logo: '',          // 已保存的云文件 ID，或本次新选的本地临时路径
@@ -31,18 +23,30 @@ Page({
     description: '',
     min_order: '',
     business_hours: '',
+    order_notice: '',
     contact_wechat: '',
 
+    // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
+    paymentEnabled: false,
+    payment_note: '',
+    paymentQr: '',
+    tempPaymentQr: '',
 
-    // 配送：商家先选「自己送」还是「外包给配送队」。
-    // 服务地点和批次归实际送货的一方：自己送就在下面的方案编辑器里填，外包就用队伍那份。
+    // 要不要配送。关掉之后服务地点、服务时间、配送费整套都不适用，
+    // 云函数那边会把这三项清空（见 shopManage 的 pickShopFields）。
+    needsDelivery: true,
+
+    teamEnabled: TEAM_MODULE_ENABLED,
+
+    // 配送方式：自己送 / 外包给配送队。
+    // 服务地点和批次归实际送货的一方：自己送就在方案编辑器里填，外包就用队伍那份。
     deliveryMode: 'self',
     teams: [],
     teamNames: [],
     teamIndex: null,
 
     // 资质：凭证选填。平台不核实，传了就留档，不传也能开店——
-    // 商家多是学生，硬卡一道「我已取得资质」的声明只会把人挡在门外。
+    // 店长多是学生，硬卡一道「我已取得资质」的声明只会把人挡在门外。
     licenseImage: '',
     tempLicense: '',
 
@@ -60,35 +64,41 @@ Page({
       const r = (res && res.result) || {}
       const shop = r.shop
 
+      // 没店的人不该站在设置页上，直接送去开店向导
       if (!shop) {
-        this.setData({ isNew: true, loading: false })
+        wx.redirectTo({ url: '/pages/shopcreate/shopcreate' })
         return
       }
 
-      const idx = CATEGORIES.indexOf(LEGACY_CATEGORY[shop.category] || shop.category)
       this.setData({
-        isNew: false,
         loading: false,
         name: shop.name || '',
         logo: shop.logo || '',
-        categoryIndex: idx === -1 ? 0 : idx,
+        categoryIndex: categoryIndexOf(shop.category),
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
         business_hours: shop.business_hours || '',
+        order_notice: shop.order_notice || '',
         contact_wechat: shop.contact_wechat || '',
-        deliveryMode: shop.delivery_mode || 'self',
+        paymentEnabled: shop.payment_enabled === true,
+        payment_note: shop.payment_note || '',
+        paymentQr: shop.payment_qr || '',
+        // 老店铺没这个字段，按「要配送」算，跟云函数那边的默认保持一致
+        needsDelivery: shop.needs_delivery !== false,
+        // 队伍模块关掉时一律按自送读，否则老店铺会停在一个界面上改不了的状态
+        deliveryMode: TEAM_MODULE_ENABLED ? (shop.delivery_mode || 'self') : 'self',
         licenseImage: shop.license_image || '',
         planPoints: shop.pickup_points || [],
         planBatches: shop.batches || []
       }, () => this.markTeam(shop.delivery_team_id))
     }).catch(err => {
-      console.error('读取店铺失败：', err)
+      console.error('读取小店失败：', err)
       this.setData({ loading: false })
       wx.showToast({ title: '读取失败', icon: 'none' })
     })
   },
 
-  // 审核通过的配送队，外包时从这里选
+  // 通过核对的配送队，外包时从这里选
   loadTeams: function () {
     return wx.cloud.callFunction({
       name: 'deliveryManage',
@@ -102,7 +112,7 @@ Page({
     })
   },
 
-  // 店铺原本绑的那个队，在列表里定位一下
+  // 小店原本绑的那个队，在列表里定位一下
   markTeam: function (teamId) {
     if (!teamId) return
     const idx = this.data.teams.findIndex(t => t._id === teamId)
@@ -114,26 +124,22 @@ Page({
     this.setData({ planPoints: e.detail.points, planBatches: e.detail.batches })
   },
 
-  chooseLicense: function () {
+  onPaymentEnabledChange: function (e) {
+    this.setData({ paymentEnabled: e.detail.value })
+  },
+
+  choosePaymentQr: function () {
     wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sizeType: ['compressed'],
+      count: 1, mediaType: ['image'], sizeType: ['compressed'],
       success: res => {
         const path = res.tempFiles[0].tempFilePath
-        this.setData({ licenseImage: path, tempLicense: path })
+        this.setData({ paymentQr: path, tempPaymentQr: path })
       }
     })
   },
 
-  uploadLicense: function () {
-    const temp = this.data.tempLicense
-    if (!temp) return Promise.resolve(this.data.licenseImage)
-
-    const match = temp.match(/\.(\w+)$/)
-    const ext = match ? match[1] : 'jpg'
-    const cloudPath = 'licenses/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + ext
-    return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: temp }).then(r => r.fileID)
+  onNeedsDeliveryChange: function (e) {
+    this.setData({ needsDelivery: e.detail.value })
   },
 
   onDeliveryModeChange: function (e) {
@@ -145,23 +151,16 @@ Page({
   },
 
   onInput: function (e) {
-    const field = e.currentTarget.dataset.field
-    this.setData({ [field]: e.detail.value })
+    this.setData({ [e.currentTarget.dataset.field]: e.detail.value })
   },
 
   onCategoryChange: function (e) {
     this.setData({ categoryIndex: Number(e.detail.value) })
   },
 
-  onAgreeChange: function (e) {
-    this.setData({ agreed: e.detail.value.length > 0 })
-  },
-
   chooseLogo: function () {
     wx.chooseMedia({
-      count: 1,
-      mediaType: ['image'],
-      sizeType: ['compressed'],
+      count: 1, mediaType: ['image'], sizeType: ['compressed'],
       success: res => {
         const path = res.tempFiles[0].tempFilePath
         this.setData({ logo: path, tempLogo: path })
@@ -169,74 +168,57 @@ Page({
     })
   },
 
-  // 没换 Logo 就把原来的云文件 ID 原样返回
-  uploadLogo: function () {
-    const temp = this.data.tempLogo
-    if (!temp) return Promise.resolve(this.data.logo)
-
-    const match = temp.match(/\.(\w+)$/)
-    const ext = match ? match[1] : 'jpg'
-    const cloudPath = 'shops/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + ext
-    return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: temp }).then(r => r.fileID)
+  chooseLicense: function () {
+    wx.chooseMedia({
+      count: 1, mediaType: ['image'], sizeType: ['compressed'],
+      success: res => {
+        const path = res.tempFiles[0].tempFilePath
+        this.setData({ licenseImage: path, tempLicense: path })
+      }
+    })
   },
 
   submit: async function () {
     const d = this.data
     if (d.saving) return
 
-    if (d.isNew && !d.agreed) {
-      wx.showToast({ title: '请先阅读并同意商家责任告知书', icon: 'none' })
-      return
-    }
-    // 分节标题上不再逐个标（必填），所以漏填时要指名道姓，
-    // 而不是甩一句「请填完必填项」让商家自己回去找
+    // 漏填时指名道姓，而不是甩一句「请填完必填项」让店长自己回去找
     if (!d.name) {
-      wx.showToast({ title: '请填写店铺名称', icon: 'none' })
+      wx.showToast({ title: '请填写小店名称', icon: 'none' })
       return
     }
     if (!d.contact_wechat) {
       wx.showToast({ title: '请填写联系微信', icon: 'none' })
       return
     }
-    if (d.deliveryMode === 'outsourced' && d.teamIndex === null) {
-      wx.showToast({ title: '请选择要外包给哪个配送队', icon: 'none' })
-      return
-    }
-    if (d.deliveryMode === 'self') {
-      const points = (d.planPoints || []).filter(p => String(p.name || '').trim())
-      if (!points.length) {
-        wx.showToast({ title: '自己送的话，至少要设一个服务地点', icon: 'none' })
+    if (d.needsDelivery) {
+      if (d.deliveryMode === 'outsourced' && d.teamIndex === null) {
+        wx.showToast({ title: '请选择要外包给哪个配送队', icon: 'none' })
         return
       }
-      const names = points.map(p => p.name.trim())
-      if (new Set(names).size !== names.length) {
-        wx.showToast({ title: '服务地点名字不能重复', icon: 'none' })
-        return
-      }
-      // 场次的日期只校验填没填，不校验是不是过去的日子——
-      // 否则场次一过期，商家连改商品、改联系方式都保存不了
-      const batch = (d.planBatches || [])[0]
-      if (!batch || !batch.date) {
-        wx.showToast({ title: '请选择服务时间的日期', icon: 'none' })
-        return
-      }
-      if (batch.deliver_time <= batch.cutoff) {
-        wx.showToast({ title: '送达时间要晚于截单时间', icon: 'none' })
-        return
+      if (d.deliveryMode === 'self') {
+        const bad = validatePlan(d.planPoints, d.planBatches)
+        if (bad) {
+          wx.showToast({ title: bad, icon: 'none' })
+          return
+        }
       }
     }
 
     this.setData({ saving: true })
-    wx.showLoading({ title: d.isNew ? '提交中...' : '保存中...', mask: true })
+    wx.showLoading({ title: '保存中...', mask: true })
 
     try {
-      // 店铺资料是公开展示的内容，一样要过内容安全检测
+      // 小店资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.business_hours, d.contact_wechat]
+        texts: [d.name, d.description, d.business_hours, d.order_notice, d.contact_wechat, d.payment_note]
       }))) return
 
-      const logo = await this.uploadLogo()
-      const licenseImage = await this.uploadLicense()
+      const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
+      const licenseImage = await uploadShopImage(d.tempLicense, d.licenseImage, 'licenses')
+      const paymentQr = d.paymentEnabled
+        ? await uploadShopImage(d.tempPaymentQr, d.paymentQr, 'payqr')
+        : ''
 
       // 换了新 Logo 才需要检测，没换的是之前已经检过的
       if (d.tempLogo && logo) {
@@ -246,46 +228,42 @@ Page({
         }
       }
 
-      const payload = {
-        action: d.isNew ? 'apply' : 'update',
-        agreed: d.agreed,
-        name: d.name,
-        logo: logo,
-        category: CATEGORIES[d.categoryIndex],
-        description: d.description,
-        min_order: d.min_order,
-        business_hours: d.business_hours,
-        contact_wechat: d.contact_wechat,
-        delivery_mode: d.deliveryMode,
-        delivery_team_id: d.teamIndex === null ? '' : d.teams[d.teamIndex]._id,
-        license_image: licenseImage,
-        pickup_points: d.planPoints,
-        batches: d.planBatches
-      }
+      const res = await wx.cloud.callFunction({
+        name: 'shopManage',
+        data: {
+          action: 'update',
+          name: d.name,
+          logo: logo,
+          category: CATEGORIES[d.categoryIndex],
+          description: d.description,
+          min_order: d.min_order,
+          business_hours: d.business_hours,
+          order_notice: d.order_notice,
+          contact_wechat: d.contact_wechat,
+          payment_enabled: d.paymentEnabled,
+          payment_note: d.paymentEnabled ? d.payment_note : '',
+          payment_qr: paymentQr,
+          needs_delivery: d.needsDelivery,
+          delivery_mode: d.deliveryMode,
+          delivery_team_id: (!TEAM_MODULE_ENABLED || d.teamIndex === null) ? '' : d.teams[d.teamIndex]._id,
+          license_image: licenseImage,
+          pickup_points: d.planPoints,
+          batches: d.planBatches
+        }
+      })
 
-      const res = await wx.cloud.callFunction({ name: 'shopManage', data: payload })
-      const r = (res && res.result) || {}
       wx.hideLoading()
-
+      const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '提交失败', icon: 'none' })
+        wx.showToast({ title: r.message || '保存失败', icon: 'none' })
         return
       }
 
-      if (d.isNew) {
-        wx.showModal({
-          title: '开店成功',
-          content: '去工作台上架商品，然后把状态切成「营业中」就能接单了。',
-          showCancel: false,
-          success: () => wx.navigateBack()
-        })
-      } else {
-        wx.showToast({ title: '已保存', icon: 'success' })
-        setTimeout(() => wx.navigateBack(), 1000)
-      }
+      wx.showToast({ title: '已保存', icon: 'success' })
+      setTimeout(() => wx.navigateBack(), 1000)
     } catch (err) {
       wx.hideLoading()
-      console.error('保存店铺失败：', err)
+      console.error('保存小店失败：', err)
       wx.showToast({ title: '保存失败，请重试', icon: 'none' })
     } finally {
       this.setData({ saving: false })

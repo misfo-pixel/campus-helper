@@ -212,3 +212,32 @@
   background: #666;
   color: #ccc;
 }
+
+/* 商家自己写的下单须知。平台只负责展示，内容由商家负责 */
+.notice-box {
+  background: #f7f8fa;
+  border-left: 6rpx solid #7A0019;
+  border-radius: 8rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.notice-title {
+  font-size: 26rpx;
+  font-weight: bold;
+  margin-bottom: 8rpx;
+}
+
+.notice-text {
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: #555;
+  white-space: pre-wrap;
+}
+
+/* 计价单位，跟在价格后面，弱化显示 */
+.dish-unit {
+  font-size: 22rpx;
+  font-weight: normal;
+  color: #999;
+}

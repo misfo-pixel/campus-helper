@@ -22,7 +22,7 @@
 
     <view wx:if="{{team.audit_status === 'pending'}}" class="audit-box audit-pending">
       <view class="audit-title">队伍审核中</view>
-      <view class="audit-desc">通过后商家才能选择把配送外包给你们。</view>
+      <view class="audit-desc">通过后店长才能选择把配送外包给你们。</view>
     </view>
     <view wx:elif="{{team.audit_status === 'rejected'}}" class="audit-box audit-rejected">
       <view class="audit-title">审核未通过</view>
@@ -31,7 +31,7 @@
 
     <block wx:if="{{team.audit_status === 'approved'}}">
       <view wx:if="{{groups.length === 0}}" class="text-light empty">
-        暂时没有待配送的单，商家接单后会出现在这里。
+        暂时没有待配送的单，店长接单后会出现在这里。
       </view>
 
       <view wx:for="{{groups}}" wx:key="batch_key" class="batch">

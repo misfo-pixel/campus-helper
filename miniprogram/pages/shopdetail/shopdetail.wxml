@@ -6,7 +6,7 @@
     <view class="shop-meta">
       <view class="shop-name">{{shop.name}}</view>
       <view wx:if="{{shop.description}}" class="shop-desc">{{shop.description}}</view>
-      <view class="shop-info">{{shop.min_order > 0 ? "起送 $" + shop.min_order + " · " : ""}}配送费按服务地点计算</view>
+      <view class="shop-info">{{shop.min_order > 0 ? "起送 $" + shop.min_order + " · " : ""}}{{shop.needs_delivery === false ? '不配送，下单后与店长约定' : '配送费按服务地点计算'}}</view>
       <view wx:if="{{shop.business_hours}}" class="shop-info">{{shop.business_hours}}</view>
     </view>
   </view>
@@ -18,9 +18,15 @@
   <view class="page-container">
     <disclaimer-bar type="buyer" />
 
+    <!-- 店长自己写的须知。平台不生成、不审核这段内容 -->
+    <view wx:if="{{shop.order_notice}}" class="notice-box">
+      <view class="notice-title">下单须知</view>
+      <view class="notice-text">{{shop.order_notice}}</view>
+    </view>
+
     <!-- 商品 -->
     <block wx:for="{{groups}}" wx:key="category">
-      <view class="section-title">{{item.category}}</view>
+      <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
 
       <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="_id" class="card dish">
         <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" class="dish-img" />
@@ -30,7 +36,7 @@
           <view class="dish-name {{dish.available ? '' : 'dish-off'}}">{{dish.name}}</view>
           <view wx:if="{{dish.description}}" class="text-light dish-desc">{{dish.description}}</view>
           <view wx:if="{{dish.allergens}}" class="dish-allergens">⚠️ 含：{{dish.allergens}}</view>
-          <view class="dish-price">${{dish.price}}</view>
+          <view class="dish-price">${{dish.price}}<text wx:if="{{dish.unit}}" class="dish-unit"> / {{dish.unit}}</text></view>
         </view>
 
         <view class="dish-ops">
@@ -48,7 +54,7 @@
 
     <!-- 从转发卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
-    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">看看其他商家 ›</view>
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">看看其他小店 ›</view>
 
     <report-bar target-type="shop" target-id="{{shop._id}}" />
 

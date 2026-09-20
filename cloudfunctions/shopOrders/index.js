@@ -3,14 +3,22 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 商家侧的订单：拉列表 + 推进状态。
+// 店长侧的订单：拉列表 + 推进状态。
 //
-// 状态机全部由商家自己推进，平台不介入任何一步——这就是「不需要管理员」的实现方式。
+// 状态机全部由店长自己推进，平台不介入任何一步——这就是「不需要管理员」的实现方式。
 // 平台也不碰钱：订单里没有任何支付状态，小程序里也不展示收款方式。
-// 订单只是买家的下单意向，商家自己联系买家之后再决定接不接。
+// 订单只是买家的下单意向，店长自己联系买家之后再决定接不接。
 
 // 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
 // 免得前端出 bug 时把订单改成乱七八糟的状态。
+// 推给买家的状态词。模板里「当前状态」是 phrase 类型，5 个汉字封顶。
+const STATUS_TEXT = {
+  accepted: '已接单',
+  delivering: '配送中',
+  completed: '已完成',
+  cancelled: '已取消'
+}
+
 const TRANSITIONS = {
   pending: ['accepted', 'cancelled'],     // 待确认 → 接单 / 拒单
   accepted: ['delivering', 'cancelled'],  // 准备中 → 开始配送 / 取消
@@ -100,6 +108,36 @@ exports.main = async (event) => {
             updated_at: new Date()
           }
         })
+
+        // 告诉买家状态变了。买家在下单那一刻授权过，这条多半发得出去。
+        try {
+          const first = (order.items || [])[0] || {}
+          const more = (order.items || []).length > 1
+            ? ' 等 ' + order.items.length + ' 件' : ''
+          const pad = n => (n < 10 ? '0' + n : '' + n)
+          const now = new Date()
+          await cloud.callFunction({
+            name: 'sendSubscribe',
+            data: {
+              tpl: 'orderProgress',
+              toUser: order.buyer,
+              page: 'pages/myfoodorders/myfoodorders',
+              data: {
+                status: STATUS_TEXT[next] || next,
+                item: (first.name || '你的订单') + more,
+                // date 类型：年月日，可带时分秒
+                time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                      ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
+                tip: next === 'cancelled'
+                  ? (event.reason || '店长取消了这笔订单')
+                  : '店长微信：' + (shop.contact_wechat || '见订单页')
+              }
+            }
+          })
+        } catch (e) {
+          console.warn('订单进度通知发送失败（不影响状态推进）：', e)
+        }
+
         return { success: true }
       }
 

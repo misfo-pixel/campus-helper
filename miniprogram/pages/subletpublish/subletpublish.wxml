@@ -42,16 +42,19 @@
     <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex}}" />
   </block>
 
-  <view class="section-title">租期</view>
-  <view class="field-hint">租期结束日到了，房源会自动下架。</view>
+  <!-- 求租填的是「想什么时候租」，不是已经定下的租期，两边措辞分开 -->
+  <view class="section-title">{{demand ? '想租的时间（必填）' : '租期（必填）'}}</view>
+  <view class="field-hint">
+    {{demand ? '希望租到的日期过了，求租会自动下架。' : '租期结束日到了，房源会自动下架。'}}
+  </view>
   <picker mode="date" value="{{start_date}}" bindchange="onStartDateChange">
     <view class="card" style="padding: 24rpx; color: {{start_date ? '#000' : '#999'}};">
-      {{start_date || '起租日期（可入住时间）'}}
+      {{start_date || (demand ? '希望入住日期' : '起租日期（可入住时间）')}}
     </view>
   </picker>
   <picker mode="date" value="{{end_date}}" bindchange="onEndDateChange">
     <view class="card" style="padding: 24rpx; color: {{end_date ? '#000' : '#999'}};">
-      {{end_date || '租期结束日期'}}
+      {{end_date || (demand ? '希望租到的日期' : '租期结束日期')}}
     </view>
   </picker>
 

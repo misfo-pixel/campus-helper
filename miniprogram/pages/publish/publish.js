@@ -2,6 +2,7 @@ const { markStale } = require('../../utils/refresh.js')
 // pages/publish.js
 const { myProfile } = require('../../utils/user.js')
 const { createUploader, requestReview } = require('../../utils/publish.js')
+const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
 
 const CFG = KINDS.item
@@ -126,6 +127,8 @@ Page({
 
       // 3. 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
       requestReview('item', added._id, title)
+      // 到期前一天 autoExpire 会来提醒一次，得先有这张票
+      ask('expiring')
 
       wx.hideLoading()
       markStale('item')   // 列表页返回时会看到这条新发布的

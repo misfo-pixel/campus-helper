@@ -1,9 +1,9 @@
-// 商家工作台。订单状态全部由商家自己推进，平台不介入任何一步。
+// 店长工作台。订单状态全部由店长自己推进，平台不介入任何一步。
 // 平台也不碰钱——订单里没有支付状态，小程序里也不出现任何收款方式。
-// 订单只是买家的下单意向，商家自己通过微信联系买家后再决定接不接。
+// 订单只是买家的下单意向，店长自己通过微信联系买家后再决定接不接。
 
-// 商家只有两态。closed 是系统态（待审 / 被拒 / 重审中），
-// 商家选不到，但显示上也归到「打烊」——他不需要知道这个区别。
+// 店长只有两态。closed 是系统态（待审 / 被拒 / 重审中），
+// 店长选不到，但显示上也归到「打烊」——他不需要知道这个区别。
 const SHOP_STATUS_TEXT = { open: '营业中', paused: '打烊', closed: '打烊' }
 const SHOP_STATUS_LIST = [
   { value: 'open', label: '营业中（接单）' },
@@ -26,8 +26,12 @@ function formatTime(value) {
   return pad(d.getHours()) + ':' + pad(d.getMinutes())
 }
 
+const { TEAM_MODULE_ENABLED } = require('../../config.js')
+const { ask } = require('../../utils/subscribe.js')
+
 Page({
   data: {
+    teamEnabled: TEAM_MODULE_ENABLED,
     loading: true,
     shop: null,
     shopStatusText: '',
@@ -65,7 +69,7 @@ Page({
     })
   },
 
-  // 场次过了就没人下得了单，可店还好端端挂在列表里，商家自己看不出来。
+  // 场次过了就没人下得了单，可店还好端端挂在列表里，店长自己看不出来。
   //
   // 没有日期的场次也要报警：那是场次还没按日期填过的老数据，
   // 买家侧同样一个可选场次都展不出来，而且它比「过期」更隐蔽。
@@ -73,6 +77,7 @@ Page({
   // 外包给配送队的店用的是队伍那份方案，不归他管，就别吓唬他了。
   checkSlot: function (shop) {
     if (!shop || shop.takedown) return { alert: false, lastDate: '' }
+    if (shop.needs_delivery === false) return { alert: false, lastDate: '' }
     if (shop.delivery_mode === 'outsourced') return { alert: false, lastDate: '' }
 
     const slot = (shop.batches || [])[0]
@@ -131,7 +136,7 @@ Page({
     this.setData({ tab: tab, orders: [] }, () => this.loadOrders())
   },
 
-  // 营业状态是商家最高频的操作，放在最顶上一点就能切
+  // 营业状态是店长最高频的操作，放在最顶上一点就能切
   changeShopStatus: function () {
     wx.showActionSheet({
       itemList: SHOP_STATUS_LIST.map(s => s.label),
@@ -228,6 +233,20 @@ Page({
   goToMenu: function () {
     wx.navigateTo({ url: '/pages/shopmenu/shopmenu' })
   },
+  // 订阅消息一次授权只能收一条，所以这是个要反复点的按钮，不是开关。
+  // 微信没给「长期订阅」的口子（那个只对政务医疗等类目开放），只能这样。
+  enableOrderAlert: async function () {
+    const ok = await ask('newOrder')
+    wx.showModal({
+      title: ok ? '已开启' : '没有开启',
+      content: ok
+        ? '下一笔新订单会用微信服务通知提醒你。\n\n微信的规则是一次授权收一条，想持续收到，隔段时间回来再点一次。'
+        : '你刚才没有同意接收通知。需要的话再点一次这个按钮。',
+      showCancel: false,
+      confirmText: '知道了'
+    })
+  },
+
   goToSettings: function () {
     wx.navigateTo({ url: '/pages/shopedit/shopedit' })
   },
@@ -235,6 +254,6 @@ Page({
     wx.navigateTo({ url: '/pages/settlement/settlement?as=shop' })
   },
   goToApply: function () {
-    wx.navigateTo({ url: '/pages/shopedit/shopedit' })
+    wx.navigateTo({ url: '/pages/shopcreate/shopcreate' })
   }
 })

@@ -9,7 +9,8 @@ const COLLECTIONS = {
   item: 'secondhand_items',
   sublet: 'sublet_items',
   task: 'task_items',
-  shop: 'shops'
+  shop: 'shops',
+  message: 'messages'
 }
 
 exports.main = async (event) => {
@@ -37,15 +38,17 @@ exports.main = async (event) => {
 
     // 存一份被举报内容的快照：管理员列表不用回表查，
     // 而且内容被发布者自己删了之后也还能看到当初举报的是什么
-    // 两种内容的字段名不一样：用户发的帖子是 title + _openid（小程序端 add 自带），
-    // 店铺是 name + owner（云函数写库不会自动带 _openid，归属只能显式存）。
+    // 三种内容的字段名都不一样：
+    //   帖子   title  + _openid（小程序端 add 自带）
+    //   店铺   name   + owner  （云函数写库不带 _openid，归属显式存）
+    //   留言   content+ author
     let title = ''
     let ownerOpenid = ''
     try {
       const doc = await db.collection(collection).doc(targetId).get()
       const d = doc.data || {}
-      title = d.title || d.name || ''
-      ownerOpenid = d._openid || d.owner || ''
+      title = d.title || d.name || d.content || ''
+      ownerOpenid = d._openid || d.owner || d.author || ''
     } catch (e) {
       console.warn('被举报内容已不存在：', targetType, targetId)
     }

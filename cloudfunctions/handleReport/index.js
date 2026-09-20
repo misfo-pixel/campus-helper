@@ -10,7 +10,8 @@ const COLLECTIONS = {
   item: 'secondhand_items',
   sublet: 'sublet_items',
   task: 'task_items',
-  shop: 'shops'
+  shop: 'shops',
+  message: 'messages'
 }
 
 exports.main = async (event) => {
@@ -39,7 +40,7 @@ exports.main = async (event) => {
           if (report.targetType === 'shop') {
             // 店铺不能直接删：底下挂着 shop_items 和历史订单，删了全成孤儿数据，
             // 买家也再查不到自己下过的单。改成强制关店 + takedown 标记，
-            // shopManage 的 setStatus 据此不让商家自己再开回来。
+            // shopManage 的 setStatus 据此不让店长自己再开回来。
             await db.collection(collection).doc(report.targetId).update({
               data: {
                 status: 'closed',
@@ -65,6 +66,36 @@ exports.main = async (event) => {
         handled_at: new Date()
       }
     })
+
+    // 告诉举报人处理完了。没这一步，举报就是个许愿池——
+    // 用户举报一次没下文，第二次就不会再举报了。
+    // 发不出去很正常（对方没授权、模板还没申请），不能影响处理本身。
+    if (report.reporter) {
+      try {
+        const now = new Date()
+        const pad = n => (n < 10 ? '0' + n : '' + n)
+        // 「处理日期」在模板里是 time 类型（24 小时制，可带日期），
+        // 只发年月日会被判格式不符，要带上时分
+        await cloud.callFunction({
+          name: 'sendSubscribe',
+          data: {
+            tpl: 'reportResult',
+            toUser: report.reporter,
+            data: {
+              content: report.targetTitle || '你举报的内容',
+              result: action === 'delete' ? '已删除' : '未发现违规',
+              date: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                    ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()),
+              tip: action === 'delete'
+                ? '感谢反馈，内容已下架'
+                : '核实后未发现违规，感谢关注'
+            }
+          }
+        })
+      } catch (e) {
+        console.warn('举报结果通知发送失败（不影响处理）：', e)
+      }
+    }
 
     return { success: true }
   } catch (err) {

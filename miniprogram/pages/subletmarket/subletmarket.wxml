@@ -18,8 +18,8 @@
       <view style="flex: 1; min-width: 0;">
         <view style="font-size: 30rpx; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
         <view class="price" style="margin: 8rpx 0;">${{item.rent}}/月</view>
-        <view class="text-light" style="font-size: 24rpx;">{{item.room_type}} · {{item.address}}</view>
-        <view class="text-light" style="font-size: 24rpx; margin-top: 4rpx;">{{item.start_date}} 起</view>
+        <view class="text-light">{{item.room_type}} · {{item.address}}</view>
+        <view class="text-light" style="margin-top: 4rpx;">{{item.start_date}} 起</view>
       </view>
     </view>
   </view>
@@ -31,7 +31,7 @@
         <view style="font-size: 30rpx; font-weight: bold; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{item.title}}</view>
         <view class="price" style="margin-left: 20rpx;">预算 ${{item.rentText}}/月</view>
       </view>
-      <view class="text-light" style="font-size: 24rpx; margin-top: 8rpx;">想找：{{item.room_type || '不限'}} · {{item.address || '区域不限'}}</view>
+      <view class="text-light" style="margin-top: 8rpx;">想找：{{item.room_type || '不限'}} · {{item.address || '区域不限'}}</view>
       <view wx:if="{{item.description}}" class="text-light"
             style="margin-top: 12rpx; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">{{item.description}}</view>
     </view>

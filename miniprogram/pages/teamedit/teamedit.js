@@ -1,7 +1,7 @@
 // 建队 / 队伍设置 / 成员管理。
 //
 // 队伍自己定配送方案：有哪些服务地点、各收多少、每天几班。
-// 外包给这支队伍的商家，买家看到的就是这套。
+// 外包给这支队伍的店长，买家看到的就是这套。
 // 除此之外这里管队伍本身：叫什么、找谁、钱打到哪、谁在队里。
 
 const { ensureContentOk } = require('../../utils/contentCheck.js')
@@ -110,7 +110,7 @@ Page({
     wx.showLoading({ title: d.isNew ? '提交中' : '保存中', mask: true })
 
     try {
-      // 队伍名和简介会展示给商家看，属于 UGC
+      // 队伍名和简介会展示给店长看，属于 UGC
       if (!(await ensureContentOk({
         texts: [d.name, d.description, d.contact_wechat, d.payment_note]
       }))) return
@@ -138,7 +138,7 @@ Page({
       if (d.isNew) {
         wx.showModal({
           title: '已提交',
-          content: '队伍申请已提交，等超管审核通过后，商家就能选择把配送外包给你们。',
+          content: '队伍申请已提交，等超管审核通过后，店长就能选择把配送外包给你们。',
           showCancel: false,
           success: () => this.load()
         })

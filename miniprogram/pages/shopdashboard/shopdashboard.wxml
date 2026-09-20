@@ -4,9 +4,9 @@
   <block wx:if="{{!shop}}">
     <view class="empty-apply">
       <view class="empty-emoji">🏪</view>
-      <view class="empty-title">你还没有店铺</view>
-      <view class="text-light empty-desc">入驻后就能上架商品、接收订单。</view>
-      <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">申请入驻</button>
+      <view class="empty-title">你还没有小店</view>
+      <view class="text-light empty-desc">开店后就能上架商品、接收订单。</view>
+      <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">开一家小店</button>
     </view>
   </block>
 
@@ -17,7 +17,7 @@
       <view class="audit-desc">你的店铺因违规被下架，无法继续营业。如有异议，请通过「意见反馈」联系我们。</view>
     </view>
 
-    <!-- 没有可约场次：店还在列表里，但买家一下单就被拦，商家自己看不出来 -->
+    <!-- 没有可约场次：店还在列表里，但买家一下单就被拦，店长自己看不出来 -->
     <view wx:if="{{slotAlert}}" class="audit-box audit-rejected">
       <view class="audit-title">{{slotLastDate ? '服务时间已过期' : '还没设置服务时间'}}</view>
       <view class="audit-desc">
@@ -123,10 +123,14 @@
       </view>
       <view class="entry card" bindtap="goToSettings">
         <view class="entry-icon">⚙️</view>
-        <view class="entry-label">店铺设置</view>
+        <view class="entry-label">小店设置</view>
+      </view>
+      <view class="entry card" bindtap="enableOrderAlert">
+        <view class="entry-icon">🔔</view>
+        <view class="entry-label">开启新单提醒</view>
       </view>
       <!-- 外包配送才需要跟队伍结账，自己送的没这回事 -->
-      <view wx:if="{{shop.delivery_mode === 'outsourced'}}" class="entry card" bindtap="goToSettlement">
+      <view wx:if="{{teamEnabled && shop.delivery_mode === 'outsourced'}}" class="entry card" bindtap="goToSettlement">
         <view class="entry-icon">💵</view>
         <view class="entry-label">配送费对账</view>
       </view>

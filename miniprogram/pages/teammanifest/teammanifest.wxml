@@ -4,19 +4,19 @@
     <view class="text-light">{{batchLabel ? batchLabel + ' · ' : ''}}{{deliverTime}} 送达 · 还剩 {{remaining}} 单未送达</view>
   </view>
 
-  <!-- 取货清单：直接念给商家 -->
-  <view class="section-title">📋 取货清单（报给商家）</view>
+  <!-- 取货清单：直接念给店长 -->
+  <view class="section-title">📋 取货清单（报给店长）</view>
   <view class="card pickup-card">
     <view wx:for="{{pickup}}" wx:key="name" class="pickup-line">
       <text class="pickup-name">{{item.name}}</text>
-      <text class="pickup-count">×{{item.count}}</text>
+      <text class="pickup-count">×{{item.count}}{{item.unit}}</text>
     </view>
   </view>
 
   <button wx:if="{{!allPicked}}" class="btn-primary" bindtap="markPicked" style="margin: 24rpx 0;">
-    我在商家取到货了
+    我到店取到货了
   </button>
-  <view wx:else class="picked-tip">已标记取货，商家那边显示配送中</view>
+  <view wx:else class="picked-tip">已标记取货，店长那边显示配送中</view>
 
   <!-- 交付清单：按服务地点走 -->
   <view class="section-title">🚚 交付清单（按服务地点）</view>

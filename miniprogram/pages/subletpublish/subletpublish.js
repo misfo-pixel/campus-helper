@@ -1,6 +1,7 @@
 const { markStale } = require('../../utils/refresh.js')
 const { myProfile } = require('../../utils/user.js')
 const { createUploader, requestReview } = require('../../utils/publish.js')
+const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
 
 const CFG = KINDS.sublet
@@ -175,6 +176,8 @@ Page({
 
       // 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
       requestReview('sublet', added._id, d.title)
+      // 租期结束前一天 autoExpire 会来提醒一次，得先有这张票
+      ask('expiring')
 
       wx.hideLoading()
       markStale('sublet')   // 列表页返回时会看到这条新发布的

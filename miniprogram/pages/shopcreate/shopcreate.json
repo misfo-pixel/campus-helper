@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "开一家小店",
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index",
+    "ban-bar": "/components/banBar/index",
+    "plan-editor": "/components/planEditor/index"
+  }
+}

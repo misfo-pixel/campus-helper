@@ -1,15 +1,18 @@
 <view class="page-container">
   <view class="menu-head">
     <view class="page-title" style="margin-bottom: 0;">商品管理</view>
-    <button class="btn-primary btn-sm" bindtap="addItem">+ 添加商品</button>
+    <view class="cat-toggle {{useCategory ? 'cat-on' : ''}}" bindtap="toggleCategory">
+      <text class="cat-icon">☰</text>
+      <text>{{useCategory ? '已开启分类' : '开启分类'}}</text>
+    </view>
   </view>
 
-  <view wx:if="{{!loading && groups.length === 0}}" class="text-light empty">
-    还没有商品，点右上角添加第一件
+  <view wx:if="{{!loading && itemCount === 0}}" class="text-light empty">
+    还没有商品，点下面的框加第一件
   </view>
 
   <block wx:for="{{groups}}" wx:key="category">
-    <view class="section-title">{{item.category}}</view>
+    <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
 
     <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="_id" class="card dish">
       <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" class="dish-img" />
@@ -18,7 +21,7 @@
       <view class="dish-meta">
         <view class="dish-name {{dish.available ? '' : 'dish-off'}}">{{dish.name}}</view>
         <view wx:if="{{dish.description}}" class="text-light dish-desc">{{dish.description}}</view>
-        <view class="dish-price">${{dish.price}}</view>
+        <view class="dish-price">${{dish.price}}<text wx:if="{{dish.unit}}" class="dish-unit"> / {{dish.unit}}</text></view>
       </view>
 
       <view class="dish-right">
@@ -30,4 +33,10 @@
       </view>
     </view>
   </block>
+
+  <!-- 虚线占位框。比一个顶部按钮更像「这里还能再加一件」 -->
+  <view wx:if="{{!loading}}" class="dish-add" bindtap="addItem">
+    <view class="dish-add-icon">＋</view>
+    <view class="dish-add-text">添加商品</view>
+  </view>
 </view>

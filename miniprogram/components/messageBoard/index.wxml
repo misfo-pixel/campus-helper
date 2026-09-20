@@ -1,0 +1,41 @@
+<view class="board">
+  <view class="board-head">
+    <text class="board-title">留言</text>
+    <text wx:if="{{messages.length > 0}}" class="board-count">{{messages.length}}</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="board-empty">加载中…</view>
+  <view wx:elif="{{messages.length === 0}}" class="board-empty">还没有留言，问一句「还在吗」也行</view>
+
+  <view wx:for="{{messages}}" wx:key="_id" class="msg">
+    <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="msg-avatar" />
+    <view wx:else class="msg-avatar msg-avatar-fallback">{{item.nickname[0]}}</view>
+
+    <view class="msg-body">
+      <view class="msg-head">
+        <text class="msg-name">{{item.nickname}}</text>
+        <text wx:if="{{item.isPoster}}" class="msg-badge">楼主</text>
+        <text class="msg-time">{{item.timeText}}</text>
+      </view>
+      <view class="msg-text">
+        <text wx:if="{{item.reply_to_name}}" class="msg-reply">回复 {{item.reply_to_name}}：</text>{{item.content}}
+      </view>
+      <view class="msg-ops">
+        <text class="msg-op" bindtap="replyTo" data-name="{{item.nickname}}">回复</text>
+        <text wx:if="{{item.canDelete}}" class="msg-op msg-op-danger" bindtap="remove" data-id="{{item._id}}">删除</text>
+        <text wx:if="{{!item.isMine}}" class="msg-op" bindtap="report" data-id="{{item._id}}">举报</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="board-input">
+    <view wx:if="{{replyToName}}" class="reply-tag">
+      <text>回复 {{replyToName}}</text>
+      <text class="reply-cancel" bindtap="cancelReply">×</text>
+    </view>
+    <textarea value="{{draft}}" bindinput="onInput" maxlength="200"
+              placeholder="{{isOwner ? '回复买家的提问…' : '公开留言，双方都能看到'}}"
+              class="input-box"></textarea>
+    <button class="btn-primary btn-sm send-btn" bindtap="send" loading="{{sending}}">发送</button>
+  </view>
+</view>

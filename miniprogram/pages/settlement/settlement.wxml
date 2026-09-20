@@ -1,6 +1,6 @@
 <view wx:if="{{!loading}}" class="page-container">
   <view class="role-hint">
-    {{as === 'shop' ? '你是商家：买家把配送费一起付给了你，这些钱要结给配送队。' : '你是配送队：这些配送费由商家代收，需要向商家结算。'}}
+    {{as === 'shop' ? '你是店长：买家把配送费一起付给了你，这些钱要结给配送队。' : '你是配送队：这些配送费由店长代收，需要向店长结算。'}}
   </view>
 
   <!-- 待结算 -->
@@ -16,7 +16,7 @@
     </view>
     <view class="text-light group-sub">{{item.count}} 单</view>
 
-    <!-- 商家侧显示队伍的收款方式，方便直接转 -->
+    <!-- 店长侧显示队伍的收款方式，方便直接转 -->
     <view wx:if="{{as === 'shop' && item.payment_note}}" class="pay-line">
       <text class="text-light">收款方式：</text>
       <text class="pay-note">{{item.payment_note}}</text>
@@ -55,16 +55,16 @@
     </view>
 
     <view class="bill-actions">
-      <!-- 商家：还没转账时可以标记已转 -->
+      <!-- 店长：还没转账时可以标记已转 -->
       <button wx:if="{{as === 'shop' && item.status === 'pending'}}" class="btn-primary btn-sm"
               bindtap="markPaid" data-id="{{item._id}}">我已转账</button>
 
-      <!-- 配送队：商家转了之后确认收款 -->
+      <!-- 配送队：店长转了之后确认收款 -->
       <button wx:if="{{as === 'team' && item.status === 'paid'}}" class="btn-primary btn-sm"
               bindtap="confirmReceived" data-id="{{item._id}}">确认收到</button>
 
-      <!-- 队伍等商家转账时的提示 -->
-      <text wx:if="{{as === 'team' && item.status === 'pending'}}" class="text-light bill-wait">等商家转账</text>
+      <!-- 队伍等店长转账时的提示 -->
+      <text wx:if="{{as === 'team' && item.status === 'pending'}}" class="text-light bill-wait">等店长转账</text>
       <text wx:if="{{as === 'shop' && item.status === 'paid'}}" class="text-light bill-wait">等队伍确认</text>
 
       <text wx:if="{{item.status !== 'settled'}}" class="bill-cancel"

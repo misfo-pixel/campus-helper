@@ -1,63 +1,96 @@
 <view wx:if="{{!loading}}" class="page-container">
-  <view class="page-title">{{isNew ? '申请入驻 🏪' : '店铺设置'}}</view>
+  <view class="page-title">小店设置</view>
 
-  <disclaimer-bar wx:if="{{isNew}}" type="apply" />
+  <ban-bar />
 
   <!-- 必填的东西全在「详细信息（选填）」之前，所以只在首尾各标一次，
        中间的分节标题不再重复标注——标多了反而没人看 -->
   <view class="section-title">基本信息（必填）</view>
 
-  <input placeholder="店铺名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
+  <input placeholder="小店名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
   <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-    <view class="card form-card">分类：{{categories[categoryIndex]}}</view>
-  </picker>
-
-  <view class="subsection-title">配送方式</view>
-
-  <radio-group bindchange="onDeliveryModeChange">
-    <label class="card mode-row">
-      <radio value="self" checked="{{deliveryMode === 'self'}}" color="#7A0019" />
-      <view class="mode-text">
-        <view class="mode-title">我自己送 / 顾客自取</view>
-        <view class="text-light mode-desc">配送费归你，不用跟谁结算。只做自取也选这个，配送费填 0</view>
-      </view>
-    </label>
-    <label class="card mode-row">
-      <radio value="outsourced" checked="{{deliveryMode === 'outsourced'}}" color="#7A0019" />
-      <view class="mode-text">
-        <view class="mode-title">外包给配送队</view>
-        <view class="text-light mode-desc">买家把配送费一起付给你，你事后按对账结果结给队伍</view>
-      </view>
-    </label>
-  </radio-group>
-
-  <picker wx:if="{{deliveryMode === 'outsourced'}}" mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
-    <view class="card picker-row">
-      <text class="{{teamIndex === null ? 'placeholder' : ''}}">
-        {{teamIndex === null ? '选择配送队（必填）' : teamNames[teamIndex]}}
-      </text>
+    <view class="card form-card picker-row">
+      <text>分类：{{categories[categoryIndex]}}</text>
       <text class="picker-arrow">›</text>
     </view>
   </picker>
 
-  <view wx:if="{{deliveryMode === 'outsourced' && teamNames.length === 0}}" class="field-hint">
-    目前还没有通过审核的配送队，暂时只能选自己送。
+  <input placeholder="联系微信（买家下单后联系你）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+
+  <view class="subsection-title">配送</view>
+
+  <view class="card switch-row">
+    <view class="switch-text">
+      <view class="switch-title">需要配送</view>
+      <view class="text-light switch-desc">关掉就是顾客上门或到店自提，买家下单后与你自行约定时间地点</view>
+    </view>
+    <switch checked="{{needsDelivery}}" color="#7A0019" bindchange="onNeedsDeliveryChange" />
   </view>
 
-  <view wx:if="{{deliveryMode === 'outsourced' && teamIndex !== null}}" class="field-hint">
-    服务地点和配送时间用这支队伍的，你不用填。
+  <block wx:if="{{needsDelivery}}">
+    <radio-group wx:if="{{teamEnabled}}" bindchange="onDeliveryModeChange">
+      <label class="card mode-row">
+        <radio value="self" checked="{{deliveryMode === 'self'}}" color="#7A0019" />
+        <view class="mode-text">
+          <view class="mode-title">我自己送</view>
+          <view class="text-light mode-desc">配送费归你，不用跟谁结算</view>
+        </view>
+      </label>
+      <label class="card mode-row">
+        <radio value="outsourced" checked="{{deliveryMode === 'outsourced'}}" color="#7A0019" />
+        <view class="mode-text">
+          <view class="mode-title">外包给配送队</view>
+          <view class="text-light mode-desc">买家把配送费一起付给你，你事后按对账结果结给队伍</view>
+        </view>
+      </label>
+    </radio-group>
+
+    <picker wx:if="{{deliveryMode === 'outsourced'}}" mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
+      <view class="card picker-row">
+        <text class="{{teamIndex === null ? 'placeholder' : ''}}">
+          {{teamIndex === null ? '选择配送队（必填）' : teamNames[teamIndex]}}
+        </text>
+        <text class="picker-arrow">›</text>
+      </view>
+    </picker>
+
+    <view wx:if="{{deliveryMode === 'outsourced' && teamNames.length === 0}}" class="field-hint">
+      目前还没有通过核对的配送队，暂时只能自己送。
+    </view>
+
+    <view wx:if="{{deliveryMode === 'outsourced' && teamIndex !== null}}" class="field-hint">
+      服务地点和服务时间用这支队伍的，你不用填。
+    </view>
+
+    <!-- 自己送：服务地点和批次由你自己定 -->
+    <plan-editor wx:if="{{deliveryMode === 'self'}}"
+                 init-points="{{planPoints}}" init-batches="{{planBatches}}"
+                 bind:change="onPlanChange" />
+  </block>
+
+  <view class="subsection-title">收款方式</view>
+
+  <view class="card switch-row">
+    <view class="switch-text">
+      <view class="switch-title">在订单里展示我的收款方式</view>
+      <view class="text-light switch-desc">买家下单后能看到。平台不经手资金、不验证账户、不处理退款，填错或被冒用的后果由你承担</view>
+    </view>
+    <switch checked="{{paymentEnabled}}" color="#7A0019" bindchange="onPaymentEnabledChange" />
   </view>
 
-  <!-- 自己送：服务地点和批次由你自己定 -->
-  <plan-editor wx:if="{{deliveryMode === 'self'}}"
-               init-points="{{planPoints}}" init-batches="{{planBatches}}"
-               bind:change="onPlanChange" />
+  <block wx:if="{{paymentEnabled}}">
+    <input placeholder="收款方式（如 Venmo @your-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" maxlength="60" class="card form-card" />
 
-  <view class="subsection-title">联系方式</view>
-  <view class="field-hint">买家下单后通过微信联系你确认。平台只展示信息、记录订单，不参与交易。</view>
-
-  <input placeholder="联系微信（买家联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+    <view class="card qr-row" bindtap="choosePaymentQr">
+      <image wx:if="{{paymentQr}}" src="{{paymentQr}}" mode="aspectFit" class="qr-img" />
+      <view wx:else class="qr-img qr-placeholder">+</view>
+      <view class="qr-hint">
+        <view>收款码（选填）</view>
+        <view class="text-light">点击{{paymentQr ? '更换' : '上传'}}。买家在订单里长按可以保存</view>
+      </view>
+    </view>
+  </block>
 
   <view class="section-title">详细信息（选填）</view>
 
@@ -65,15 +98,17 @@
     <image wx:if="{{logo}}" src="{{logo}}" mode="aspectFill" class="logo-img" />
     <view wx:else class="logo-img logo-placeholder">+</view>
     <view class="logo-hint">
-      <view>店铺 Logo</view>
+      <view>小店 Logo</view>
       <view class="text-light">点击{{logo ? '更换' : '上传'}}，建议正方形</view>
     </view>
   </view>
 
-  <textarea placeholder="店铺简介（做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
+  <textarea placeholder="小店简介（做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
 
   <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
   <input placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
+
+  <textarea placeholder="下单须知（买家在小店页会看到，如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
   <view class="card license-row" bindtap="chooseLicense">
     <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />
@@ -84,18 +119,10 @@
     </view>
   </view>
 
-  <!-- 入驻时必须勾选，已入驻的改资料就不用重复勾了 -->
-  <view wx:if="{{isNew}}" class="agree-row">
-    <checkbox-group bindchange="onAgreeChange">
-      <label class="agree-label">
-        <checkbox value="1" checked="{{agreed}}" color="#7A0019" />
-        <text class="agree-text">我已阅读并同意</text>
-      </label>
-    </checkbox-group>
-    <text class="agree-link" catchtap="openAgreement">《商家责任告知书》</text>
+  <view class="agree-row">
+    <text class="agree-text">开店时已同意</text>
+    <text class="agree-link" catchtap="openAgreement">《店长责任告知书》</text>
   </view>
 
-  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">
-    {{isNew ? '提交入驻申请' : '保存'}}
-  </button>
+  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">保存</button>
 </view>
