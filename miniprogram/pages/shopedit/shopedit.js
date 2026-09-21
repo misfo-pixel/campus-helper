@@ -5,13 +5,16 @@
 // 两边共用的图片上传、方案校验在 utils/shopForm.js。
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
-const { TEAM_MODULE_ENABLED } = require('../../config.js')
+const { TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
 const {
   uploadShopImage, validatePlan, normalizeMode, markTeams
 } = require('../../utils/shopForm.js')
 
 Page({
   data: {
+    // 黄页模式下这张表只剩「店是什么 + 怎么联系」：配送、起送价、
+    // 下单补充说明全都依附于订单，订单没了它们就是在问废话。
+    ordering: ORDERING_ENABLED,
     loading: true,
     saving: false,
 

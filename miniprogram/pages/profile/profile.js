@@ -1,5 +1,5 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
-const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED } = require('../../config.js')
+const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
 
 Page({
   data: {
@@ -10,6 +10,7 @@ Page({
     isSuperAdmin: false,
     canSeeDelivery: false,  // 配送队管理员 / 有店的店长 / 已在队里的人
     shopEnabled: SHOP_MODULE_ENABLED,
+    ordering: ORDERING_ENABLED,   // 黄页模式下没有订单这回事
     teamEnabled: TEAM_MODULE_ENABLED,
     pendingReports: 0
   },

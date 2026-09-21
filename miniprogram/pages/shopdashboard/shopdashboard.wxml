@@ -5,7 +5,7 @@
     <view class="empty-apply">
       <view class="empty-emoji">🏪</view>
       <view class="empty-title">你还没有小店</view>
-      <view class="text-light empty-desc">开店后就能上架商品、接收订单。</view>
+      <view class="text-light empty-desc">{{ordering ? '开店后就能上架商品、接收订单。' : '开店后就能上架商品，买家看到后会直接加你微信。'}}</view>
       <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">开一家小店</button>
     </view>
   </block>
@@ -18,7 +18,7 @@
     </view>
 
     <!-- 没有可约场次：店还在列表里，但买家一下单就被拦，店长自己看不出来 -->
-    <view wx:if="{{slotAlert}}" class="audit-box audit-rejected">
+    <view wx:if="{{ordering && slotAlert}}" class="audit-box audit-rejected">
       <view class="audit-title">{{slotLastDate ? '服务时间已过期' : '还没设置服务时间'}}</view>
       <view class="audit-desc">
         {{slotLastDate ? '上一场是 ' + slotLastDate + '，' : ''}}买家现在下不了单，选个新日期就能继续接单。
@@ -39,7 +39,7 @@
             bindtap="changeShopStatus">{{shopStatusText}} ▾</view>
     </view>
 
-    <block wx:if="{{!shop.takedown}}">
+    <block wx:if="{{!shop.takedown && ordering}}">
       <!-- 今日数据 -->
       <view class="summary card">
         <view class="summary-cell">
@@ -129,7 +129,7 @@
         <view class="entry-icon">⚙️</view>
         <view class="entry-label">小店设置</view>
       </view>
-      <view class="entry card" bindtap="enableOrderAlert">
+      <view wx:if="{{ordering}}" class="entry card" bindtap="enableOrderAlert">
         <view class="entry-icon">🔔</view>
         <view class="entry-label">新单提醒</view>
       </view>

@@ -18,13 +18,16 @@ const ORDER_STATUS_TEXT = {
   cancelled: '已取消'
 }
 
-const { TEAM_MODULE_ENABLED } = require('../../config.js')
+const { TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
 const { askOrGuide } = require('../../utils/subscribe.js')
 const { today, formatTime } = require('../../utils/date.js')
 
 Page({
   data: {
     teamEnabled: TEAM_MODULE_ENABLED,
+    // 黄页模式下没有订单：今日数据、tab、订单列表整块不渲染，
+    // loadSummary / loadOrders 也不会被调用（见 loadShop）
+    ordering: ORDERING_ENABLED,
     loading: true,
     shop: null,
     shopStatusText: '',
@@ -52,7 +55,7 @@ Page({
         loading: false
       })
       // 被下架的店没有订单可看，就别白跑两个云函数了
-      if (shop && !shop.takedown) {
+      if (shop && !shop.takedown && ORDERING_ENABLED) {
         this.loadSummary()
         this.loadOrders()
       }

@@ -1,8 +1,11 @@
 // 校外服务列表。只显示审核通过、且没打烊的店。
+const { ORDERING_ENABLED } = require('../../config.js')
+
 const STATUS_TEXT = { open: '营业中', paused: '已打烊' }
 
 Page({
   data: {
+    ordering: ORDERING_ENABLED,   // 黄页模式下不提起送价
     loading: true,
     shops: []
   },

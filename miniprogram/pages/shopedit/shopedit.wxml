@@ -9,14 +9,14 @@
 
   <input placeholder="小店名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
-  <input placeholder="联系微信（买家下单后联系你）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+  <input placeholder="{{ordering ? '联系微信（买家下单后联系你）' : '联系微信（买家会直接加你）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
 
-  <view class="title-switch">
+  <view wx:if="{{ordering}}" class="title-switch">
     <view class="subsection-title title-switch-label">线下交付</view>
     <switch checked="{{needsDelivery}}" color="#7A0019" bindchange="onNeedsDeliveryChange" />
   </view>
 
-  <block wx:if="{{needsDelivery}}">
+  <block wx:if="{{ordering && needsDelivery}}">
     <!-- 服务时间排在最前面：能不能找配送队、送达前该什么时候通知，
          都要按送达时间算。让店长先选配送方式再填时间，是让他在没有依据的
          时候做决定 -->
@@ -86,15 +86,15 @@
                  bind:change="onPlanChange" />
   </block>
 
-  <view class="title-switch">
+  <view wx:if="{{ordering}}" class="title-switch">
     <view class="subsection-title title-switch-label">下单时要买家补充说明</view>
     <switch checked="{{noteRequired}}" color="#7A0019" bindchange="onNoteRequiredChange" />
   </view>
-  <view class="field-hint">
+  <view wx:if="{{ordering}}" class="field-hint">
     确认尺寸、颜色、口味、款式
   </view>
 
-  <block wx:if="{{noteRequired}}">
+  <block wx:if="{{ordering && noteRequired}}">
     <input placeholder="请说明尺寸和颜色" value="{{note_hint}}" bindinput="onInput" data-field="note_hint" maxlength="60" class="card form-card" />
   </block>
 
@@ -112,9 +112,9 @@
   <textarea placeholder="小店简介（做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
 
   <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
-  <input placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
+  <input wx:if="{{ordering}}" placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
 
-  <textarea placeholder="下单须知（如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
+  <textarea placeholder="{{ordering ? '下单须知（如取货约定、备注怎么填、多久回复）' : '购买须知（如怎么联系、多久回复、怎么交付）'}}" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
   <view class="card license-row" bindtap="chooseLicense">
     <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />

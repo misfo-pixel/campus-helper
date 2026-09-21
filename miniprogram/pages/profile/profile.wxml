@@ -33,7 +33,7 @@
        「我的小店」是店长视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
   <view wx:if="{{shopEnabled}}" class="profile-group">校外服务</view>
 
-  <view wx:if="{{shopEnabled}}" bindtap="goToShopOrders" class="card card-tap profile-row">
+  <view wx:if="{{shopEnabled && ordering}}" bindtap="goToShopOrders" class="card card-tap profile-row">
     <view class="profile-row-label">🧾 我的订单</view>
     <view class="profile-row-arrow">›</view>
   </view>

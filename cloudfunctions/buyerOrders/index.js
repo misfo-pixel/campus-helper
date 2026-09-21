@@ -3,6 +3,16 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+// 校外服务的形态。和小程序端 miniprogram/config.js 的 SHOP_MODE 是一对，
+// 两边必须一致——那边管界面（黄页模式下根本不渲染购物车），这边是真闸门：
+// 界面拦得住手滑，拦不住有人直接调云函数。
+//
+//   'catalog' 黄页 —— 拒绝一切建单请求。平台只展示信息，不撮合交易。
+//   'order'   订单 —— 完整下单流程。
+//
+// ⚠️ 改这个值要连着改 config.js，并重新部署本函数。
+const SHOP_MODE = 'catalog'
+
 // 买家侧订单：下单、看自己的单、取消。
 //
 // 配送模型：全部走服务时间，买家到服务地点自取（不送到公寓门口）。
@@ -118,6 +128,11 @@ exports.main = async (event) => {
     switch (action) {
 
       case 'create': {
+        // 黄页模式下平台不产生订单——这是类目合规的底线，放在最前面
+        if (SHOP_MODE !== 'order') {
+          return { success: false, message: '这家店通过微信直接联系下单' }
+        }
+
         const shopDoc = await db.collection('shops').doc(event.shopId).get()
         const shop = shopDoc.data
         if (!shop) {

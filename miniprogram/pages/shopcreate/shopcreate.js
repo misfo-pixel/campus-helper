@@ -8,7 +8,7 @@
 // 点「上一步」不会丢。
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
-const { TEAM_MODULE_ENABLED } = require('../../config.js')
+const { TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
 const {
   uploadShopImage, validatePlan, markTeams
 } = require('../../utils/shopForm.js')
@@ -17,6 +17,10 @@ const LAST_STEP = 3
 
 Page({
   data: {
+    // 黄页模式没有配送这回事，第 2 步整屏跳过：向导从三步变两步。
+    // step 的编号不变（1 → 3），只是进度条少画一个点——改编号要动
+    // next / prev / 每个 block 的条件，得不偿失。
+    ordering: ORDERING_ENABLED,
     step: 1,
     saving: false,
 
@@ -170,7 +174,9 @@ Page({
   },
 
   prev: function () {
-    if (this.data.step > 1) this.setData({ step: this.data.step - 1 })
+    const d = this.data
+    if (d.step <= 1) return
+    this.setData({ step: (!ORDERING_ENABLED && d.step === 3) ? 1 : d.step - 1 })
   },
 
   // 每一步都在原地拦住，不让人带着空字段走到最后一屏才被退回来
@@ -202,6 +208,11 @@ Page({
       }
     }
 
+    // 黄页模式从第 1 步直接跳到第 3 步
+    if (d.step === 1 && !ORDERING_ENABLED) {
+      this.setData({ step: LAST_STEP })
+      return
+    }
     if (d.step < LAST_STEP) this.setData({ step: d.step + 1 })
   },
 

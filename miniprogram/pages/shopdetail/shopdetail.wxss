@@ -241,3 +241,10 @@
   font-weight: normal;
   color: #999;
 }
+
+/* 黄页模式下底部条左侧放的是微信号，不是金额。
+   字号比金额小一档：微信号可能很长，太大会撑破 */
+.wechat-id {
+  font-size: 32rpx;
+  word-break: break-all;
+}

@@ -1,9 +1,8 @@
 <view class="page-container">
   <view class="list-head">
     <view class="page-title" style="margin-bottom: 0;">校外服务 🏪</view>
-    <button class="btn-sm" bindtap="goToMyOrders">我的订单</button>
+    <button wx:if="{{ordering}}" class="btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
-
 
   <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
   <view wx:elif="{{shops.length === 0}}" class="text-light empty">
@@ -20,7 +19,7 @@
         <text class="shop-status shop-status-{{item.status}}">{{item.statusText}}</text>
       </view>
       <view wx:if="{{item.description}}" class="text-light shop-desc">{{item.description}}</view>
-      <view class="text-light shop-info">
+      <view wx:if="{{ordering}}" class="text-light shop-info">
         起送 ${{item.min_order}}{{item.needs_delivery === false ? ' · 线上服务' : ''}}
       </view>
       <view wx:if="{{item.business_hours}}" class="text-light shop-info">{{item.business_hours}}</view>

@@ -1,11 +1,18 @@
 <view class="page-container wizard">
   <!-- 进度条：让人知道还有几步，不至于填到一半跑掉 -->
   <view class="steps">
-    <view class="step-dot {{step >= 1 ? 'on' : ''}}">1</view>
-    <view class="step-bar {{step >= 2 ? 'on' : ''}}"></view>
-    <view class="step-dot {{step >= 2 ? 'on' : ''}}">2</view>
-    <view class="step-bar {{step >= 3 ? 'on' : ''}}"></view>
-    <view class="step-dot {{step >= 3 ? 'on' : ''}}">3</view>
+    <block wx:if="{{ordering}}">
+      <view class="step-dot {{step >= 1 ? 'on' : ''}}">1</view>
+      <view class="step-bar {{step >= 2 ? 'on' : ''}}"></view>
+      <view class="step-dot {{step >= 2 ? 'on' : ''}}">2</view>
+      <view class="step-bar {{step >= 3 ? 'on' : ''}}"></view>
+      <view class="step-dot {{step >= 3 ? 'on' : ''}}">3</view>
+    </block>
+    <block wx:else>
+      <view class="step-dot on">1</view>
+      <view class="step-bar {{step >= 3 ? 'on' : ''}}"></view>
+      <view class="step-dot {{step >= 3 ? 'on' : ''}}">2</view>
+    </block>
   </view>
 
   <!-- ========== 第 1 步：这家店是什么 ========== -->
@@ -21,7 +28,7 @@
   </block>
 
   <!-- ========== 第 2 步：要不要配送 ========== -->
-  <block wx:if="{{step === 2}}">
+  <block wx:if="{{ordering && step === 2}}">
     <view class="wizard-title">需要线下交付吗？</view>
     <view class="wizard-sub">选错了也没关系，开店后在小店设置里能改。</view>
 
@@ -120,7 +127,7 @@
     <view class="wizard-title">买家怎么找到你？</view>
     <view class="wizard-sub">只有微信号是必填的，其余可以之后再补。</view>
 
-    <input placeholder="联系微信（必填，买家下单后联系你）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+    <input placeholder="{{ordering ? '联系微信（必填，买家下单后联系你）' : '联系微信（必填，买家会直接加你）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
 
     <view class="section-title">详细信息（选填）</view>
 
@@ -134,8 +141,8 @@
     </view>
 
     <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
-    <input placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
-    <textarea placeholder="下单须知（买家在小店页会看到，如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
+    <input wx:if="{{ordering}}" placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
+    <textarea placeholder="{{ordering ? '下单须知（如取货约定、备注怎么填、多久回复）' : '购买须知（如怎么联系、多久回复、怎么交付）'}}" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
     <view class="card license-row" bindtap="chooseLicense">
       <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />

@@ -1,7 +1,11 @@
+/* 标题行。page-title 自带的 32rpx 下边距在这里被 inline 抵消掉了
+   （否则按钮会被推下去对不齐），所以边距挂在容器上 */
 .list-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 64rpx;
+  margin-bottom: 32rpx;
 }
 
 .empty {

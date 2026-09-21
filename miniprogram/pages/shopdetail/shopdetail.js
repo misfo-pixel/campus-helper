@@ -5,6 +5,7 @@
 
 const { withCover, clip } = require('../../utils/share.js')
 const { toLocalPath } = require('../../utils/poster.js')
+const { ORDERING_ENABLED } = require('../../config.js')
 
 const CART_KEY = 'shopCart'
 const NAME_MAX = 12   // 转发标题里留给店名的字数，后面还要写得下截单时间
@@ -27,6 +28,7 @@ function cutoffPhrase(batches) {
 
 Page({
   data: {
+    ordering: ORDERING_ENABLED,   // 黄页模式下整套购物车/下单都不出现
     loading: true,
     shop: null,
     items: [],
@@ -147,6 +149,16 @@ Page({
     cart[id] -= 1
     if (cart[id] <= 0) delete cart[id]
     this.setData({ cart: cart }, () => this.rebuild())
+  },
+
+  // 黄页模式下买家唯一的动作：把店长微信复制走，自己去微信谈
+  copyWechat: function () {
+    const wechat = (this.data.shop || {}).contact_wechat
+    if (!wechat) return
+    wx.setClipboardData({
+      data: wechat,
+      success: () => wx.showToast({ title: '已复制微信号', icon: 'success' })
+    })
   },
 
   checkout: function () {
