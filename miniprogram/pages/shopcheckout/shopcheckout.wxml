@@ -1,0 +1,91 @@
+<view wx:if="{{cart && !loading}}" class="page-container">
+  <view class="page-title">确认订单</view>
+
+  <!-- 商品清单 -->
+  <view class="card order-card">
+    <view class="shop-name">{{cart.shopName}}</view>
+    <view wx:for="{{cart.items}}" wx:key="item_id" class="line">
+      <text class="line-name">{{item.name}}</text>
+      <text class="line-count">×{{item.count}}{{item.unit}}</text>
+      <text class="line-price">${{item.lineTotal}}</text>
+    </view>
+
+    <view class="divider"></view>
+    <view class="line">
+      <text class="line-name">小计</text>
+      <text class="line-price">${{cart.subtotal}}</text>
+    </view>
+    <view wx:if="{{needsDelivery}}" class="line">
+      <text class="line-name">配送费{{!exactAddress && pointIndex === null ? '（选取货地点后计算）' : ''}}</text>
+      <text class="line-price">${{deliveryFee}}</text>
+    </view>
+    <view class="line line-total">
+      <text class="line-name">合计</text>
+      <text class="line-price">${{total}}</text>
+    </view>
+  </view>
+
+  <block wx:if="{{needsDelivery}}">
+
+  <!-- 送上门：买家填自己的地址，没有点位可选 -->
+  <block wx:if="{{exactAddress}}">
+    <view class="section-title">收货地址</view>
+    <view class="field-hint">写清楚楼栋、门牌号和任何找得到你的信息。</view>
+    <textarea placeholder="如 Radius at 15th, Apt 412" value="{{address}}"
+              bindinput="onInput" data-field="address" maxlength="200"
+              class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+  </block>
+
+  <block wx:else>
+    <view class="section-title">取货地点</view>
+    <view class="field-hint">到店长设的地点自取，不同点位的配送费不一样。</view>
+
+    <picker mode="selector" range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPointChange">
+      <view class="card picker-row">
+        <text class="{{pointIndex === null ? 'placeholder' : ''}}">
+          {{pointIndex === null ? '选择取货地点（必填）' : pointLabels[pointIndex]}}
+        </text>
+        <text class="picker-arrow">›</text>
+      </view>
+    </picker>
+  </block>
+
+  <view class="section-title">服务时间</view>
+  <view class="field-hint">{{exactAddress ? '店长会在这个时段送到，请保持微信畅通。' : '同一时段一趟送多单，配送费因此更便宜，请按时到取货地点。'}}</view>
+
+  <picker mode="selector" range="{{batchLabels}}" value="{{batchIndex}}" bindchange="onBatchChange">
+    <view class="card picker-row">
+      <text>{{batchLabels[batchIndex]}}</text>
+      <text class="picker-arrow">›</text>
+    </view>
+  </picker>
+  </block>
+
+  <view wx:else class="field-hint">这是线上服务，没有取货环节。下单后店长会通过微信联系你。</view>
+
+  <input placeholder="你的微信号（必填，店长联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx; margin-top: 24rpx;" />
+
+  <textarea placeholder="{{noteRequired ? (noteHint || '补充说明（必填）') : '备注（规格、特殊要求等）'}}"
+            value="{{note}}" bindinput="onInput" data-field="note" class="card"
+            style="padding: 24rpx; width: auto; height: 140rpx; margin-top: 24rpx;"></textarea>
+
+  <!-- 配图只在店长要求补充说明时出现：标品店不需要，多一格只会让人犹豫 -->
+  <view wx:if="{{noteRequired}}" class="note-imgs">
+    <view wx:for="{{noteImages}}" wx:key="*this" class="note-img-box">
+      <image src="{{item}}" mode="aspectFill" class="note-img"
+             bindtap="previewNoteImage" data-url="{{item}}" />
+      <view class="note-img-del" catchtap="removeNoteImage" data-index="{{index}}">×</view>
+    </view>
+    <view wx:if="{{noteImages.length < 3}}" class="note-img-add" bindtap="chooseNoteImages">＋</view>
+  </view>
+  <view wx:if="{{noteRequired}}" class="text-light note-imgs-hint">可附最多 3 张图，帮店长看清你要什么</view>
+
+  <!-- 平台只记录下单意向：不展示收款方式，不出现任何支付指引 -->
+  <view class="field-hint" style="margin-top: 24rpx;">提交后店长会在工作台看到这笔订单，并通过微信与你联系确认。平台只记录下单意向，不参与交易。</view>
+
+  <disclaimer-bar type="buyer" />
+
+  <button class="btn-primary" bindtap="submit" loading="{{submitting}}" style="margin-top: 24rpx;">
+    提交订单
+  </button>
+</view>

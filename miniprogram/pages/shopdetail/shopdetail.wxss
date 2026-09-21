@@ -57,21 +57,21 @@
 }
 
 /* 菜品 */
-.dish {
+.product {
   display: flex;
   align-items: center;
   padding: 24rpx;
   gap: 20rpx;
 }
 
-.dish-img {
+.product-img {
   width: 150rpx;
   height: 150rpx;
   border-radius: 12rpx;
   flex-shrink: 0;
 }
 
-.dish-img-fallback {
+.product-img-fallback {
   background: #f2f2f2;
   display: flex;
   align-items: center;
@@ -79,49 +79,49 @@
   font-size: 52rpx;
 }
 
-.dish-meta {
+.product-meta {
   flex: 1;
   min-width: 0;
 }
 
-.dish-name {
+.product-name {
   font-size: 30rpx;
   font-weight: bold;
 }
 
-.dish-off {
+.product-off {
   color: #bbb;
 }
 
-.dish-desc {
+.product-desc {
   font-size: 24rpx;
   margin-top: 6rpx;
   line-height: 1.5;
 }
 
 /* 过敏原要显眼，这是商家在告知书里承诺如实标注的东西 */
-.dish-allergens {
+.product-specs {
   font-size: 22rpx;
   color: #b8860b;
   margin-top: 8rpx;
   line-height: 1.4;
 }
 
-.dish-price {
+.product-price {
   font-size: 32rpx;
   color: var(--color-primary);
   font-weight: bold;
   margin-top: 10rpx;
 }
 
-.dish-ops {
+.product-ops {
   display: flex;
   align-items: center;
   gap: 12rpx;
   flex-shrink: 0;
 }
 
-.dish-soldout {
+.product-soldout {
   font-size: 24rpx;
   color: #bbb;
   border: 1rpx solid #e5e5e5;
@@ -236,7 +236,7 @@
 }
 
 /* 计价单位，跟在价格后面，弱化显示 */
-.dish-unit {
+.product-unit {
   font-size: 22rpx;
   font-weight: normal;
   color: #999;

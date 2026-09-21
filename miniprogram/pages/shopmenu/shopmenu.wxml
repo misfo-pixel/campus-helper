@@ -14,29 +14,29 @@
   <block wx:for="{{groups}}" wx:key="category">
     <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
 
-    <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="_id" class="card dish">
-      <image wx:if="{{dish.image}}" src="{{dish.image}}" mode="aspectFill" class="dish-img" />
-      <view wx:else class="dish-img dish-img-fallback">📦</view>
+    <view wx:for="{{item.items}}" wx:for-item="product" wx:key="_id" class="card product">
+      <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" class="product-img" />
+      <view wx:else class="product-img product-img-fallback">📦</view>
 
-      <view class="dish-meta">
-        <view class="dish-name {{dish.available ? '' : 'dish-off'}}">{{dish.name}}</view>
-        <view wx:if="{{dish.description}}" class="text-light dish-desc">{{dish.description}}</view>
-        <view class="dish-price">${{dish.price}}<text wx:if="{{dish.unit}}" class="dish-unit"> / {{dish.unit}}</text></view>
+      <view class="product-meta">
+        <view class="product-name {{product.available ? '' : 'product-off'}}">{{product.name}}</view>
+        <view wx:if="{{product.description}}" class="text-light product-desc">{{product.description}}</view>
+        <view class="product-price">${{product.price}}<text wx:if="{{product.unit}}" class="product-unit"> / {{product.unit}}</text></view>
       </view>
 
-      <view class="dish-right">
-        <switch checked="{{dish.available}}" color="#7A0019" bindchange="toggleItem" data-id="{{dish._id}}" />
-        <view class="dish-ops">
-          <text class="dish-op" bindtap="editItem" data-id="{{dish._id}}">编辑</text>
-          <text class="dish-op dish-op-danger" bindtap="deleteItem" data-id="{{dish._id}}" data-name="{{dish.name}}">删除</text>
+      <view class="product-right">
+        <switch checked="{{product.available}}" color="#7A0019" bindchange="toggleItem" data-id="{{product._id}}" />
+        <view class="product-ops">
+          <text class="product-op" bindtap="editItem" data-id="{{product._id}}">编辑</text>
+          <text class="product-op product-op-danger" bindtap="deleteItem" data-id="{{product._id}}" data-name="{{product.name}}">删除</text>
         </view>
       </view>
     </view>
   </block>
 
   <!-- 虚线占位框。比一个顶部按钮更像「这里还能再加一件」 -->
-  <view wx:if="{{!loading}}" class="dish-add" bindtap="addItem">
-    <view class="dish-add-icon">＋</view>
-    <view class="dish-add-text">添加商品</view>
+  <view wx:if="{{!loading}}" class="product-add" bindtap="addItem">
+    <view class="product-add-icon">＋</view>
+    <view class="product-add-text">添加商品</view>
   </view>
 </view>

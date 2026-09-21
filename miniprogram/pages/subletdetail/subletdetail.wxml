@@ -35,7 +35,7 @@
       <!-- 求租帖的房型和区域是选填，空着就是都行 -->
       <view style="margin-bottom: 12rpx;">🏠 房型：{{item.room_type || '不限'}}</view>
       <view style="margin-bottom: 12rpx;">📍 {{demand ? '想找的区域' : '地址'}}：{{item.address || '不限'}}</view>
-      <view style="margin-bottom: 12rpx;">📅 租期：{{item.start_date}} 至 {{item.end_date}}</view>
+      <view style="margin-bottom: 12rpx;">📅 {{demand ? '想租' : '租期'}}：{{item.start_date}} 至 {{item.end_date}}</view>
       <view style="margin-bottom: 12rpx;">🛋 家具：{{item.furnished ? '带家具' : '不带家具'}}</view>
       <view wx:if="{{item.utilities}}" style="margin-bottom: 12rpx;">💡 每月水电：${{item.utilities}}</view>
       <view wx:if="{{item.deposit}}">💰 押金：${{item.deposit}}</view>

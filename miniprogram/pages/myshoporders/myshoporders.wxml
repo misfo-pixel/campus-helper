@@ -2,7 +2,7 @@
   <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
   <view wx:elif="{{orders.length === 0}}" class="text-light empty">还没有订单</view>
 
-  <view wx:if="{{hasPending}}" class="pay-warn-top">平台只记录下单意向，不参与交易、不提供担保，请直接与店长沟通。</view>
+  <view wx:if="{{hasPending}}" class="notice-top">平台只记录下单意向，不参与交易、不提供担保，请直接与店长沟通。</view>
 
   <view wx:for="{{orders}}" wx:key="_id" class="card order">
     <view class="order-head">
@@ -12,9 +12,9 @@
     <view class="text-light order-sub">#{{item.shortId}} · {{item.timeText}}</view>
 
     <view class="order-items">
-      <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="item_id" class="order-dish">
-        <text>{{dish.name}}</text>
-        <text class="order-dish-count">×{{dish.count}}{{dish.unit}}</text>
+      <view wx:for="{{item.items}}" wx:for-item="product" wx:key="item_id" class="order-product">
+        <text>{{product.name}}</text>
+        <text class="order-product-count">×{{product.count}}{{product.unit}}</text>
       </view>
     </view>
 
@@ -25,23 +25,22 @@
 
     <view wx:if="{{item.statusHint}}" class="order-hint">{{item.statusHint}}</view>
 
-    <!-- 店长自填的收款方式。平台只原样展示，没验证过账户归属 -->
-    <view wx:if="{{item.status === 'pending' && item.payment_enabled}}" class="pay-box">
-      <view class="pay-label">店长的收款方式</view>
-      <view wx:if="{{item.payment_note}}" class="pay-row">
-        <text class="pay-note">{{item.payment_note}}</text>
-        <text class="pay-copy" bindtap="copyText" data-text="{{item.payment_note}}">复制</text>
+    <!-- 下单时自己填的补充说明。留在这里是为了「我当时写了啥」随时翻得到 -->
+    <view wx:if="{{item.note}}" class="note-box">
+      <view class="note-label">我的补充说明</view>
+      <view class="note-text">{{item.note}}</view>
+      <view wx:if="{{item.note_images.length}}" class="note-imgs">
+        <image wx:for="{{item.note_images}}" wx:for-item="img" wx:key="*this"
+               src="{{img}}" mode="aspectFill" class="note-img"
+               bindtap="previewNoteImages" data-urls="{{item.note_images}}" data-url="{{img}}" />
       </view>
-      <image wx:if="{{item.payment_qr}}" src="{{item.payment_qr}}" mode="aspectFit" class="pay-qr"
-             bindtap="previewQr" data-url="{{item.payment_qr}}" />
-      <view class="pay-warn">这是店长自己填的，平台没有验证过账户归属，也不经手这笔钱。付款前请先和店长核对，付款后如有纠纷需你们自行协商。</view>
     </view>
 
     <view wx:if="{{item.cancel_reason}}" class="order-cancel">取消原因：{{item.cancel_reason}}</view>
 
     <view class="order-contact">
       <text class="text-light">店长微信：{{item.shop_wechat || '未填写'}}</text>
-      <text wx:if="{{item.shop_wechat}}" class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">复制</text>
+      <text wx:if="{{item.shop_wechat}}" class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">复制微信号</text>
     </view>
 
     <view wx:if="{{item.status === 'pending'}}" class="order-actions">

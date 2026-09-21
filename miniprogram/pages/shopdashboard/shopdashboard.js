@@ -18,16 +18,9 @@ const ORDER_STATUS_TEXT = {
   cancelled: '已取消'
 }
 
-function formatTime(value) {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
-  const pad = n => (n < 10 ? '0' + n : '' + n)
-  return pad(d.getHours()) + ':' + pad(d.getMinutes())
-}
-
 const { TEAM_MODULE_ENABLED } = require('../../config.js')
-const { ask } = require('../../utils/subscribe.js')
+const { askOrGuide } = require('../../utils/subscribe.js')
+const { today, formatTime } = require('../../utils/date.js')
 
 Page({
   data: {
@@ -77,24 +70,27 @@ Page({
   // 外包给配送队的店用的是队伍那份方案，不归他管，就别吓唬他了。
   checkSlot: function (shop) {
     if (!shop || shop.takedown) return { alert: false, lastDate: '' }
+    // 纯线上服务没有场次这回事。其余三种服务方式（自送 / 配送队 / 发委托）
+    // 都要自己设服务时间——配送队那支也一样，截单时刻归店长定，不归队伍。
+    // 以前这里给 outsourced 开了豁免，现在留着会让选了配送队的店永远
+    // 收不到「没设服务时间」的警告，然后开门被拦却不知道为什么。
     if (shop.needs_delivery === false) return { alert: false, lastDate: '' }
-    if (shop.delivery_mode === 'outsourced') return { alert: false, lastDate: '' }
 
     const slot = (shop.batches || [])[0]
     if (!slot || !slot.date) return { alert: true, lastDate: '' }
 
-    const d = new Date()
-    const pad = n => (n < 10 ? '0' + n : '' + n)
-    const today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
-    if (slot.date < today) return { alert: true, lastDate: slot.date }
+    const todayStr = today()
+    if (slot.date < todayStr) return { alert: true, lastDate: slot.date }
 
     // 今天的场次过了截单时刻也算没场次：买家侧同样展不出来。
     // 这条判断要和 shopManage 的 slotBlocker 对齐，否则会出现
     // 「工作台没报警，但一点营业中就被拒」的割裂。
-    if (slot.date === today && slot.cutoff) {
+    if (slot.date === todayStr && slot.cutoff) {
       const bits = String(slot.cutoff).split(':')
       const cutoffMin = Number(bits[0]) * 60 + Number(bits[1])
-      if (d.getHours() * 60 + d.getMinutes() >= cutoffMin) {
+      // today() 用的也是设备本地时区，这里跟着用本地时分才对得上
+      const now = new Date()
+      if (now.getHours() * 60 + now.getMinutes() >= cutoffMin) {
         return { alert: true, lastDate: slot.date }
       }
     }
@@ -152,6 +148,9 @@ Page({
           if (result.success) {
             wx.showToast({ title: '已切换为' + SHOP_STATUS_TEXT[next], icon: 'none' })
             this.loadShop()
+            // 刚挂上营业中 = 开始等单，这一刻要授权最自然。
+            // 被永久拒绝过的话 askOrGuide 会引导去设置。
+            if (next === 'open') askOrGuide('newOrder')
           } else if (next === 'open') {
             // 开门被场次拦下了。这时候只弹 toast 等于把人扔在原地，
             // 直接问他要不要去设置——拦截理由本身已经说清楚该改什么了。
@@ -234,24 +233,27 @@ Page({
     wx.navigateTo({ url: '/pages/shopmenu/shopmenu' })
   },
   // 订阅消息一次授权只能收一条，所以这是个要反复点的按钮，不是开关。
-  // 微信没给「长期订阅」的口子（那个只对政务医疗等类目开放），只能这样。
-  enableOrderAlert: async function () {
-    const ok = await ask('newOrder')
-    wx.showModal({
-      title: ok ? '已开启' : '没有开启',
-      content: ok
-        ? '下一笔新订单会用微信服务通知提醒你。\n\n微信的规则是一次授权收一条，想持续收到，隔段时间回来再点一次。'
-        : '你刚才没有同意接收通知。需要的话再点一次这个按钮。',
-      showCancel: false,
-      confirmText: '知道了'
+  // 微信没给「长期订阅」的口子（那个只对政务医疗等类目开放）。
+  //
+  // 成功给个 toast 就够，失败什么都不说——再点一次就会再弹，
+  // 弹个「需要的话再点一次」的框纯属废话。只有被永久拒绝时
+  // askOrGuide 会自己引导去设置，那是唯一点了也没反应的情况。
+  enableOrderAlert: function () {
+    askOrGuide('newOrder').then(ok => {
+      if (ok) wx.showToast({ title: '已开启', icon: 'success' })
     })
+  },
+
+  previewNoteImages: function (e) {
+    const urls = e.currentTarget.dataset.urls || []
+    wx.previewImage({ urls: urls, current: e.currentTarget.dataset.url })
   },
 
   goToSettings: function () {
     wx.navigateTo({ url: '/pages/shopedit/shopedit' })
   },
-  goToSettlement: function () {
-    wx.navigateTo({ url: '/pages/settlement/settlement?as=shop' })
+  goToDeliveryAsk: function () {
+    wx.navigateTo({ url: '/pages/deliveryask/deliveryask' })
   },
   goToApply: function () {
     wx.navigateTo({ url: '/pages/shopcreate/shopcreate' })

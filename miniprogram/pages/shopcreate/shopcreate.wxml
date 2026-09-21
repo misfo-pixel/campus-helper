@@ -17,74 +17,100 @@
 
     <input placeholder="小店名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
-    <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-      <view class="card form-card picker-row">
-        <text>分类：{{categories[categoryIndex]}}</text>
-        <text class="picker-arrow">›</text>
-      </view>
-    </picker>
-
     <textarea placeholder="一句话介绍（选填，做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
   </block>
 
   <!-- ========== 第 2 步：要不要配送 ========== -->
   <block wx:if="{{step === 2}}">
-    <view class="wizard-title">需要配送吗？</view>
+    <view class="wizard-title">需要线下交付吗？</view>
     <view class="wizard-sub">选错了也没关系，开店后在小店设置里能改。</view>
 
     <view class="pick {{needsDelivery === true ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="1">
-      <view class="pick-emoji">🚚</view>
+      <view class="pick-emoji">📦</view>
       <view class="pick-body">
-        <view class="pick-name">需要配送</view>
-        <view class="pick-desc">要把东西送到约定地点。可以自己送，也可以外包给配送队。</view>
+        <view class="pick-name">要</view>
+        <view class="pick-desc">买家要拿到实物，或者你要上门服务。到店自取也算。</view>
       </view>
     </view>
 
     <view class="pick {{needsDelivery === false ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="0">
-      <view class="pick-emoji">🙋</view>
+      <view class="pick-emoji">💻</view>
       <view class="pick-body">
-        <view class="pick-name">不需要配送</view>
-        <view class="pick-desc">顾客上门，或者到店自提。买家下单后你们自己约时间地点。</view>
+        <view class="pick-name">不要</view>
+        <view class="pick-desc">纯线上，比如辅导、代写、设计。没有取货这一步。</view>
       </view>
     </view>
 
     <block wx:if="{{needsDelivery === true}}">
-      <!-- 配送队模块关掉时不出现「谁来送」这一问，直接当自己送 -->
-      <block wx:if="{{teamEnabled}}">
-        <view class="section-title">谁来送</view>
+      <!-- 服务时间放在最前：找不找得到配送队、送达前什么时候通知，
+           都按送达时间算，得先有它 -->
+      <plan-editor part="time"
+                   init-batches="{{planBatches}}"
+                   bind:change="onPlanChange" />
 
+      <view class="title-switch">
+        <view class="subsection-title title-switch-label">送到买家地址</view>
+        <switch checked="{{exactAddress}}" color="#7A0019" bindchange="onExactAddressChange" />
+      </view>
+      <view class="field-hint">
+        关掉就是买家过来取，你设几个取货点让他们挑。
+      </view>
+
+      <!-- 只有送上门才有「谁来送」这一问 -->
+      <block wx:if="{{exactAddress}}">
         <view class="pick pick-sm {{deliveryMode === 'self' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="self">
           <view class="pick-body">
             <view class="pick-name">我自己送</view>
-            <view class="pick-desc">自己定服务地点、配送费和服务时间。</view>
           </view>
         </view>
 
-        <view class="pick pick-sm {{deliveryMode === 'outsourced' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="outsourced">
+        <!-- 上面填的送达时间没有一支队能接就置灰，理由写在卡片里 -->
+        <view wx:if="{{teamEnabled}}"
+              class="pick pick-sm {{deliveryMode === 'team' ? 'pick-on' : ''}} {{teamPickDisabled ? 'pick-off' : ''}}"
+              bindtap="pickMode" data-mode="team">
           <view class="pick-body">
-            <view class="pick-name">外包给配送队</view>
-            <view class="pick-desc">用配送队那套地点和时间，你不用填。</view>
+            <view class="pick-name">找配送队</view>
+            <view class="pick-desc">
+              {{teamPickDisabled ? teamPickReason : '先绑定一支队；开店后有单要送，在工作台「配送状态」里发请求。'}}
+            </view>
           </view>
         </view>
 
-        <block wx:if="{{deliveryMode === 'outsourced'}}">
-          <view wx:if="{{teamNames.length === 0}}" class="field-hint">
-            目前还没有通过核对的配送队，暂时只能自己送。
-          </view>
-          <picker wx:else mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
-            <view class="card form-card picker-row">
-              <text class="{{teamIndex === null ? 'placeholder' : ''}}">
-                {{teamIndex === null ? '选择配送队' : teamNames[teamIndex]}}
-              </text>
-              <text class="picker-arrow">›</text>
+        <block wx:if="{{teamEnabled && deliveryMode === 'team'}}">
+          <view wx:if="{{teamsError}}" class="text-light team-empty" bindtap="loadTeams">读取配送队失败，点击重试</view>
+          <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
+
+          <!-- 选完队又把送达时间改到人家没空的点上：不把选择清掉，只说一句 -->
+          <view wx:if="{{teamWarn}}" class="team-warn">⚠️ {{teamWarn}}</view>
+
+          <view wx:for="{{teams}}" wx:key="_id"
+                class="pick pick-sm team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
+                bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
+            <view class="pick-emoji">🛵</view>
+            <view class="pick-body">
+              <view class="pick-name">
+                {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>
+              </view>
+              <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
+              <!-- 时间对不上的队更要把时段摆出来：店长照着改送达时间就能用上 -->
+              <view wx:if="{{item.slotTexts.length}}" class="team-slots">
+                可配送
+                <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="team-slot">{{slot}}</text>
+                <text wx:if="{{item.slotMore}}" class="team-slot">还有 {{item.slotMore}} 段</text>
+              </view>
+              <view wx:else class="team-slots">还没填可配送时段</view>
             </view>
-          </picker>
+          </view>
         </block>
+
+        <input placeholder="配送费（美元）" type="digit"
+               value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
+               class="card form-card" />
       </block>
 
-      <!-- 自己送的服务地点和时间：不管队伍模块开没开，只要是自送就得填 -->
-      <plan-editor wx:if="{{deliveryMode === 'self'}}"
-                   init-points="{{planPoints}}" init-batches="{{planBatches}}"
+      <!-- 服务地点只有买家自取才用得上 -->
+      <plan-editor wx:if="{{!exactAddress}}" part="points"
+                   init-points="{{planPoints}}"
                    bind:change="onPlanChange" />
     </block>
   </block>

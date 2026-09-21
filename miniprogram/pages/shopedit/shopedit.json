@@ -1,7 +1,6 @@
 {
   "navigationBarTitleText": "小店设置",
   "usingComponents": {
-    "disclaimer-bar": "/components/disclaimerBar/index",
     "plan-editor": "/components/planEditor/index",
     "ban-bar": "/components/banBar/index"
   }

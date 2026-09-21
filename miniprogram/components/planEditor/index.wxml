@@ -1,4 +1,5 @@
 <view class="plan-editor">
+  <block wx:if="{{part !== 'time'}}">
   <view class="subsection-title">服务地点与配送费</view>
   <view wx:for="{{points}}" wx:key="index" class="card row">
     <view class="row-head">
@@ -15,7 +16,9 @@
   </view>
 
   <view class="add" bindtap="addPoint">+ 添加服务地点</view>
+  </block>
 
+  <block wx:if="{{part !== 'points'}}">
   <view class="subsection-title">服务时间</view>
   <view class="card row">
     <!-- 场次过了就没人能下单了，但店还挂在列表里，所以这条提示要显眼 -->
@@ -45,4 +48,5 @@
       </picker>
     </view>
   </view>
+  </block>
 </view>

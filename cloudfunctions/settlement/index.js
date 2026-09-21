@@ -64,7 +64,7 @@ exports.main = async (event) => {
 
       // 待结算汇总：店长看「我欠哪些队多少」，队伍看「哪些店长欠我多少」
       case 'summary': {
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where(unsettledWhere(actor)).limit(1000).get()
 
         const groupKey = actor.kind === 'shop' ? 'delivery_team_id' : 'shop_id'
@@ -121,7 +121,7 @@ exports.main = async (event) => {
         if (actor.kind === 'shop') where.delivery_team_id = counterpartId
         else where.shop_id = counterpartId
 
-        const res = await db.collection('food_orders').where(where).limit(1000).get()
+        const res = await db.collection('shop_orders').where(where).limit(1000).get()
         if (!res.data.length) return { success: false, message: '没有待结算的订单' }
 
         const orders = res.data
@@ -154,7 +154,7 @@ exports.main = async (event) => {
         })
 
         // 打上账单号就不会再被下一次对账重复计入
-        await db.collection('food_orders')
+        await db.collection('shop_orders')
           .where(where)
           .update({ data: { settlement_id: bill._id, updated_at: new Date() } })
 
@@ -177,7 +177,7 @@ exports.main = async (event) => {
           return { success: false, message: '没有权限' }
         }
 
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({ settlement_id: bill._id })
           .orderBy('batch_date', 'asc')
           .limit(1000)
@@ -225,7 +225,7 @@ exports.main = async (event) => {
         await db.collection('settlements').doc(bill._id).update({
           data: { status: 'settled', settled_at: new Date() }
         })
-        await db.collection('food_orders')
+        await db.collection('shop_orders')
           .where({ settlement_id: bill._id })
           .update({ data: { settled: true, updated_at: new Date() } })
 
@@ -240,7 +240,7 @@ exports.main = async (event) => {
         if (bill.created_by !== openid) return { success: false, message: '只有发起方能撤回' }
         if (bill.status === 'settled') return { success: false, message: '已结清的账单不能撤回' }
 
-        await db.collection('food_orders')
+        await db.collection('shop_orders')
           .where({ settlement_id: bill._id })
           .update({ data: { settlement_id: '', updated_at: new Date() } })
         await db.collection('settlements').doc(bill._id).remove()

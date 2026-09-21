@@ -1,6 +1,8 @@
 // 我的服务订单（买家侧）。
 // 订单展示店长微信；店长自己开了收款展示位的话，待确认的单里还会显示
-// 他填的收款方式和收款码。平台只原样展示，不经手资金、不验证账户归属。
+// 订单里还会回显买家自己下单时填的补充说明和配图。
+
+const { formatTime } = require('../../utils/date.js')
 
 const STATUS_TEXT = {
   pending: '待店长确认',
@@ -17,14 +19,6 @@ const STATUS_HINT = {
   delivering: '店长正在配送',
   completed: '订单已完成',
   cancelled: '订单已取消'
-}
-
-function formatTime(value) {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
-  const pad = n => (n < 10 ? '0' + n : '' + n)
-  return (d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
 }
 
 Page({
@@ -71,11 +65,9 @@ Page({
     })
   },
 
-  // 点开大图，用户可以长按保存收款码
-  previewQr: function (e) {
-    const url = e.currentTarget.dataset.url
-    if (!url) return
-    wx.previewImage({ urls: [url], current: url })
+  previewNoteImages: function (e) {
+    const urls = e.currentTarget.dataset.urls || []
+    wx.previewImage({ urls: urls, current: e.currentTarget.dataset.url })
   },
 
   copyText: function (e) {

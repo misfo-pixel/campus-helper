@@ -51,7 +51,7 @@ exports.main = async (event) => {
 
       case 'list': {
         const statuses = TAB_STATUS[event.tab] || TAB_STATUS.pending
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({ shop_id: shop._id, status: _.in(statuses) })
           .orderBy('created_at', 'desc')
           .limit(50)
@@ -64,7 +64,7 @@ exports.main = async (event) => {
         const start = new Date()
         start.setHours(0, 0, 0, 0)
 
-        const todayRes = await db.collection('food_orders')
+        const todayRes = await db.collection('shop_orders')
           .where({ shop_id: shop._id, created_at: _.gte(start) })
           .limit(500)
           .get()
@@ -90,7 +90,7 @@ exports.main = async (event) => {
         const next = event.status
         if (!orderId || !next) return { success: false, message: '参数不完整' }
 
-        const doc = await db.collection('food_orders').doc(orderId).get()
+        const doc = await db.collection('shop_orders').doc(orderId).get()
         const order = doc.data
         if (!order || order.shop_id !== shop._id) {
           return { success: false, message: '没有权限' }
@@ -101,7 +101,7 @@ exports.main = async (event) => {
           return { success: false, message: '这个订单已经不能改成该状态了' }
         }
 
-        await db.collection('food_orders').doc(orderId).update({
+        await db.collection('shop_orders').doc(orderId).update({
           data: {
             status: next,
             cancel_reason: next === 'cancelled' ? (event.reason || '') : '',
@@ -121,7 +121,7 @@ exports.main = async (event) => {
             data: {
               tpl: 'orderProgress',
               toUser: order.buyer,
-              page: 'pages/myfoodorders/myfoodorders',
+              page: 'pages/myshoporders/myshoporders',
               data: {
                 status: STATUS_TEXT[next] || next,
                 item: (first.name || '你的订单') + more,

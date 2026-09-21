@@ -4,13 +4,13 @@
   gap: 24rpx;
 }
 
-.dish-img {
+.product-img {
   width: 200rpx;
   height: 200rpx;
   border-radius: 12rpx;
 }
 
-.dish-img-placeholder {
+.product-img-placeholder {
   border: 2rpx dashed #ccc;
   display: flex;
   align-items: center;

@@ -1,0 +1,70 @@
+<view class="page-container">
+
+  <!-- ========== 发一条新请求 ========== -->
+  <view class="section-title">找配送队送一趟</view>
+
+  <!-- 读失败 ≠ 平台上没有队。分开说，否则店长会以为没人可找 -->
+  <view wx:if="{{loading}}" class="text-light">加载中…</view>
+  <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
+  <view wx:elif="{{teams.length === 0}}" class="text-light">
+    目前还没有配送队。
+  </view>
+
+  <block wx:else>
+    <view wx:for="{{teams}}" wx:key="_id"
+          class="pick {{teamIndex === index ? 'pick-on' : ''}}"
+          bindtap="pickTeam" data-index="{{index}}">
+      <view class="pick-emoji">🛵</view>
+      <view class="pick-body">
+        <view class="pick-name">{{item.name}}</view>
+        <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
+
+        <!-- 队长填的可配送时段。挑队伍时最要紧的就是这个——
+             时间对不上的话，加了微信也是白聊一轮 -->
+        <view wx:if="{{item.slotTexts.length}}" class="pick-slots">
+          <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="pick-slot">{{slot}}</text>
+          <text wx:if="{{item.slotMore}}" class="pick-slot-more">还有 {{item.slotMore}} 个时段</text>
+        </view>
+        <view wx:else class="pick-slots-none">没填可配送时段，联系上再问</view>
+      </view>
+    </view>
+
+    <textarea placeholder="说清楚几单、什么时候、从哪送到哪，方便队长判断接不接"
+              value="{{note}}" bindinput="onNote" maxlength="300"
+              class="card note-box"></textarea>
+
+    <button class="btn-primary" bindtap="send" loading="{{sending}}" style="margin-top: 24rpx;">
+      发送请求
+    </button>
+
+    <view class="field-hint" style="margin-top: 16rpx;">
+      队长会收到提醒，然后用微信直接联系你。平台不参与你们之间的约定。
+    </view>
+  </block>
+
+  <!-- ========== 进度 ========== -->
+  <view class="section-title">配送记录</view>
+  <view wx:if="{{requestsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
+  <view wx:elif="{{requests.length === 0}}" class="text-light">还没有发过请求。</view>
+
+  <view wx:for="{{requests}}" wx:key="_id" class="card req">
+    <view class="req-head">
+      <text class="req-team">{{item.team_name}}</text>
+      <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
+    </view>
+
+    <view class="text-light req-time">{{item.timeText}} 发出</view>
+    <view class="req-note">{{item.note}}</view>
+
+    <!-- 送达照片：平台不派单也不结账，出了「说送了其实没送」的争议，
+         能拿出来的只有这个 -->
+    <block wx:if="{{item.status === 'delivered'}}">
+      <view class="req-done">{{item.deliveredText}} 送达</view>
+      <view class="req-photos">
+        <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"
+               src="{{ph}}" mode="aspectFill" class="req-photo"
+               bindtap="previewPhoto" data-urls="{{item.photos}}" data-current="{{ph}}" />
+      </view>
+    </block>
+  </view>
+</view>

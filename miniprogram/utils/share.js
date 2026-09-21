@@ -11,6 +11,7 @@
 
 const { KINDS, isDemand, isClosed, rentText } = require('./kinds.js')
 const { toLocalPath } = require('./poster.js')
+const { today } = require('./date.js')
 
 const TASK_TAG = '有偿'    // 委托只有一面，没有供/求之分，突出「给钱」最能让人点进来
 const TITLE_MAX = 14       // 卡片标题两行就截断，用户标题太长会把价钱和日期挤掉
@@ -41,12 +42,6 @@ function clip(s, n) {
 function monthDay(date) {
   const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(date || '')
   return m ? Number(m[1]) + '/' + Number(m[2]) : ''
-}
-
-function today() {
-  const d = new Date()
-  const pad = n => (n < 10 ? '0' : '') + n
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
 }
 
 // 出/收/转/找 直接用 kinds.js 里胶囊上的字，和列表页说法一致

@@ -12,7 +12,7 @@ Page({
     price: '',
     unit: '',
     description: '',
-    allergens: '',
+    specs: '',
     category: '',
     useCategory: false,   // 小店关了分类展示时，这个输入框整个不出现
     image: '',
@@ -45,7 +45,7 @@ Page({
         price: String(item.price),
         unit: item.unit || '',
         description: item.description || '',
-        allergens: item.allergens || '',
+        specs: item.specs || '',
         category: item.category || '',
         image: item.image || '',
         available: item.available !== false
@@ -84,7 +84,7 @@ Page({
 
     const match = temp.match(/\.(\w+)$/)
     const ext = match ? match[1] : 'jpg'
-    const cloudPath = 'dishes/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + ext
+    const cloudPath = 'shop_items/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + ext
     return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: temp }).then(r => r.fileID)
   },
 
@@ -106,7 +106,7 @@ Page({
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.allergens, d.category, d.unit]
+        texts: [d.name, d.description, d.specs, d.category, d.unit]
       }))) return
 
       const image = await this.uploadImage()
@@ -127,7 +127,7 @@ Page({
           price: d.price,
           unit: d.unit,
           description: d.description,
-          allergens: d.allergens,
+          specs: d.specs,
           category: d.category,
           image: image,
           available: d.available

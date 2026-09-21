@@ -21,7 +21,7 @@ async function getMyTeamId(openid) {
 
 // 一次把这个队所有在途的单捞出来。校园场景单量小，够用而且省得分页。
 async function loadLiveOrders(teamId) {
-  const res = await db.collection('food_orders')
+  const res = await db.collection('shop_orders')
     .where({
       delivery_team_id: teamId,
       status: _.in(VISIBLE_STATUS),
@@ -84,9 +84,9 @@ exports.main = async (event) => {
       }
 
       // 汇总清单：给店长报单的取货清单 + 按服务地点分组的交付清单。
-      // 这两张表就是老饭搭子 summary 页做的事，批次配送需要的正是它。
+      // 这两张表就是老配送队 summary 页做的事，批次配送需要的正是它。
       case 'manifest': {
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({
             delivery_team_id: teamId,
             batch_key: event.batch_key,
@@ -100,15 +100,15 @@ exports.main = async (event) => {
         if (!orders.length) return { success: true, pickup: [], points: [], shopName: '' }
 
         // 取货清单：所有单的商品按名字合并计数，单位跟着名字走
-        const dishMap = {}
+        const productMap = {}
         orders.forEach(o => {
           (o.items || []).forEach(it => {
-            if (!dishMap[it.name]) dishMap[it.name] = { count: 0, unit: it.unit || '' }
-            dishMap[it.name].count += it.count
+            if (!productMap[it.name]) productMap[it.name] = { count: 0, unit: it.unit || '' }
+            productMap[it.name].count += it.count
           })
         })
-        const pickup = Object.keys(dishMap).map(name => ({
-          name: name, count: dishMap[name].count, unit: dishMap[name].unit
+        const pickup = Object.keys(productMap).map(name => ({
+          name: name, count: productMap[name].count, unit: productMap[name].unit
         }))
 
         // 交付清单：按服务地点分组。买家到服务地点自取，配送员在点上按名字分发。
@@ -152,7 +152,7 @@ exports.main = async (event) => {
           console.warn('读取配送员昵称失败：', e)
         }
 
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({
             delivery_team_id: teamId,
             batch_key: event.batch_key,
@@ -176,7 +176,7 @@ exports.main = async (event) => {
 
       // 取到货了：整批标记 picked，同时把店长那边推进到「配送中」
       case 'markPicked': {
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({
             delivery_team_id: teamId,
             batch_key: event.batch_key,
@@ -196,7 +196,7 @@ exports.main = async (event) => {
 
       // 单个送达：配送和店长两条状态一起收尾
       case 'markDelivered': {
-        const doc = await db.collection('food_orders').doc(event.orderId).get()
+        const doc = await db.collection('shop_orders').doc(event.orderId).get()
         const order = doc.data
         if (!order || order.delivery_team_id !== teamId) {
           return { success: false, message: '订单不存在' }
@@ -205,7 +205,7 @@ exports.main = async (event) => {
           return { success: false, message: '这单是别人领的' }
         }
 
-        await db.collection('food_orders').doc(event.orderId).update({
+        await db.collection('shop_orders').doc(event.orderId).update({
           data: {
             delivery_status: 'delivered',
             status: 'completed',
@@ -226,7 +226,7 @@ exports.main = async (event) => {
             data: {
               tpl: 'orderProgress',
               toUser: order.buyer,
-              page: 'pages/myfoodorders/myfoodorders',
+              page: 'pages/myshoporders/myshoporders',
               data: {
                 status: '已送达',
                 item: (first.name || '你的订单') + more,

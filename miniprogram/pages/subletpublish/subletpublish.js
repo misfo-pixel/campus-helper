@@ -3,6 +3,7 @@ const { myProfile } = require('../../utils/user.js')
 const { createUploader, requestReview } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
+const { today } = require('../../utils/date.js')
 
 const CFG = KINDS.sublet
 const BEDROOMS = ['Studio', '1', '2', '3', '4', '5+']
@@ -136,6 +137,23 @@ Page({
     }
     if (d.demand && Number(d.rent_min) > Number(d.rent_max)) {
       wx.showToast({ title: '最低预算不能高于最高预算', icon: 'none' })
+      return
+    }
+    // 日期是 YYYY-MM-DD，直接按字符串比就是按时间比
+    if (d.end_date < d.start_date) {
+      wx.showToast({
+        title: d.demand ? '希望租到的日期不能早于入住日期' : '租期结束日期不能早于起租日期',
+        icon: 'none'
+      })
+      return
+    }
+    // 结束日期填成过去的，autoExpire 当晚就会把帖子下架，
+    // 发布者只会看到帖子凭空消失。起租日期不拦：转租常常是「已经住进去了，转剩下的租期」
+    if (d.end_date < today()) {
+      wx.showToast({
+        title: d.demand ? '希望租到的日期不能早于今天' : '租期结束日期不能早于今天',
+        icon: 'none'
+      })
       return
     }
     const room_type = roomType(d)

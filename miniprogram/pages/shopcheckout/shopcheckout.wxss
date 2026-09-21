@@ -93,3 +93,57 @@
   font-size: 36rpx;
 }
 
+
+/* 买家补充说明的配图。和发布页那几个图片格子保持同一套尺寸，
+   不另起一套——买家在别的板块已经见过这个交互了 */
+.note-imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+
+.note-img-box {
+  position: relative;
+  width: 160rpx;
+  height: 160rpx;
+}
+
+.note-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12rpx;
+  background: #f7f7f7;
+}
+
+/* 删除角标压在图片右上角。做得够大能点中，但不至于盖住内容 */
+.note-img-del {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 36rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 28rpx;
+}
+
+.note-img-add {
+  width: 160rpx;
+  height: 160rpx;
+  border: 2rpx dashed #ccc;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 56rpx;
+}
+
+.note-imgs-hint {
+  font-size: 24rpx;
+  margin-top: 12rpx;
+}

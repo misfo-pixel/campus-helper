@@ -122,21 +122,6 @@
   font-size: 30rpx;
 }
 
-.picker-row {
-  display: flex;
-  align-items: center;
-}
-
-.picker-row .placeholder {
-  color: #999;
-}
-
-.picker-arrow {
-  margin-left: auto;
-  color: #ccc;
-  font-size: 36rpx;
-}
-
 .logo-row,
 .license-row {
   display: flex;
@@ -198,3 +183,62 @@
   font-size: 26rpx;
   color: var(--color-primary);
 }
+
+/* 开关坐在小节标题右边，跟小店设置那边保持一致 */
+.title-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  margin: 24rpx 0 8rpx;
+}
+
+.title-switch-label {
+  margin: 0;
+}
+
+/* 置灰：送达时间没有队能接时，「找配送队」这一项 */
+.pick-off {
+  opacity: 0.45;
+}
+
+/* 具体选哪一支队，缩进一档表示从属关系 */
+.team-pick {
+  margin-left: 32rpx;
+}
+
+.team-closed {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  font-weight: normal;
+}
+
+.team-empty {
+  margin: 0 0 20rpx 32rpx;
+}
+
+/* 队伍卡片上的可配送时段。时间对不上的队也照样摆出来——
+   店长照着改自己的送达时间就能用上，比只看到一张灰卡片有用 */
+.team-slots {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+.team-slot {
+  display: inline-block;
+  margin-right: 12rpx;
+}
+
+/* 选完队又把送达时间改到人家没空的点上。不解绑，只在这里说一句 */
+.team-warn {
+  margin: 0 0 16rpx 32rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: #FFF6E5;
+  color: #8A5A00;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+

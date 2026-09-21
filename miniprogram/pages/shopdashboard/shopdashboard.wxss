@@ -204,14 +204,14 @@
   padding-top: 16rpx;
 }
 
-.order-dish {
+.order-product {
   display: flex;
   justify-content: space-between;
   font-size: 28rpx;
   line-height: 1.8;
 }
 
-.order-dish-count {
+.order-product-count {
   color: var(--color-text-light);
 }
 
@@ -269,4 +269,20 @@
 .entry-label {
   font-size: 28rpx;
   margin-top: 8rpx;
+}
+
+/* 买家下单时附的图。工作台一屏要塞很多单，所以给得比买家侧小一号，
+   点开是大图，够店长核对款式 */
+.order-note-imgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.order-note-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+  background: #f7f7f7;
 }

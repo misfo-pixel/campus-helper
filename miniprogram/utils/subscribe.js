@@ -54,7 +54,52 @@ function ask(names) {
   })
 }
 
+// ask 的加强版：给用户主动点的按钮用。
+//
+// 坑在这里：用户在授权弹窗里点「拒绝」并勾了「总是保持以上选择」之后，
+// 再调 requestSubscribeMessage 会【直接返回 reject，连弹窗都不出】——
+// 按钮看着没反应，点一百次也没用。
+//
+// 所以失败之后要分清两种情况：
+//   只是这次没点同意  → 什么都不做，下次点按钮照样弹，不用打扰他
+//   勾了「不再询问」  → 只能引导去设置里打开，这是唯一的出路
+function askOrGuide(name) {
+  const id = TEMPLATES[name]
+  if (!id) return Promise.resolve(false)
+
+  return ask(name).then(ok => {
+    if (ok) return true
+
+    return new Promise(resolve => {
+      wx.getSetting({
+        withSubscriptions: true,
+        success: res => {
+          const setting = res.subscriptionsSetting || {}
+          const items = setting.itemSettings || {}
+          const blocked = setting.mainSwitch === false || items[id] === 'reject'
+
+          // 没被永久拒绝：下次再点按钮还会弹，这里安静退出就行
+          if (!blocked) return resolve(false)
+
+          wx.showModal({
+            title: '通知已被关闭',
+            content: '你之前选了「不再询问」，需要在设置里重新打开。',
+            confirmText: '去设置',
+            success: r => {
+              if (r.confirm) wx.openSetting({ withSubscriptions: true })
+              resolve(false)
+            },
+            fail: () => resolve(false)
+          })
+        },
+        fail: () => resolve(false)
+      })
+    })
+  })
+}
+
 module.exports = {
   TEMPLATES: TEMPLATES,
-  ask: ask
+  ask: ask,
+  askOrGuide: askOrGuide
 }

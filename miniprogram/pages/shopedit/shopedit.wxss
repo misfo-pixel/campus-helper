@@ -76,23 +76,6 @@
   line-height: 1.5;
 }
 
-.picker-row {
-  display: flex;
-  align-items: center;
-  padding: 24rpx;
-  font-size: 28rpx;
-}
-
-.picker-row .placeholder {
-  color: #999;
-}
-
-.picker-arrow {
-  margin-left: auto;
-  color: #ccc;
-  font-size: 36rpx;
-}
-
 .license-row {
   display: flex;
   align-items: center;
@@ -152,39 +135,103 @@
   margin-top: 4rpx;
 }
 
-/* 收款码上传 */
-.qr-row {
+/* 开关直接坐在小节标题右边。
+   原来是「标题一行 + 底下一张卡里再写一遍标题和开关」，
+   同一件事说了两遍，标题也白占一行。 */
+.title-switch {
   display: flex;
   align-items: center;
-  padding: 24rpx;
+  justify-content: space-between;
   gap: 24rpx;
+  margin: 24rpx 0 8rpx;
 }
 
-.qr-img {
-  width: 140rpx;
-  height: 140rpx;
-  border-radius: 12rpx;
-  flex-shrink: 0;
-  background: #f7f7f7;
+.title-switch-label {
+  margin: 0;
 }
 
-.qr-placeholder {
-  border: 2rpx dashed #ccc;
+/* 服务方式三选一。和开店向导里那套卡片同一个观感 */
+.pick {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-  font-size: 56rpx;
+  align-items: flex-start;
+  gap: 24rpx;
+  padding: 24rpx 28rpx;
+  border: 2rpx solid #eee;
+  border-radius: 16rpx;
+  background: #fff;
+  margin-bottom: 20rpx;
 }
 
-.qr-hint {
+.pick-on {
+  border-color: var(--color-primary);
+  background: #fdf7f8;
+}
+
+.pick-body {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
 }
 
-.qr-hint .text-light {
+.pick-name {
+  font-size: 30rpx;
+  font-weight: bold;
+}
+
+.pick-desc {
   font-size: 24rpx;
-  line-height: 1.5;
+  color: var(--color-text-light);
+  line-height: 1.6;
   margin-top: 6rpx;
 }
+
+/* 置灰：不可选的配送方式 / 送达时间没空的队伍。
+   仍然渲染、仍然可点（点了给一句解释），只是看起来是灰的 */
+.pick-off {
+  opacity: 0.45;
+}
+
+/* 具体选哪一支队，缩进一档，表示它从属于上面的「找配送队」 */
+.team-pick {
+  margin-left: 32rpx;
+}
+
+.pick-emoji {
+  font-size: 40rpx;
+  line-height: 1.2;
+}
+
+.team-closed {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  font-weight: normal;
+}
+
+.team-empty {
+  margin: 0 0 20rpx 32rpx;
+}
+
+/* 队伍卡片上的可配送时段。时间对不上的队也照样摆出来——
+   店长照着改自己的送达时间就能用上，比只看到一张灰卡片有用 */
+.team-slots {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  line-height: 1.6;
+}
+
+.team-slot {
+  display: inline-block;
+  margin-right: 12rpx;
+}
+
+/* 选完队又把送达时间改到人家没空的点上。不解绑，只在这里说一句 */
+.team-warn {
+  margin: 0 0 16rpx 32rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  background: #FFF6E5;
+  color: #8A5A00;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+

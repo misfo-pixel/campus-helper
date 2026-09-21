@@ -1,6 +1,4 @@
 {
   "navigationBarTitleText": "配送队",
-  "usingComponents": {
-    "plan-editor": "/components/planEditor/index"
-  }
+  "usingComponents": {}
 }

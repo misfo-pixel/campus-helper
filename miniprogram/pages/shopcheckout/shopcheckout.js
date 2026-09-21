@@ -10,9 +10,22 @@
 
 const { myProfile } = require('../../utils/user.js')
 const { ask } = require('../../utils/subscribe.js')
-const { ensureContentOk } = require('../../utils/contentCheck.js')
+const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
-const CART_KEY = 'foodCart'
+const CART_KEY = 'shopCart'
+
+// 买家补充说明的配图。单独放一个目录，和店铺 Logo、商品图分开，
+// 将来要按订单清理时一眼能圈出范围。
+const NOTE_IMAGE_MAX = 3
+
+function uploadNoteImage(tempPath) {
+  const match = tempPath.match(/\.(\w+)$/)
+  const ext = match ? match[1] : 'jpg'
+  const cloudPath = 'order_notes/' + Date.now() + '-' +
+    Math.floor(Math.random() * 1000000) + '.' + ext
+  return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: tempPath })
+    .then(r => r.fileID)
+}
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -21,8 +34,12 @@ Page({
     cart: null,
     loading: true,
 
-    // 店铺不配送时（顾客上门、到店自提）整块地点 / 时间都不出现
+    // 纯线上服务：整块地点 / 时间都不出现
     needsDelivery: true,
+    // 送到我填的地址（true），还是我去固定点位自取（false）
+    exactAddress: false,
+    address: '',
+    flatFee: 0,
 
     points: [],
     pointLabels: [],
@@ -34,6 +51,11 @@ Page({
 
     contact_wechat: '',
     note: '',
+    // 店长开了「下单时要买家补充说明」才出现。noteHint 是他自己写的提示语，
+    // 没写就用一句通用的。noteImages 存的是本地临时路径，提交时才真的上传。
+    noteRequired: false,
+    noteHint: '',
+    noteImages: [],
 
     deliveryFee: 0,
     total: 0,
@@ -69,14 +91,44 @@ Page({
         return
       }
 
-      // 不配送的店没有地点和场次可选，直接进到「填微信 + 提交」
+      // 这两项和配送方式无关，三种分支都要，所以先设
+      this.setData({
+        noteRequired: r.note_required === true,
+        noteHint: r.note_hint || ''
+      })
+
+      // 纯线上服务没有地点和场次可选，直接进到「填微信 + 提交」
       if (r.needs_delivery === false) {
         this.setData({ needsDelivery: false, loading: false }, () => this.recalc())
         return
       }
 
-      const points = r.pickup_points || []
       const batches = r.availableBatches || []
+
+      // 送到我填的地址：没有点位可选，配送费是店长定的一口价
+      if (r.exact_address === true) {
+        if (!batches.length) {
+          this.setData({ loading: false })
+          wx.showModal({
+            title: '暂时无法下单',
+            content: '这家店暂时没有可约的服务时间，请稍后再试。',
+            showCancel: false,
+            success: () => wx.navigateBack()
+          })
+          return
+        }
+        this.setData({
+          exactAddress: true,
+          flatFee: Number(r.flat_delivery_fee) || 0,
+          batches: batches,
+          batchLabels: batches.map(b => this.batchLabel(b)),
+          batchIndex: 0,
+          loading: false
+        }, () => this.recalc())
+        return
+      }
+
+      const points = r.pickup_points || []
       if (!points.length || !batches.length) {
         this.setData({ loading: false })
         wx.showModal({
@@ -148,22 +200,59 @@ Page({
   },
 
   recalc: function () {
-    const idx = this.data.pointIndex
-    const fee = idx === null ? 0 : (Number(this.data.points[idx].fee) || 0)
-    const total = Math.round((this.data.cart.subtotal + fee) * 100) / 100
+    const d = this.data
+    let fee = 0
+    if (d.needsDelivery) {
+      // 送上门是一口价；自取按选中的那个点位收
+      fee = d.exactAddress
+        ? (Number(d.flatFee) || 0)
+        : (d.pointIndex === null ? 0 : (Number(d.points[d.pointIndex].fee) || 0))
+    }
+    const total = Math.round((d.cart.subtotal + fee) * 100) / 100
     this.setData({ deliveryFee: fee, total: total })
+  },
+
+  chooseNoteImages: function () {
+    const left = NOTE_IMAGE_MAX - this.data.noteImages.length
+    if (left <= 0) return
+    wx.chooseMedia({
+      count: left, mediaType: ['image'], sizeType: ['compressed'],
+      success: res => {
+        const paths = res.tempFiles.map(f => f.tempFilePath)
+        this.setData({ noteImages: this.data.noteImages.concat(paths) })
+      }
+    })
+  },
+
+  removeNoteImage: function (e) {
+    const list = this.data.noteImages.slice()
+    list.splice(Number(e.currentTarget.dataset.index), 1)
+    this.setData({ noteImages: list })
+  },
+
+  previewNoteImage: function (e) {
+    const url = e.currentTarget.dataset.url
+    wx.previewImage({ urls: this.data.noteImages, current: url })
   },
 
   submit: async function () {
     const d = this.data
     if (d.submitting) return
 
-    if (d.needsDelivery && d.pointIndex === null) {
-      wx.showToast({ title: '请选择服务地点', icon: 'none' })
+    if (d.needsDelivery && d.exactAddress && !d.address.trim()) {
+      wx.showToast({ title: '请填写收货地址', icon: 'none' })
+      return
+    }
+    if (d.needsDelivery && !d.exactAddress && d.pointIndex === null) {
+      wx.showToast({ title: '请选择取货地点', icon: 'none' })
       return
     }
     if (!d.contact_wechat.trim()) {
       wx.showToast({ title: '请填写你的微信号', icon: 'none' })
+      return
+    }
+    if (d.noteRequired && !d.note.trim()) {
+      wx.showToast({ title: '请填写补充说明', icon: 'none' })
       return
     }
 
@@ -180,6 +269,17 @@ Page({
         scene: 2
       }))) return
 
+      // 图片等文字过了再传：文字没过就不用白传一趟。
+      // 传完单独过一次检，没过就把刚传上去的删掉，不留孤儿文件。
+      let noteImages = []
+      if (d.noteImages.length) {
+        noteImages = await Promise.all(d.noteImages.map(uploadNoteImage))
+        if (!(await ensureContentOk({ fileIDs: noteImages }))) {
+          await deleteCloudFiles(noteImages)
+          return
+        }
+      }
+
       const batch = d.batches[d.batchIndex]
       const res = await wx.cloud.callFunction({
         name: 'buyerOrders',
@@ -187,10 +287,12 @@ Page({
           action: 'create',
           shopId: d.cart.shopId,
           items: d.cart.items.map(i => ({ item_id: i.item_id, count: i.count })),
-          pickup_point: d.points[d.pointIndex].name,
+          pickup_point: d.exactAddress ? '' : d.points[d.pointIndex].name,
+          address: d.address,
           batch_key: batch.key,
           contact_wechat: d.contact_wechat,
-          note: d.note
+          note: d.note,
+          note_images: noteImages
         }
       })
 
@@ -207,13 +309,15 @@ Page({
         title: '订单已提交',
         content: '店长会通过微信与你联系确认。\n\n' +
                  (r.needs_delivery === false
-                   ? '具体时间和地点请与店长约定。\n\n'
-                   : '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到服务地点自取。\n\n') +
+                   ? '这是线上服务，没有取货环节。\n\n'
+                   : (d.exactAddress
+                       ? '预计 ' + r.batch_date + ' ' + r.deliver_time + ' 送到你填的地址。\n\n'
+                       : '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到取货地点自取。\n\n')) +
                  '平台只记录下单意向，不参与交易。',
         showCancel: false,
         confirmText: '知道了',
         success: () => {
-          wx.redirectTo({ url: '/pages/myfoodorders/myfoodorders' })
+          wx.redirectTo({ url: '/pages/myshoporders/myshoporders' })
         }
       })
     } catch (err) {

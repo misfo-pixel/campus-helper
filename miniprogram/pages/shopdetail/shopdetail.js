@@ -1,12 +1,12 @@
 // 店铺详情 + 点单。
 //
-// 购物车只在这一页存活，点「去结算」时写进 storage 交给结算页。
+// 选好的商品只在这一页存活，点「下一步」时写进 storage 交给下单页。
 // 前端算的金额只用来显示，真正的总价由 buyerOrders 云函数按数据库当前价重算。
 
 const { withCover, clip } = require('../../utils/share.js')
 const { toLocalPath } = require('../../utils/poster.js')
 
-const CART_KEY = 'foodCart'
+const CART_KEY = 'shopCart'
 const NAME_MAX = 12   // 转发标题里留给店名的字数，后面还要写得下截单时间
 
 // 转发标题里的「什么时候截单」。
@@ -179,7 +179,7 @@ Page({
       shop_wechat: this.data.shop.contact_wechat
     })
 
-    wx.navigateTo({ url: '/pages/foodcheckout/foodcheckout' })
+    wx.navigateTo({ url: '/pages/shopcheckout/shopcheckout' })
   },
 
   // 从转发卡片冷启动进来的，退无可退，给个往下逛的出口
@@ -190,8 +190,8 @@ Page({
   // 转发封面用商品实拍图：比店铺 logo 勾人，也比微信自动截的界面图好。
   // 趁用户还在翻商品列表先下到本地，点转发时就不用等跨太平洋那一趟（见 utils/share.js）
   prefetchCover: function () {
-    const dish = (this.data.items || []).filter(i => i.available && i.image)[0]
-    this.coverID = (dish && dish.image) || (this.data.shop || {}).logo || ''
+    const product = (this.data.items || []).filter(i => i.available && i.image)[0]
+    this.coverID = (product && product.image) || (this.data.shop || {}).logo || ''
     this.cover = toLocalPath(this.coverID)
   },
 

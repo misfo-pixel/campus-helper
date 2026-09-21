@@ -10,7 +10,7 @@
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { TEAM_MODULE_ENABLED } = require('../../config.js')
 const {
-  CATEGORIES, uploadShopImage, validatePlan
+  uploadShopImage, validatePlan, markTeams
 } = require('../../utils/shopForm.js')
 
 const LAST_STEP = 3
@@ -22,19 +22,25 @@ Page({
 
     // 第 1 步：这家店是什么
     name: '',
-    categories: CATEGORIES,
-    categoryIndex: 0,
     description: '',
 
-    // 第 2 步：要不要配送
+    // 第 2 步：要不要线下交付 + 谁来送
     teamEnabled: TEAM_MODULE_ENABLED,
     needsDelivery: null,      // null = 还没选，两张卡片都不高亮
-    deliveryMode: 'self',
-    teams: [],
-    teamNames: [],
-    teamIndex: null,
+    // 两层：先 exactAddress（送上门 or 买家自取），再 deliveryMode（谁送）
+    exactAddress: false,
+    deliveryMode: 'self',     // self 我自己送 / team 找配送队
+    flat_delivery_fee: '',
     planPoints: [],
     planBatches: [],
+
+    // 绑定哪一支配送队。和小店设置页同一套逻辑，注释见 shopedit.js
+    deliveryTeamId: '',
+    teams: [],
+    teamsError: false,
+    teamPickDisabled: false,
+    teamPickReason: '',
+    teamWarn: '',
 
     // 第 3 步：怎么找到你
     contact_wechat: '',
@@ -49,20 +55,41 @@ Page({
   },
 
   onLoad: function () {
-    this.loadTeams()
+    if (TEAM_MODULE_ENABLED) this.loadTeams()
   },
 
-  // 审核通过的配送队，外包时从这里选
   loadTeams: function () {
     wx.cloud.callFunction({
       name: 'deliveryManage',
-      data: { action: 'listApproved' }
+      data: { action: 'listTeams' }
     }).then(res => {
       const r = (res && res.result) || {}
-      const teams = r.success ? (r.teams || []) : []
-      this.setData({ teams: teams, teamNames: teams.map(t => t.name) })
+      if (!r.success) {
+        this.setData({ teamsError: true }, () => this.refreshTeamPick())
+        return
+      }
+      this.setData({ teams: r.teams || [], teamsError: false }, () => this.refreshTeamPick())
     }).catch(err => {
       console.error('读取配送队失败：', err)
+      this.setData({ teamsError: true }, () => this.refreshTeamPick())
+    })
+  },
+
+  // 哪些队现在能选：拿第 2 步填的送达时刻前后各半小时，去比队伍的可配送
+  // 时段，整段盖得住才算能接。规则在 utils/shopForm.js 的 markTeams 里，
+  // 和小店设置页共用一份。
+  //
+  // 送达时间在这一步排在配送方式之前，就是为了这个——先有时间才判断得了
+  // 有没有队能接。日期还没选的时候不置灰（markTeams 里一律算可选）。
+  //
+  // 读失败时也不置灰：那是「不知道有没有队」，不是「没有队」。
+  refreshTeamPick: function () {
+    const marked = markTeams(this.data.teams, this.data.planBatches, this.data.deliveryTeamId)
+    this.setData({
+      teams: marked.teams,
+      teamPickDisabled: !this.data.teamsError && marked.disabled,
+      teamPickReason: marked.reason,
+      teamWarn: this.data.teamsError ? '' : marked.warn
     })
   },
 
@@ -70,16 +97,17 @@ Page({
     this.setData({ [e.currentTarget.dataset.field]: e.detail.value })
   },
 
-  onCategoryChange: function (e) {
-    this.setData({ categoryIndex: Number(e.detail.value) })
-  },
-
-  onTeamChange: function (e) {
-    this.setData({ teamIndex: Number(e.detail.value) })
-  },
-
+  // 两个 plan-editor 实例各抛一半（服务时间 / 服务地点），按 key 合并。
+  // 改了服务时间就要重算队伍可选性——「哪支队能接」完全跟着送达时间走。
   onPlanChange: function (e) {
-    this.setData({ planPoints: e.detail.points, planBatches: e.detail.batches })
+    const d = e.detail || {}
+    const patch = {}
+    if (d.points) patch.planPoints = d.points
+    if (d.batches) patch.planBatches = d.batches
+    if (!Object.keys(patch).length) return
+    this.setData(patch, () => {
+      if (d.batches) this.refreshTeamPick()
+    })
   },
 
   onAgreeChange: function (e) {
@@ -91,8 +119,34 @@ Page({
     this.setData({ needsDelivery: e.currentTarget.dataset.need === '1' })
   },
 
+  onExactAddressChange: function (e) {
+    this.setData({ exactAddress: e.detail.value })
+  },
+
   pickMode: function (e) {
-    this.setData({ deliveryMode: e.currentTarget.dataset.mode })
+    const mode = e.currentTarget.dataset.mode
+
+    if (mode === 'team' && this.data.teamPickDisabled) {
+      wx.showToast({ title: this.data.teamPickReason, icon: 'none' })
+      return
+    }
+
+    this.setData({ deliveryMode: mode })
+
+    // 只有一支队可选时（现阶段大概率如此）自动选上，省一次点击
+    if (mode === 'team' && !this.data.deliveryTeamId) {
+      const usable = (this.data.teams || []).filter(t => t.selectable)
+      if (usable.length === 1) this.setData({ deliveryTeamId: usable[0]._id }, () => this.refreshTeamPick())
+    }
+  },
+
+  pickTeam: function (e) {
+    const { id, selectable } = e.currentTarget.dataset
+    if (!selectable) {
+      wx.showToast({ title: '这支队在送达前后半小时里没空', icon: 'none' })
+      return
+    }
+    this.setData({ deliveryTeamId: id }, () => this.refreshTeamPick())
   },
 
   chooseLogo: function () {
@@ -136,16 +190,14 @@ Page({
         return
       }
       if (d.needsDelivery) {
-        if (d.deliveryMode === 'outsourced' && d.teamIndex === null) {
-          wx.showToast({ title: '请选择要外包给哪个配送队', icon: 'none' })
+        const bad = validatePlan(d.planPoints, d.planBatches, d.exactAddress)
+        if (bad) {
+          wx.showToast({ title: bad, icon: 'none' })
           return
         }
-        if (d.deliveryMode === 'self') {
-          const bad = validatePlan(d.planPoints, d.planBatches)
-          if (bad) {
-            wx.showToast({ title: bad, icon: 'none' })
-            return
-          }
+        if (d.exactAddress && d.deliveryMode === 'team' && !d.deliveryTeamId) {
+          wx.showToast({ title: '请选择一支配送队', icon: 'none' })
+          return
         }
       }
     }
@@ -191,15 +243,16 @@ Page({
           agreed: true,
           name: d.name,
           logo: logo,
-          category: CATEGORIES[d.categoryIndex],
           description: d.description,
           min_order: d.min_order,
           business_hours: d.business_hours,
           order_notice: d.order_notice,
           contact_wechat: d.contact_wechat,
           needs_delivery: d.needsDelivery === true,
+          exact_address: d.exactAddress,
           delivery_mode: d.deliveryMode,
-          delivery_team_id: (!TEAM_MODULE_ENABLED || d.teamIndex === null) ? '' : d.teams[d.teamIndex]._id,
+          delivery_team_id: d.deliveryTeamId,
+          flat_delivery_fee: d.flat_delivery_fee,
           license_image: licenseImage,
           pickup_points: d.planPoints,
           batches: d.planBatches

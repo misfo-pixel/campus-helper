@@ -9,21 +9,21 @@
   margin-top: 120rpx;
 }
 
-.dish {
+.product {
   display: flex;
   align-items: center;
   padding: 24rpx;
   gap: 20rpx;
 }
 
-.dish-img {
+.product-img {
   width: 120rpx;
   height: 120rpx;
   border-radius: 12rpx;
   flex-shrink: 0;
 }
 
-.dish-img-fallback {
+.product-img-fallback {
   background: #f2f2f2;
   display: flex;
   align-items: center;
@@ -31,23 +31,23 @@
   font-size: 48rpx;
 }
 
-.dish-meta {
+.product-meta {
   flex: 1;
   min-width: 0;
 }
 
-.dish-name {
+.product-name {
   font-size: 30rpx;
   font-weight: bold;
 }
 
 /* 售罄的菜名灰掉，一眼能扫出哪些下架了 */
-.dish-off {
+.product-off {
   color: #bbb;
   text-decoration: line-through;
 }
 
-.dish-desc {
+.product-desc {
   font-size: 24rpx;
   margin-top: 4rpx;
   overflow: hidden;
@@ -55,14 +55,14 @@
   white-space: nowrap;
 }
 
-.dish-price {
+.product-price {
   font-size: 30rpx;
   color: var(--color-primary);
   font-weight: bold;
   margin-top: 8rpx;
 }
 
-.dish-right {
+.product-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -70,22 +70,22 @@
   flex-shrink: 0;
 }
 
-.dish-ops {
+.product-ops {
   display: flex;
   gap: 20rpx;
 }
 
-.dish-op {
+.product-op {
   font-size: 26rpx;
   color: var(--color-text-light);
 }
 
-.dish-op-danger {
+.product-op-danger {
   color: #C8102E;
 }
 
 /* 计价单位，跟在价格后面，弱化显示 */
-.dish-unit {
+.product-unit {
   font-size: 22rpx;
   font-weight: normal;
   color: #999;
@@ -111,7 +111,7 @@
 .cat-icon { font-size: 24rpx; }
 
 /* 虚线占位框：列表末尾的「再加一件」 */
-.dish-add {
+.product-add {
   border: 2rpx dashed #d0d0d0;
   border-radius: 16rpx;
   padding: 44rpx 0;
@@ -123,13 +123,13 @@
   background: #fafafa;
 }
 
-.dish-add-icon {
+.product-add-icon {
   font-size: 44rpx;
   color: #bbb;
   line-height: 1;
 }
 
-.dish-add-text {
+.product-add-text {
   font-size: 26rpx;
   color: #999;
 }

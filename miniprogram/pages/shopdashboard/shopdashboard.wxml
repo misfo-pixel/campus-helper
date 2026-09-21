@@ -78,13 +78,19 @@
         <view class="order-buyer">{{item.buyer_nickname || '买家'}} · {{item.pickup_info}}</view>
 
         <view class="order-items">
-          <view wx:for="{{item.items}}" wx:for-item="dish" wx:key="name" class="order-dish">
-            <text>{{dish.name}}</text>
-            <text class="order-dish-count">×{{dish.count}}</text>
+          <view wx:for="{{item.items}}" wx:for-item="product" wx:key="name" class="order-product">
+            <text>{{product.name}}</text>
+            <text class="order-product-count">×{{product.count}}</text>
           </view>
         </view>
 
         <view wx:if="{{item.note}}" class="order-note">备注：{{item.note}}</view>
+        <!-- 买家附的图：要确认款式尺寸的店，这几张比那段文字管用 -->
+        <view wx:if="{{item.note_images.length}}" class="order-note-imgs">
+          <image wx:for="{{item.note_images}}" wx:for-item="img" wx:key="*this"
+                 src="{{img}}" mode="aspectFill" class="order-note-img"
+                 bindtap="previewNoteImages" data-urls="{{item.note_images}}" data-url="{{img}}" />
+        </view>
 
         <view class="order-contact">
           <text class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
@@ -114,8 +120,6 @@
       </view>
     </block>
 
-    <disclaimer-bar type="merchant" />
-
     <view class="entries">
       <view class="entry card" bindtap="goToMenu">
         <view class="entry-icon">🏪</view>
@@ -127,12 +131,11 @@
       </view>
       <view class="entry card" bindtap="enableOrderAlert">
         <view class="entry-icon">🔔</view>
-        <view class="entry-label">开启新单提醒</view>
+        <view class="entry-label">新单提醒</view>
       </view>
-      <!-- 外包配送才需要跟队伍结账，自己送的没这回事 -->
-      <view wx:if="{{teamEnabled && shop.delivery_mode === 'outsourced'}}" class="entry card" bindtap="goToSettlement">
-        <view class="entry-icon">💵</view>
-        <view class="entry-label">配送费对账</view>
+      <view wx:if="{{teamEnabled}}" class="entry card" bindtap="goToDeliveryAsk">
+        <view class="entry-icon">🛵</view>
+        <view class="entry-label">配送状态</view>
       </view>
     </view>
   </block>

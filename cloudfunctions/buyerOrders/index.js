@@ -59,27 +59,13 @@ function expandBatches(batches) {
   }).filter(Boolean)
 }
 
-// 这家店的配送方案归谁：外包用配送队的，否则用店铺自己的。
-// 队伍被驳回或删了就退回店铺那份，免得订单彻底下不了。
-async function resolvePlan(shop) {
-  if (shop.delivery_mode === 'outsourced' && shop.delivery_team_id) {
-    try {
-      const t = await db.collection('delivery_teams').doc(shop.delivery_team_id).get()
-      if (t.data && t.data.audit_status === 'approved') {
-        return {
-          pickup_points: t.data.pickup_points || [],
-          batches: t.data.batches || [],
-          outsourced: true
-        }
-      }
-    } catch (e) {
-      console.warn('读取配送队方案失败，回落到店铺自己的：', shop.delivery_team_id)
-    }
-  }
+// 配送方案一律是店铺自己那份。
+// 以前会在「外包」时去读配送队的方案，那套已经撤了——队伍不再维护自己的
+// 点位和班次，一律送到买家填的地址。
+function resolvePlan(shop) {
   return {
     pickup_points: shop.pickup_points || [],
-    batches: shop.batches || [],
-    outsourced: false
+    batches: shop.batches || []
   }
 }
 
@@ -149,26 +135,45 @@ exports.main = async (event) => {
           return { success: false, message: '还没到起送价 $' + minOrder }
         }
 
+        // 店长要求补充说明的话，服务端也拦一道——前端那条只挡手滑。
+        if (shop.note_required === true && !String(event.note || '').trim()) {
+          return { success: false, message: '这家店要求填写补充说明' }
+        }
+
         // ---- 配送：服务地点决定费率，场次决定什么时候送到 ----
         // 不送到公寓门口，买家到服务地点自取，所以不需要房间号。
         //
-        // 不配送的店（顾客上门、到店自提）整段跳过：没有服务地点、没有场次、
-        // 配送费为 0。订单只是一条「我要这些」的意向，怎么交付由双方自己约。
+        // 纯线上服务（辅导、代写、设计这类）整段跳过：没有地点、没有场次。
+        // 到店自提不走这条——它有地点有时间，只是配送费为 0。
         const needsDelivery = shop.needs_delivery !== false
+        const exactAddress = shop.exact_address === true
 
         let point = null
         let batch = null
-        let outsourced = false
+        let address = ''
+        let fee = 0
 
         if (needsDelivery) {
-          const plan = await resolvePlan(shop)
-          if (!plan.pickup_points.length || !plan.batches.length) {
-            return { success: false, message: '这家店还没设置好服务地点或服务时间，暂时不能下单' }
+          const plan = resolvePlan(shop)
+          if (!plan.batches.length) {
+            return { success: false, message: '这家店还没设置好服务时间，暂时不能下单' }
           }
 
-          const pointName = (event.pickup_point || '').trim()
-          point = plan.pickup_points.find(p => p.name === pointName)
-          if (!point) return { success: false, message: '请选择服务地点' }
+          if (exactAddress) {
+            // 送到买家自己填的地址，没有点位可选，配送费是店长定的一口价
+            address = String(event.address || '').trim().slice(0, 200)
+            if (!address) return { success: false, message: '请填写收货地址' }
+            fee = Math.round((Number(shop.flat_delivery_fee) || 0) * 100) / 100
+          } else {
+            // 客户自取：到店长设的某个点来拿，费率跟着点位走
+            if (!plan.pickup_points.length) {
+              return { success: false, message: '这家店还没设置好服务地点，暂时不能下单' }
+            }
+            const pointName = (event.pickup_point || '').trim()
+            point = plan.pickup_points.find(p => p.name === pointName)
+            if (!point) return { success: false, message: '请选择服务地点' }
+            fee = Math.round((Number(point.fee) || 0) * 100) / 100
+          }
 
           const available = expandBatches(plan.batches)
           if (!available.length) {
@@ -181,22 +186,15 @@ exports.main = async (event) => {
             // 前端页面开太久，选的那场已经截单了
             return { success: false, message: '这一场已经截单，请重新选择' }
           }
-
-          // 用解析结果而不是 shop 上的字段：队伍被驳回时方案已经回落到自送，
-          // 这时候再记一笔「欠队伍的钱」就对不上账了
-          outsourced = plan.outsourced
         }
 
         const contactWechat = (event.contact_wechat || '').trim()
         if (!contactWechat) return { success: false, message: '请填写你的微信号' }
 
-        const fee = point ? Math.round(point.fee * 100) / 100 : 0
-
-        // charged 是买家实付，owed 是店长欠配送队的。
-        // 现在两者相等；将来店长做「满 X 免配送费」时 charged 会变 0 而 owed 不变——
-        // 配送队的钱不能因为店长搞活动就没了。对账永远按 owed 算。
+        // 配送费全归店长。配送队那条线现在是店长和队长私下谈钱，
+        // 平台不再记「店长欠队伍多少」——对账模块已经不接入了。
         const feeCharged = fee
-        const feeOwed = outsourced ? fee : 0
+        const feeOwed = 0
 
         let nickname = ''
         try {
@@ -208,7 +206,7 @@ exports.main = async (event) => {
 
         const total = Math.round((built.subtotal + feeCharged) * 100) / 100
 
-        const res = await db.collection('food_orders').add({
+        const res = await db.collection('shop_orders').add({
           data: {
             shop_id: shop._id,
             shop_name: shop.name,
@@ -220,15 +218,18 @@ exports.main = async (event) => {
             // 不配送的店这几项为空。delivery_status 仍然写 'waiting'：
             // delivery_team_id 是空的，配送队那边查不到这类单，状态机不受影响。
             needs_delivery: needsDelivery,
+            exact_address: exactAddress,
+            address: address,
             pickup_point: point ? point.name : '',
-            pickup_info: point ? point.name : '与店长自行约定',
+            // 工作台和订单列表直接显示这一行：送上门显示地址，自取显示点位
+            pickup_info: exactAddress ? address : (point ? point.name : '线上服务，无需取货'),
             batch_key: batch ? batch.key : '',
             batch_label: batch ? batch.label : '',
             batch_date: batch ? batch.date : '',
             deliver_time: batch ? batch.deliver_time : '',
 
-            delivery_mode: outsourced ? 'outsourced' : 'self',
-            delivery_team_id: outsourced ? shop.delivery_team_id : '',
+            delivery_mode: shop.delivery_mode || 'self',
+            delivery_team_id: '',
             delivery_fee_charged: feeCharged,
             delivery_fee_owed: feeOwed,
             deliverer: '',
@@ -238,6 +239,10 @@ exports.main = async (event) => {
             total: total,
             contact_wechat: contactWechat,
             note: (event.note || '').trim().slice(0, 200),
+            // 买家自己传的配图（尺寸、款式、参考图）。前端限 3 张，这里再兜一次
+            note_images: Array.isArray(event.note_images)
+              ? event.note_images.filter(x => typeof x === 'string' && x).slice(0, 3)
+              : [],
             status: 'pending',
             cancel_reason: '',
             created_at: new Date(),
@@ -285,7 +290,7 @@ exports.main = async (event) => {
       }
 
       case 'list': {
-        const res = await db.collection('food_orders')
+        const res = await db.collection('shop_orders')
           .where({ buyer: openid })
           .orderBy('created_at', 'desc')
           .limit(50)
@@ -298,14 +303,7 @@ exports.main = async (event) => {
           const shops = await db.collection('shops')
             .where({ _id: _.in(shopIds) }).limit(100).get()
           shops.data.forEach(s => {
-            // 店长没开收款展示位就整块不下发，前端拿不到也就无从显示
-            const on = s.payment_enabled === true
-            shopMap[s._id] = {
-              contact_wechat: s.contact_wechat,
-              payment_enabled: on,
-              payment_note: on ? (s.payment_note || '') : '',
-              payment_qr: on ? (s.payment_qr || '') : ''
-            }
+            shopMap[s._id] = { contact_wechat: s.contact_wechat }
           })
         }
 
@@ -313,12 +311,8 @@ exports.main = async (event) => {
           success: true,
           orders: res.data.map(o => {
             const s = shopMap[o.shop_id] || {}
-            return Object.assign({}, o, {
-              shop_wechat: s.contact_wechat || '',
-              payment_enabled: s.payment_enabled === true,
-              payment_note: s.payment_note || '',
-              payment_qr: s.payment_qr || ''
-            })
+            // note / note_images 本来就在订单文档里，Object.assign 直接带过去
+            return Object.assign({}, o, { shop_wechat: s.contact_wechat || '' })
           })
         }
       }
@@ -326,7 +320,7 @@ exports.main = async (event) => {
       // 店长还没接单之前买家可以自己取消；接单之后就得直接找店长谈了，
       // 因为那时候店长可能已经开始准备了
       case 'cancel': {
-        const doc = await db.collection('food_orders').doc(event.orderId).get()
+        const doc = await db.collection('shop_orders').doc(event.orderId).get()
         const order = doc.data
         if (!order || order.buyer !== openid) {
           return { success: false, message: '订单不存在' }
@@ -335,7 +329,7 @@ exports.main = async (event) => {
           return { success: false, message: '店长已经接单，请直接联系店长' }
         }
 
-        await db.collection('food_orders').doc(event.orderId).update({
+        await db.collection('shop_orders').doc(event.orderId).update({
           data: {
             status: 'cancelled',
             cancel_reason: '买家取消',

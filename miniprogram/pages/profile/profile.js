@@ -8,8 +8,7 @@ Page({
     roles: [],
     isAdmin: false,
     isSuperAdmin: false,
-    canAudit: false,        // 超管 或 饭搭子管理员：能审店长和配送队
-    canSeeDelivery: false,  // 饭搭子管理员 / 有店的店长 / 已在队里的人
+    canSeeDelivery: false,  // 配送队管理员 / 有店的店长 / 已在队里的人
     shopEnabled: SHOP_MODULE_ENABLED,
     teamEnabled: TEAM_MODULE_ENABLED,
     pendingReports: 0
@@ -26,17 +25,14 @@ Page({
   goToShop: function () {
     wx.navigateTo({ url: '/pages/shopdashboard/shopdashboard' })
   },
-  goToFoodOrders: function () {
-    wx.navigateTo({ url: '/pages/myfoodorders/myfoodorders' })
+  goToShopOrders: function () {
+    wx.navigateTo({ url: '/pages/myshoporders/myshoporders' })
   },
   goToTeam: function () {
     wx.navigateTo({ url: '/pages/teamdashboard/teamdashboard' })
   },
   goToFeedbacks: function () {
     wx.navigateTo({ url: '/pages/feedbacks/feedbacks' })
-  },
-  goToShopAudit: function () {
-    wx.navigateTo({ url: '/pages/shopaudit/shopaudit' })
   },
   goToMySublets: function () {
     wx.navigateTo({ url: '/pages/mysublets/mysublets' })
@@ -50,8 +46,8 @@ Page({
     // 读缓存，不再多打一次 login（见 utils/user.js）
     myProfile().then(profile => {
       const roles = profile.roles
-      const isAdmin = roles.includes('food_admin') || roles.includes('market_admin') || roles.includes('super_admin')
-      const isFoodAdmin = roles.includes('food_admin')
+      const isAdmin = roles.includes('ops_admin') || roles.includes('market_admin') || roles.includes('super_admin')
+      const isOpsAdmin = roles.includes('ops_admin')
       const isSuper = roles.includes('super_admin')
 
       this.setData({
@@ -60,9 +56,8 @@ Page({
         avatarUrl: profile.avatarUrl,
         isAdmin: isAdmin,
         isSuperAdmin: isSuper,
-        canAudit: isSuper || isFoodAdmin,
         // 先按角色给一次，下面再根据「有没有店 / 在不在队里」补
-        canSeeDelivery: isSuper || isFoodAdmin
+        canSeeDelivery: isSuper || isOpsAdmin
       })
       guideProfileSetupOnce(profile)
       if (isAdmin) this.loadPendingReports()

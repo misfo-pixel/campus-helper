@@ -5,14 +5,7 @@
 const TYPE_TEXT = { item: '闲置', sublet: '转租', task: '委托', shop: '店铺', message: '留言' }
 
 const { ask } = require('../../utils/subscribe.js')
-
-function formatTime(value) {
-  if (!value) return ''
-  const d = new Date(value)
-  if (isNaN(d.getTime())) return ''
-  const pad = n => (n < 10 ? '0' + n : '' + n)
-  return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
-}
+const { formatTime } = require('../../utils/date.js')
 
 Page({
   data: {

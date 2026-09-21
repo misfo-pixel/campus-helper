@@ -1,0 +1,22 @@
+{
+  "name": "campus-helper",
+  "version": "1.0.0",
+  "description": "面向明大中国学生的校园服务小程序。",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/misfo-pixel/campus-helper.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/misfo-pixel/campus-helper/issues"
+  },
+  "homepage": "https://github.com/misfo-pixel/campus-helper#readme",
+  "devDependencies": {
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0"
+  }
+}

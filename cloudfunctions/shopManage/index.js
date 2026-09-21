@@ -48,11 +48,10 @@ function toMinutes(hhmm) {
 // 没有这道闸，工作台会出现「营业中」但买家点进店一个时段都选不出来的死局。
 // 返回拦截理由，null = 可以开门。
 //
-// 外包给配送队的店走的是队伍那份方案，场次不归店长管，不拦他。
-// 不配送的店（顾客上门或自己约）压根没有场次这回事，也不拦。
+// 纯线上服务没有场次这回事，不拦。其余三种方式都得有个有效场次——
+// 配送队那支也一样，截单时刻是店长自己定的，不归队伍管了。
 function slotBlocker(shop) {
   if (shop.needs_delivery === false) return null
-  if (shop.delivery_mode === 'outsourced') return null
 
   const slot = (shop.batches || [])[0]
   if (!slot || !slot.date) {
@@ -104,16 +103,35 @@ async function getMyShop(openid) {
 
 // 配送方案（服务地点 + 服务时间）属于实际送货的那一方：
 // 自己送就存在这里，外包就用配送队的那份。店长先选谁送，再决定填不填。
+// 配送这块是两个正交的问题，分两层存：
+//   exact_address  送到买家地址（true）还是买家过来取（false）
+//   delivery_mode  只有送上门才有意义——self 自己送 / team 找配送队
+//
+// 2026-09-20：team 模式又要指明是哪一支队了，存在 delivery_team_id 上。
+// 这不是回到老的 'outsourced'——那个值意味着整套派单对账都绑在队伍上；
+// 现在绑定只解决一个问题：送达前该通知谁。派单和结账仍然不归平台。
+//
+// 'outsourced' 和 'task'（撤掉的委托送）都是历史值，normalizeMode 把
+// 'outsourced' 收敛成 'team'，老数据的 delivery_team_id 正好能接着用。
+const DELIVERY_MODES = ['self', 'team']
+
+function normalizeMode(value) {
+  return (value === 'outsourced' || value === 'team') ? 'team' : 'self'
+}
+
 function pickShopFields(event) {
-  // 老店铺库里没有这个字段，读出来是 undefined。默认按「要配送」算，
+  // 老店铺库里没有这个字段，读出来是 undefined。默认按「有线下交付」算，
   // 否则一次保存就会把已经配置好的服务地点和场次清空。
   const needsDelivery = event.needs_delivery !== false
-  const mode = event.delivery_mode === 'outsourced' ? 'outsourced' : 'self'
+
+  // 先问送不送上门，再问谁送。客户自取时「谁来送」不存在，mode 归 self 占位。
+  const exact = needsDelivery && event.exact_address === true
+  const mode = exact ? normalizeMode(event.delivery_mode) : 'self'
+
   return {
     name: (event.name || '').trim(),
     description: (event.description || '').trim(),
     logo: event.logo || '',
-    category: event.category || '',
     min_order: Number(event.min_order) || 0,
     business_hours: (event.business_hours || '').trim(),
 
@@ -122,25 +140,39 @@ function pickShopFields(event) {
     order_notice: (event.order_notice || '').trim().slice(0, 300),
     contact_wechat: (event.contact_wechat || '').trim(),
 
-    // 收款方式展示位。默认关闭：平台不主动把任何人往站外支付上引，
-    // 开不开、填什么都是店长自己的决定。关着的时候连字段都不下发给买家。
-    payment_enabled: event.payment_enabled === true,
-    payment_note: (event.payment_note || '').trim().slice(0, 60),
-    payment_qr: event.payment_qr || '',
+    // 下单时要不要买家补充说明（尺寸、颜色、口味、参考图这类）。
+    // 默认关闭：多数店卖的是标品，硬加一步只会挡住下单。
+    // note_hint 是店长自己写的提示语，直接当买家那个输入框的 placeholder。
+    note_required: event.note_required === true,
+    note_hint: (event.note_hint || '').trim().slice(0, 60),
 
-    // 要不要配送。不要的话（美甲、摄影这种顾客上门，或者到店自提），
-    // 服务地点、场次、配送费整套都不适用，下面三项一律清空。
+    // 有没有线下交付。关掉的是纯线上服务（辅导、代写、设计这类），
+    // 这种既没有地点也没有场次，下面几项一律清空。
+    //
+    // 注意：到店自取【属于】要线下交付——它就是「不送到精确地址」那一支，
+    // 照样需要服务地点和时间，只是配送费填 0。
     needs_delivery: needsDelivery,
     delivery_mode: needsDelivery ? mode : 'self',
-    delivery_team_id: (needsDelivery && mode === 'outsourced') ? (event.delivery_team_id || '') : '',
+
+    // 送到买家填的地址，还是买家到固定点位来取
+    exact_address: needsDelivery ? exact : false,
+
+    // 绑定的配送队。只有「送上门 + 找配送队」这一种组合才存，
+    // 其余情况一律清空——留着一个不生效的绑定，下次切回来会静默复活。
+    delivery_team_id: mode === 'team' ? String(event.delivery_team_id || '') : '',
+
+    // 送上门没有「按点位计价」这回事，改成一口价
+    flat_delivery_fee: (needsDelivery && exact)
+      ? Math.round(Math.max(0, Number(event.flat_delivery_fee) || 0) * 100) / 100
+      : 0,
 
     // 资质凭证选填，不作为入驻门槛。平台不核实、也没有能力核实，
     // 传了就留档——出事时这是责任在谁的直接证据。
     license_image: event.license_image || '',
 
-    // 自送才用得上；外包时买家走的是配送队那份方案，不配送时两个都不要
-    pickup_points: (needsDelivery && mode === 'self') ? cleanPickupPoints(event.pickup_points) : [],
-    batches: (needsDelivery && mode === 'self') ? cleanBatches(event.batches) : []
+    // 点位只有「客户自取」才用得上；服务时间三种方式都要（得有个截单时刻）
+    pickup_points: (needsDelivery && !exact) ? cleanPickupPoints(event.pickup_points) : [],
+    batches: needsDelivery ? cleanBatches(event.batches) : []
   }
 }
 
@@ -148,15 +180,38 @@ function validateShop(fields) {
   if (!fields.name) return '请填写店铺名称'
   if (!fields.contact_wechat) return '请填写联系微信'
   if (fields.needs_delivery) {
-    if (fields.delivery_mode === 'outsourced' && !fields.delivery_team_id) {
-      return '请选择要外包给哪个配送队'
+    if (!fields.batches.length) {
+      return '要设一个服务时间：日期 + 截单时间 + 送达时间'
     }
-    if (fields.delivery_mode === 'self') {
-      if (!fields.pickup_points.length) return '自己送的话，至少要设一个服务地点'
-      if (!fields.batches.length) return '自己送的话，要设一个服务时间：日期 + 截单时间 + 送达时间'
+    if (!fields.exact_address && !fields.pickup_points.length) {
+      return '客户自取的话，至少要设一个服务地点'
+    }
+    // 「找配送队」不再是一个空标记，得指明是哪一支——
+    // 送达前要通知谁、买家问起来谁在送，都得有这个答案
+    if (fields.delivery_mode === 'team' && !fields.delivery_team_id) {
+      return '请选择一支配送队'
     }
   }
   return null
+}
+
+// 队伍是否还能被绑定。放在这里而不是 validateShop 里，是因为它要查库——
+// validateShop 保持纯函数，只管「填没填」，能不能用是另一回事。
+//
+// 只拦「这支队不存在」。时间对不对得上不在这儿拦：队长随时会改自己的
+// 可配送时段，服务端一卡，店长连改个营业时间都保存不了，而且他可能早就在
+// 微信里和队长约好了那一趟。界面上该置灰的已经置灰、该警告的已经警告，
+// 真要绑一支时间对不上的，那是他们俩的事。
+async function checkTeamBindable(teamId) {
+  if (!teamId) return null
+  try {
+    const doc = await db.collection('delivery_teams').doc(teamId).get()
+    if (!doc.data) return '这支配送队暂时不可用，请重新选择'
+    return null
+  } catch (e) {
+    console.warn('校验配送队失败：', teamId, e)
+    return '这支配送队暂时不可用，请重新选择'
+  }
 }
 
 exports.main = async (event) => {
@@ -186,6 +241,9 @@ exports.main = async (event) => {
         const invalid = validateShop(fields)
         if (invalid) return { success: false, message: invalid }
 
+        const badTeam = await checkTeamBindable(fields.delivery_team_id)
+        if (badTeam) return { success: false, message: badTeam }
+
         const res = await db.collection('shops').add({
           data: Object.assign({}, fields, {
             owner: openid,
@@ -207,6 +265,9 @@ exports.main = async (event) => {
         const fields = pickShopFields(event)
         const invalid = validateShop(fields)
         if (invalid) return { success: false, message: invalid }
+
+        const badTeam = await checkTeamBindable(fields.delivery_team_id)
+        if (badTeam) return { success: false, message: badTeam }
 
         await db.collection('shops').doc(shop._id).update({
           data: Object.assign({}, fields, { updated_at: new Date() })
@@ -281,10 +342,10 @@ exports.main = async (event) => {
           name: name,
           price: price,
           description: (event.description || '').trim(),
-          // 计价单位。自由填而不是给枚举：餐饮论份、咖啡论杯、美甲论次、
+          // 计价单位。自由填而不是给枚举：零售论件、代购论份、美甲论次、
           // 摄影论小时，枚举永远差一个。空着就只显示价格，跟以前一样。
           unit: (event.unit || '').trim().slice(0, 4),
-          allergens: (event.allergens || '').trim(),   // 过敏原，卖食品的必须填，买家端显著展示
+          specs: (event.specs || '').trim(),   // 成分与规格说明，买家端显著展示
           image: event.image || '',
           category: (event.category || '').trim(),
           available: event.available !== false,

@@ -10,18 +10,18 @@
   <view class="section-title">详细信息（选填）</view>
 
   <view class="img-row" bindtap="chooseImage">
-    <image wx:if="{{image}}" src="{{image}}" mode="aspectFill" class="dish-img" />
-    <view wx:else class="dish-img dish-img-placeholder">+</view>
+    <image wx:if="{{image}}" src="{{image}}" mode="aspectFill" class="product-img" />
+    <view wx:else class="product-img product-img-placeholder">+</view>
     <view class="text-light img-hint">点击{{image ? '更换' : '上传'}}商品图片</view>
   </view>
 
-  <input placeholder="单位（如 份 / 杯 / 件 / 次 / 小时）" value="{{unit}}" bindinput="onInput" data-field="unit" maxlength="4" class="card" style="padding: 24rpx;" />
-  <input wx:if="{{useCategory}}" placeholder="分类（如 主食 / 小食 / 饮品）" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
-  <textarea placeholder="商品描述（规格、分量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+  <input placeholder="单位（如 件 / 份 / 次 / 小时）" value="{{unit}}" bindinput="onInput" data-field="unit" maxlength="4" class="card" style="padding: 24rpx;" />
+  <input wx:if="{{useCategory}}" placeholder="分类（如 热销 / 新品 / 其他）" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
+  <textarea placeholder="商品描述（规格、数量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
   <view class="subsection-title">成分与规格说明</view>
-  <view class="field-hint">如实说明材质、成分或服务内容。<text class="strong">销售食品的必须标注过敏原</text>（花生、坚果、乳制品、鸡蛋、大豆、小麦、海鲜等），隐瞒或错填的后果由你承担，详见《店长责任告知书》。</view>
-  <textarea placeholder="食品如：含花生、乳制品、麸质…；其他商品如：材质、尺寸、服务时长" value="{{allergens}}" bindinput="onInput" data-field="allergens" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
+  <view class="field-hint">如实说明材质、成分或服务内容。<text class="strong">涉及安全的成分必须如实标注</text>，隐瞒或错填的后果由你承担，详见《店长责任告知书》。</view>
+  <textarea placeholder="如：材质、成分、尺寸、服务时长" value="{{specs}}" bindinput="onInput" data-field="specs" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
 
   <view class="card avail-row">
     <view>

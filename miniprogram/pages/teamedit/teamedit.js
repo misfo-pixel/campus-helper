@@ -9,6 +9,7 @@ const { ensureContentOk } = require('../../utils/contentCheck.js')
 Page({
   data: {
     loading: true,
+    loadError: false,
     saving: false,
     isNew: true,
     role: null,
@@ -20,51 +21,63 @@ Page({
     contact_wechat: '',
     payment_note: '',
 
-    planPoints: [],
-    planBatches: []
   },
 
   onShow: function () {
     this.load()
   },
 
+  // 「读取失败」和「你还没有队伍」必须分开。
+  // 云函数返回 success:false 时 r.team 同样是 undefined，不判 success 的话
+  // 一次读取失败会被当成没队伍，静默渲染一张空白建队表单——已有队伍的队长
+  // 会以为自己的队没了，还会去重新建一支（云函数那边会拦，但白跑一趟）。
   load: function () {
     wx.cloud.callFunction({ name: 'deliveryManage', data: { action: 'getMine' } }).then(res => {
       const r = (res && res.result) || {}
+
+      if (!r.success) {
+        this.fail(r.message || '读取失败')
+        return
+      }
+
       const team = r.team
 
       if (!team) {
-        this.setData({ isNew: true, loading: false })
+        this.setData({ isNew: true, loading: false, loadError: false })
         return
       }
 
       this.setData({
         isNew: false,
         loading: false,
+        loadError: false,
         role: r.role,
         team: team,
         members: r.members || [],
         name: team.name || '',
         description: team.description || '',
         contact_wechat: team.contact_wechat || '',
-        payment_note: team.payment_note || '',
-        planPoints: team.pickup_points || [],
-        planBatches: team.batches || []
+        payment_note: team.payment_note || ''
       })
     }).catch(err => {
       console.error('读取队伍失败：', err)
-      this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      this.fail('读取失败')
     })
+  },
+
+  fail: function (message) {
+    this.setData({ loading: false, loadError: true })
+    wx.showToast({ title: message, icon: 'none' })
+  },
+
+  retry: function () {
+    this.setData({ loading: true, loadError: false })
+    this.load()
   },
 
   onInput: function (e) {
     const field = e.currentTarget.dataset.field
     this.setData({ [field]: e.detail.value })
-  },
-
-  onPlanChange: function (e) {
-    this.setData({ planPoints: e.detail.points, planBatches: e.detail.batches })
   },
 
   submit: async function () {
@@ -84,30 +97,8 @@ Page({
       return
     }
 
-    const points = (d.planPoints || []).filter(p => String(p.name || '').trim())
-    if (!points.length) {
-      wx.showToast({ title: '至少要设一个服务地点', icon: 'none' })
-      return
-    }
-    const names = points.map(p => p.name.trim())
-    if (new Set(names).size !== names.length) {
-      wx.showToast({ title: '服务地点名字不能重复', icon: 'none' })
-      return
-    }
-    // 场次的日期只校验填没填，不校验是不是过去的日子——
-    // 否则场次一过期，队长连改队伍信息、换收款方式都保存不了
-    const batch = (d.planBatches || [])[0]
-    if (!batch || !batch.date) {
-      wx.showToast({ title: '请选择服务时间的日期', icon: 'none' })
-      return
-    }
-    if (batch.deliver_time <= batch.cutoff) {
-      wx.showToast({ title: '送达时间要晚于截单时间', icon: 'none' })
-      return
-    }
-
     this.setData({ saving: true })
-    wx.showLoading({ title: d.isNew ? '提交中' : '保存中', mask: true })
+    wx.showLoading({ title: d.isNew ? '创建中' : '保存中', mask: true })
 
     try {
       // 队伍名和简介会展示给店长看，属于 UGC
@@ -122,9 +113,7 @@ Page({
           name: d.name,
           description: d.description,
           contact_wechat: d.contact_wechat,
-          payment_note: d.payment_note,
-          pickup_points: d.planPoints,
-          batches: d.planBatches
+          payment_note: d.payment_note
         }
       })
 
@@ -136,10 +125,14 @@ Page({
       }
 
       if (d.isNew) {
+        // 没有核对这一步了：建完就能被店长选到。但选不选得到取决于
+        // 可配送时段——一条不填，店长那边按送达时间一筛就把你们筛掉了，
+        // 所以这句要把人直接指到工作台去。
         wx.showModal({
-          title: '已提交',
-          content: '队伍申请已提交，等超管审核通过后，店长就能选择把配送外包给你们。',
+          title: '队伍建好了',
+          content: '去工作台填上可配送时段，店长的送达时间落在里面，才选得到你们。',
           showCancel: false,
+          confirmText: '知道了',
           success: () => this.load()
         })
       } else {

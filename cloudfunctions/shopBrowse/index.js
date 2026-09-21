@@ -71,24 +71,12 @@ function expandBatches(batches) {
   }).filter(Boolean)
 }
 
-// 这家店的配送方案由谁提供：外包就用配送队的，否则用店铺自己的。
-// 队伍如果被驳回或删了，退回店铺自己那份，免得订单彻底下不了。
-async function resolvePlan(shop) {
-  if (shop.delivery_mode === 'outsourced' && shop.delivery_team_id) {
-    try {
-      const t = await db.collection('delivery_teams').doc(shop.delivery_team_id).get()
-      if (t.data && t.data.audit_status === 'approved') {
-        return {
-          pickup_points: t.data.pickup_points || [],
-          batches: t.data.batches || [],
-          provider: 'team',
-          provider_name: t.data.name || ''
-        }
-      }
-    } catch (e) {
-      console.warn('读取配送队方案失败，回落到店铺自己的：', shop.delivery_team_id)
-    }
-  }
+// 配送方案一律是店铺自己那份。
+//
+// 以前这里会在「外包」时去读配送队的方案——那套已经撤了：队伍不再维护
+// 自己的点位和班次，一律送到买家填的地址。这个函数于是退化成一次取值，
+// 留着是因为调用方还想要 provider 这个字段。
+function resolvePlan(shop) {
   return {
     pickup_points: shop.pickup_points || [],
     batches: shop.batches || [],
@@ -126,7 +114,6 @@ exports.main = async (event) => {
             _id: s._id,
             name: s.name,
             logo: s.logo,
-            category: s.category,
             description: s.description,
             delivery_mode: s.delivery_mode || 'self',
             needs_delivery: s.needs_delivery !== false,
@@ -166,7 +153,6 @@ exports.main = async (event) => {
             _id: shop._id,
             name: shop.name,
             logo: shop.logo,
-            category: shop.category,
             description: shop.description,
             delivery_mode: shop.delivery_mode || 'self',
             min_order: shop.min_order,
@@ -174,6 +160,8 @@ exports.main = async (event) => {
             order_notice: shop.order_notice || '',
             use_category: shop.use_category === true,
             needs_delivery: shop.needs_delivery !== false,
+            exact_address: shop.exact_address === true,
+            flat_delivery_fee: Number(shop.flat_delivery_fee) || 0,
             contact_wechat: shop.contact_wechat,
             status: shop.status
           },
@@ -184,7 +172,7 @@ exports.main = async (event) => {
             price: i.price,
             unit: i.unit || '',
             description: i.description,
-            allergens: i.allergens || '',
+            specs: i.specs || '',
             image: i.image,
             category: i.category,
             available: i.available !== false
@@ -203,8 +191,14 @@ exports.main = async (event) => {
         const plan = await resolvePlan(shop)
         return {
           success: true,
-          // 不配送的店没有方案，结算页据此整段隐藏地点和时间的选择
+          // 纯线上服务没有方案，结算页据此整段隐藏地点和时间的选择
           needs_delivery: shop.needs_delivery !== false,
+          // 送上门时买家填自己的地址，没有点位可选，配送费是一口价
+          exact_address: shop.exact_address === true,
+          flat_delivery_fee: Number(shop.flat_delivery_fee) || 0,
+          // 下单时要不要买家补充说明，以及店长自己写的提示语
+          note_required: shop.note_required === true,
+          note_hint: shop.note_hint || '',
           pickup_points: plan.pickup_points,
           availableBatches: expandBatches(plan.batches),
           provider: plan.provider,

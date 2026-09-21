@@ -1,7 +1,9 @@
 <view wx:if="{{!loading}}" class="page-container">
 
-  <!-- 还没加入任何队伍 -->
-  <block wx:if="{{!team}}">
+  <!-- 读取失败 / 还没加入任何队伍 / 已在队里，三种状态分开说。
+       读失败落到「你还不在配送队里」的话，队长会以为自己的队被删了 -->
+  <view wx:if="{{loadError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+  <block wx:elif="{{!team}}">
     <view class="empty-box">
       <view class="empty-emoji">🛵</view>
       <view class="empty-title">你还不在配送队里</view>
@@ -16,48 +18,84 @@
         <view class="team-name">{{team.name}}</view>
         <view class="text-light">{{role === 'admin' ? '队长' : '队员'}}</view>
       </view>
-      <view class="team-set" bindtap="goToSettlement">对账</view>
       <view class="team-set" bindtap="goToEdit">设置 ›</view>
     </view>
 
-    <view wx:if="{{team.audit_status === 'pending'}}" class="audit-box audit-pending">
-      <view class="audit-title">队伍审核中</view>
-      <view class="audit-desc">通过后店长才能选择把配送外包给你们。</view>
-    </view>
-    <view wx:elif="{{team.audit_status === 'rejected'}}" class="audit-box audit-rejected">
-      <view class="audit-title">审核未通过</view>
-      <view class="audit-desc">{{team.audit_reason || '请检查队伍信息是否完整'}}</view>
-    </view>
-
-    <block wx:if="{{team.audit_status === 'approved'}}">
-      <view wx:if="{{groups.length === 0}}" class="text-light empty">
-        暂时没有待配送的单，店长接单后会出现在这里。
+    <!-- 可配送时段。店长填了送达时间，那一趟连取货带交接按前后各半小时算，
+         整段盖得住的队伍才选得中；一条都不填，谁也选不到你们——这就是以前的
+         打烊。放在工作台而不是队伍设置里：这东西一周要改好几次，不该埋在设置页。 -->
+    <view class="card slots">
+      <view class="slots-head">
+        <view class="slots-title">可配送时段</view>
+        <text wx:if="{{role === 'admin'}}" class="slots-add" bindtap="addSlot">+ 添加</text>
+      </view>
+      <view class="text-light slots-desc">
+        {{role === 'admin' ? '填上哪天几点能出车。店长的送达时间前后各半小时都落在这几段里，才选得到你们，所以两头留宽一点。改完自动保存。' : '队长填的出车时间，店长按送达时间对着这个挑队伍。'}}
       </view>
 
-      <view wx:for="{{groups}}" wx:key="batch_key" class="batch">
-        <view class="batch-head">
-          <text wx:if="{{item.batch_label}}" class="batch-label">{{item.batch_label}}</text>
-          <text class="text-light batch-time">{{item.batch_date}} {{item.deliver_time}} 送达</text>
-        </view>
-
-        <view wx:for="{{item.shops}}" wx:for-item="shop" wx:key="shop_id" class="card shop-row">
-          <view class="shop-meta">
-            <view class="shop-name">{{shop.shop_name}}</view>
-            <view class="text-light shop-sub">
-              {{shop.count}} 单{{shop.picked > 0 ? ' · 已取货' : ''}}
-              <block wx:if="{{shop.taken && !shop.mine}}"> · {{shop.deliverer_nickname || '队友'}} 已领</block>
-            </view>
-          </view>
-
-          <button wx:if="{{!shop.taken}}" class="btn-primary btn-sm"
-                  bindtap="claim" data-batch="{{item.batch_key}}" data-shop="{{shop.shop_id}}">领这批</button>
-
-          <button class="btn-sm" wx:elif="{{shop.mine}}"
-                  bindtap="openManifest" data-batch="{{item.batch_key}}" data-shop="{{shop.shop_id}}">看清单</button>
-
-          <text wx:else class="text-light shop-taken">已被领</text>
-        </view>
+      <view wx:if="{{slots.length === 0}}" class="text-light slots-empty">
+        {{role === 'admin' ? '一条都没填，店长现在选不到你们。不接活的时候空着就行，想接了再加回来。' : '队长还没填，店长现在选不到你们。'}}
       </view>
-    </block>
+
+      <!-- 队长就地改，队员只读 -->
+      <block wx:for="{{slots}}" wx:key="index">
+        <view wx:if="{{role === 'admin'}}" class="slot-row">
+          <picker mode="date" start="{{today}}" value="{{item.date}}"
+                  bindchange="onSlotChange" data-index="{{index}}" data-field="date">
+            <view class="slot-pick slot-date">{{item.dateText}}</view>
+          </picker>
+          <picker mode="time" value="{{item.start}}"
+                  bindchange="onSlotChange" data-index="{{index}}" data-field="start">
+            <view class="slot-pick">{{item.start}}</view>
+          </picker>
+          <text class="slot-dash">-</text>
+          <picker mode="time" value="{{item.end}}"
+                  bindchange="onSlotChange" data-index="{{index}}" data-field="end">
+            <view class="slot-pick">{{item.end}}</view>
+          </picker>
+          <text class="slot-del" bindtap="removeSlot" data-index="{{index}}">删除</text>
+        </view>
+        <view wx:else class="slot-row slot-readonly">{{item.text}}</view>
+      </block>
+    </view>
+
+    <view class="tabs">
+      <view class="tab {{tab === 'open' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="open">进行中</view>
+      <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">已送达</view>
+    </view>
+
+    <view wx:if="{{requestsError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+    <view wx:elif="{{requests.length === 0}}" class="text-light empty">
+      {{tab === 'open' ? '还没有店长找你们。有人发来配送请求时，你会收到微信提醒。' : '没有记录'}}
+    </view>
+
+    <view wx:for="{{requests}}" wx:key="_id" class="card req">
+      <view class="req-head">
+        <text class="req-shop">{{item.shop_name}}</text>
+        <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
+      </view>
+
+      <view class="text-light req-time">{{item.timeText}} 发来</view>
+      <view class="req-note">{{item.note}}</view>
+
+      <view class="req-contact">
+        <text class="text-light">店长微信：{{item.shop_wechat || '未填写'}}</text>
+        <text wx:if="{{item.shop_wechat}}" class="req-copy"
+              bindtap="copyWechat" data-text="{{item.shop_wechat}}">复制</text>
+      </view>
+
+      <!-- 送达照片是这套流程里唯一的凭证，所以标记送达必须传图 -->
+      <view wx:if="{{item.photos.length > 0}}" class="req-photos">
+        <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"
+               src="{{ph}}" mode="aspectFill" class="req-photo" />
+      </view>
+
+      <view wx:if="{{item.status !== 'delivered'}}" class="req-actions">
+        <button wx:if="{{item.status === 'open'}}" class="btn-sm"
+                bindtap="accept" data-id="{{item._id}}">接下这单</button>
+        <button wx:else class="btn-primary btn-sm"
+                bindtap="deliver" data-id="{{item._id}}" loading="{{uploading}}">拍照标记送达</button>
+      </view>
+    </view>
   </block>
 </view>

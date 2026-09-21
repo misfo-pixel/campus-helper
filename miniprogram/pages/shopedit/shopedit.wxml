@@ -9,87 +9,93 @@
 
   <input placeholder="小店名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
-  <picker mode="selector" range="{{categories}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-    <view class="card form-card picker-row">
-      <text>分类：{{categories[categoryIndex]}}</text>
-      <text class="picker-arrow">›</text>
-    </view>
-  </picker>
-
   <input placeholder="联系微信（买家下单后联系你）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
 
-  <view class="subsection-title">配送</view>
-
-  <view class="card switch-row">
-    <view class="switch-text">
-      <view class="switch-title">需要配送</view>
-      <view class="text-light switch-desc">关掉就是顾客上门或到店自提，买家下单后与你自行约定时间地点</view>
-    </view>
+  <view class="title-switch">
+    <view class="subsection-title title-switch-label">线下交付</view>
     <switch checked="{{needsDelivery}}" color="#7A0019" bindchange="onNeedsDeliveryChange" />
   </view>
 
   <block wx:if="{{needsDelivery}}">
-    <radio-group wx:if="{{teamEnabled}}" bindchange="onDeliveryModeChange">
-      <label class="card mode-row">
-        <radio value="self" checked="{{deliveryMode === 'self'}}" color="#7A0019" />
-        <view class="mode-text">
-          <view class="mode-title">我自己送</view>
-          <view class="text-light mode-desc">配送费归你，不用跟谁结算</view>
-        </view>
-      </label>
-      <label class="card mode-row">
-        <radio value="outsourced" checked="{{deliveryMode === 'outsourced'}}" color="#7A0019" />
-        <view class="mode-text">
-          <view class="mode-title">外包给配送队</view>
-          <view class="text-light mode-desc">买家把配送费一起付给你，你事后按对账结果结给队伍</view>
-        </view>
-      </label>
-    </radio-group>
+    <!-- 服务时间排在最前面：能不能找配送队、送达前该什么时候通知，
+         都要按送达时间算。让店长先选配送方式再填时间，是让他在没有依据的
+         时候做决定 -->
+    <plan-editor part="time"
+                 init-batches="{{planBatches}}"
+                 bind:change="onPlanChange" />
 
-    <picker wx:if="{{deliveryMode === 'outsourced'}}" mode="selector" range="{{teamNames}}" value="{{teamIndex}}" bindchange="onTeamChange">
-      <view class="card picker-row">
-        <text class="{{teamIndex === null ? 'placeholder' : ''}}">
-          {{teamIndex === null ? '选择配送队（必填）' : teamNames[teamIndex]}}
-        </text>
-        <text class="picker-arrow">›</text>
+    <view class="title-switch">
+      <view class="subsection-title title-switch-label">送到买家地址</view>
+      <switch checked="{{exactAddress}}" color="#7A0019" bindchange="onExactAddressChange" />
+    </view>
+
+    <!-- 只有送上门才有「谁来送」这一问；买家过来取的话不存在配送方 -->
+    <block wx:if="{{exactAddress}}">
+      <view class="pick {{deliveryMode === 'self' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="self">
+        <view class="pick-body">
+          <view class="pick-name">我自己送</view>
+        </view>
       </view>
-    </picker>
 
-    <view wx:if="{{deliveryMode === 'outsourced' && teamNames.length === 0}}" class="field-hint">
-      目前还没有通过核对的配送队，暂时只能自己送。
-    </view>
+      <!-- 上面填的送达时间没有一支队能接就置灰。点它只给一句解释，不改任何
+           状态——已经绑了队的店长照样能看到自己绑的那支（见下面的队伍列表） -->
+      <view wx:if="{{teamEnabled}}"
+            class="pick {{deliveryMode === 'team' ? 'pick-on' : ''}} {{teamPickDisabled ? 'pick-off' : ''}}"
+            bindtap="pickMode" data-mode="team">
+        <view class="pick-body">
+          <view class="pick-name">找配送队</view>
+        </view>
+      </view>
 
-    <view wx:if="{{deliveryMode === 'outsourced' && teamIndex !== null}}" class="field-hint">
-      服务地点和服务时间用这支队伍的，你不用填。
-    </view>
+      <!-- 选了「找配送队」才展开具体选哪一支 -->
+      <block wx:if="{{teamEnabled && deliveryMode === 'team'}}">
+        <view wx:if="{{teamsError}}" class="text-light team-empty" bindtap="loadTeams">读取配送队失败，点击重试</view>
+        <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
 
-    <!-- 自己送：服务地点和批次由你自己定 -->
-    <plan-editor wx:if="{{deliveryMode === 'self'}}"
-                 init-points="{{planPoints}}" init-batches="{{planBatches}}"
+        <!-- 绑好之后又把送达时间改到人家没空的点上：不解绑，只说一句 -->
+        <view wx:if="{{teamWarn}}" class="team-warn">⚠️ {{teamWarn}}</view>
+
+        <view wx:for="{{teams}}" wx:key="_id"
+              class="pick team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
+              bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
+          <view class="pick-emoji">🛵</view>
+          <view class="pick-body">
+            <view class="pick-name">
+              {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>
+            </view>
+            <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
+            <!-- 时间对不上的队更要把时段摆出来：店长照着改送达时间就能用上 -->
+            <view wx:if="{{item.slotTexts.length}}" class="team-slots">
+              可配送
+              <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="team-slot">{{slot}}</text>
+              <text wx:if="{{item.slotMore}}" class="team-slot">还有 {{item.slotMore}} 段</text>
+            </view>
+            <view wx:else class="team-slots">还没填可配送时段</view>
+          </view>
+        </view>
+      </block>
+
+      <input placeholder="配送费（美元/单）" type="digit"
+             value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
+             class="card form-card" />
+    </block>
+
+    <!-- 服务地点只有「买家自取」才用得上，所以排在开关之后 -->
+    <plan-editor wx:if="{{!exactAddress}}" part="points"
+                 init-points="{{planPoints}}"
                  bind:change="onPlanChange" />
   </block>
 
-  <view class="subsection-title">收款方式</view>
-
-  <view class="card switch-row">
-    <view class="switch-text">
-      <view class="switch-title">在订单里展示我的收款方式</view>
-      <view class="text-light switch-desc">买家下单后能看到。平台不经手资金、不验证账户、不处理退款，填错或被冒用的后果由你承担</view>
-    </view>
-    <switch checked="{{paymentEnabled}}" color="#7A0019" bindchange="onPaymentEnabledChange" />
+  <view class="title-switch">
+    <view class="subsection-title title-switch-label">下单时要买家补充说明</view>
+    <switch checked="{{noteRequired}}" color="#7A0019" bindchange="onNoteRequiredChange" />
+  </view>
+  <view class="field-hint">
+    确认尺寸、颜色、口味、款式
   </view>
 
-  <block wx:if="{{paymentEnabled}}">
-    <input placeholder="收款方式（如 Venmo @your-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" maxlength="60" class="card form-card" />
-
-    <view class="card qr-row" bindtap="choosePaymentQr">
-      <image wx:if="{{paymentQr}}" src="{{paymentQr}}" mode="aspectFit" class="qr-img" />
-      <view wx:else class="qr-img qr-placeholder">+</view>
-      <view class="qr-hint">
-        <view>收款码（选填）</view>
-        <view class="text-light">点击{{paymentQr ? '更换' : '上传'}}。买家在订单里长按可以保存</view>
-      </view>
-    </view>
+  <block wx:if="{{noteRequired}}">
+    <input placeholder="请说明尺寸和颜色" value="{{note_hint}}" bindinput="onInput" data-field="note_hint" maxlength="60" class="card form-card" />
   </block>
 
   <view class="section-title">详细信息（选填）</view>
@@ -108,7 +114,7 @@
   <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
   <input placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
 
-  <textarea placeholder="下单须知（买家在小店页会看到，如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
+  <textarea placeholder="下单须知（如取货约定、备注怎么填、多久回复）" value="{{order_notice}}" bindinput="onInput" data-field="order_notice" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
   <view class="card license-row" bindtap="chooseLicense">
     <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />

@@ -42,6 +42,6 @@ Page({
   },
 
   goToMyOrders: function () {
-    wx.navigateTo({ url: '/pages/myfoodorders/myfoodorders' })
+    wx.navigateTo({ url: '/pages/myshoporders/myshoporders' })
   }
 })

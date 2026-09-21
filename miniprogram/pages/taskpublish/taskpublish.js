@@ -18,6 +18,7 @@ Page({
   onLoad: function () {
     // 选图即上传：选完就在后台传，点发布时多半已经传完（见 utils/publish.js）
     this.uploader = createUploader('task')
+
     // 读缓存，不再多打一次 login（见 utils/user.js）
     myProfile().then(profile => {
       if (profile.wechat && !this.data.contact_wechat) {

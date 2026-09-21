@@ -33,7 +33,7 @@
        「我的小店」是店长视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
   <view wx:if="{{shopEnabled}}" class="profile-group">校外服务</view>
 
-  <view wx:if="{{shopEnabled}}" bindtap="goToFoodOrders" class="card card-tap profile-row">
+  <view wx:if="{{shopEnabled}}" bindtap="goToShopOrders" class="card card-tap profile-row">
     <view class="profile-row-label">🧾 我的订单</view>
     <view class="profile-row-arrow">›</view>
   </view>
@@ -43,21 +43,16 @@
     <view class="profile-row-arrow">›</view>
   </view>
 
-  <!-- 配送工作台：饭搭子管理员 / 有店的店长 / 已在队里的人才看得到 -->
+  <!-- 配送工作台：配送队管理员 / 有店的店长 / 已在队里的人才看得到 -->
   <view wx:if="{{teamEnabled && shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card card-tap profile-row">
-    <view class="profile-row-label">🛵 饭搭子工作台</view>
+    <view class="profile-row-label">🛵 我的配送</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- ========== 管理 ==========
-       标题本身也要跟着权限走，否则普通用户会看到一个空标题 -->
-  <view wx:if="{{(teamEnabled && shopEnabled && canAudit) || isAdmin}}" class="profile-group">管理</view>
-
-  <!-- 配送队核对：超管和饭搭子管理员都能审。店长已经不审了，提交即开店 -->
-  <view wx:if="{{teamEnabled && shopEnabled && canAudit}}" bindtap="goToShopAudit" class="card card-tap profile-row">
-    <view class="profile-row-label">🛵 配送队核对</view>
-    <view class="profile-row-arrow">›</view>
-  </view>
+       标题本身也要跟着权限走，否则普通用户会看到一个空标题。
+       配送队核对已经整个撤掉：建队即可用，和店铺「提交即开店」一个口径 -->
+  <view wx:if="{{isAdmin}}" class="profile-group">管理</view>
 
   <!-- 举报处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">

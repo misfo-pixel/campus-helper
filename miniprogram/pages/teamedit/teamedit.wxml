@@ -1,4 +1,9 @@
-<view wx:if="{{!loading}}" class="page-container">
+<!-- 读取失败时不能往下渲染：一张空白的建队表单会让队长以为自己的队没了 -->
+<view wx:if="{{!loading && loadError}}" class="page-container">
+  <view class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+</view>
+
+<view wx:elif="{{!loading}}" class="page-container">
   <view class="page-title">{{isNew ? '创建配送队 🛵' : '队伍设置'}}</view>
 
   <!-- 队员只能看，改不了 -->
@@ -10,14 +15,11 @@
     <input placeholder="收款方式（如 Venmo @team-handle）" value="{{payment_note}}" bindinput="onInput" data-field="payment_note" class="card form-card" />
 
     <view class="section-title">详细信息（选填）</view>
-    <textarea placeholder="简介（服务范围、时间等，店长挑队伍时会看到）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
+    <textarea placeholder="简介（服务范围、常跑哪几个校区，店长挑队伍时会看到）" value="{{description}}" bindinput="onInput" data-field="description" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
 
-    <view class="section-title">配送方案（必填）</view>
-    <view class="field-hint">你们自己定。店长外包给你们之后，买家用的就是这套。</view>
-    <plan-editor init-points="{{planPoints}}" init-batches="{{planBatches}}" bind:change="onPlanChange" />
 
     <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">
-      {{isNew ? '提交申请' : '保存'}}
+      {{isNew ? '创建队伍' : '保存'}}
     </button>
   </block>
 
