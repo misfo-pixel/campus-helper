@@ -46,13 +46,15 @@ Page({
     pointIndex: null,
 
     batches: [],
-    batchLabels: [],
+    batchLabels: [],   // 滚轮用的一行字
+    batchParts: [],    // 卡片上分两行显示：{ main: 日期 + 送达, sub: 截单 }
     batchIndex: 0,
 
     contact_wechat: '',
     note: '',
-    // 店长开了「下单时要买家补充说明」才出现。noteHint 是他自己写的提示语，
-    // 没写就用一句通用的。noteImages 存的是本地临时路径，提交时才真的上传。
+    // 补充说明和配图每家店都有；店长开了「下单时要买家补充说明」只是变成必填。
+    // noteHint 是他自己写的提示语，没写就用一句通用的。
+    // noteImages 存的是本地临时路径，提交时才真的上传。
     noteRequired: false,
     noteHint: '',
     noteImages: [],
@@ -122,6 +124,7 @@ Page({
           flatFee: Number(r.flat_delivery_fee) || 0,
           batches: batches,
           batchLabels: batches.map(b => this.batchLabel(b)),
+          batchParts: batches.map(b => this.batchPart(b)),
           batchIndex: 0,
           loading: false
         }, () => this.recalc())
@@ -145,6 +148,7 @@ Page({
         pointLabels: points.map(p => p.name + '  $' + p.fee),
         batches: batches,
         batchLabels: batches.map(b => this.batchLabel(b)),
+        batchParts: batches.map(b => this.batchPart(b)),
         batchIndex: 0,
         loading: false
       }, () => this.recalc())
@@ -163,17 +167,23 @@ Page({
     }).catch(err => console.error('读取微信号失败：', err))
   },
 
-  // 「09-20 周日 18:00 送达（当天 08:00 截单）」
-  batchLabel: function (b) {
-    let s = this.whenText(b) + ' ' + b.deliver_time + ' 送达'
+  // main「09-20 周日 18:00 送达」，sub「当天 08:00 截单」/「还有 3 小时截单」
+  batchPart: function (b) {
+    let sub
     if (b.isToday && b.minutesLeft != null) {
-      s += b.minutesLeft >= 60
-        ? '（还有 ' + Math.floor(b.minutesLeft / 60) + ' 小时截单）'
-        : '（还有 ' + b.minutesLeft + ' 分钟截单）'
+      sub = b.minutesLeft >= 60
+        ? '还有 ' + Math.floor(b.minutesLeft / 60) + ' 小时截单'
+        : '还有 ' + b.minutesLeft + ' 分钟截单'
     } else {
-      s += '（当天 ' + b.cutoff + ' 截单）'
+      sub = '当天 ' + b.cutoff + ' 截单'
     }
-    return s
+    return { main: this.whenText(b) + ' ' + b.deliver_time + ' 送达', sub: sub }
+  },
+
+  // 滚轮里一项一行：「09-20 周日 18:00 送达（当天 08:00 截单）」
+  batchLabel: function (b) {
+    const p = this.batchPart(b)
+    return p.main + '（' + p.sub + '）'
   },
 
   // 场次是店长指定的某一天，可能在好几天后，「今天/明天」两个词不够用，
@@ -239,16 +249,17 @@ Page({
     const d = this.data
     if (d.submitting) return
 
+    // 按页面上从上到下的顺序查，提示的总是最先看到的那个空项
+    if (!d.contact_wechat.trim()) {
+      wx.showToast({ title: '请填写你的微信号', icon: 'none' })
+      return
+    }
     if (d.needsDelivery && d.exactAddress && !d.address.trim()) {
       wx.showToast({ title: '请填写收货地址', icon: 'none' })
       return
     }
     if (d.needsDelivery && !d.exactAddress && d.pointIndex === null) {
       wx.showToast({ title: '请选择取货地点', icon: 'none' })
-      return
-    }
-    if (!d.contact_wechat.trim()) {
-      wx.showToast({ title: '请填写你的微信号', icon: 'none' })
       return
     }
     if (d.noteRequired && !d.note.trim()) {

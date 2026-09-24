@@ -28,7 +28,10 @@ Component({
   properties: {
     initPoints: { type: Array, value: [] },
     initBatches: { type: Array, value: [] },
-    part: { type: String, value: 'all' }
+    part: { type: String, value: 'all' },
+    // 嵌在宿主页的分组卡里用（小店设置的「线下交付」）：标题和外框由宿主页给，
+    // 组件只出内容，免得卡里套卡、标题说两遍
+    bare: { type: Boolean, value: false }
   },
 
   data: {

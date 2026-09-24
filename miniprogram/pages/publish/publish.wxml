@@ -30,7 +30,6 @@
   <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
   <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
   <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
-  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号</view>
 
   <view class="section-title">详细信息（选填）</view>
   <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>

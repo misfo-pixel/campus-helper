@@ -52,7 +52,6 @@ Page({
     tempLogo: '',
     business_hours: '',
     min_order: '',
-    order_notice: '',
     licenseImage: '',
     tempLicense: '',
     agreed: false
@@ -123,8 +122,9 @@ Page({
     this.setData({ needsDelivery: e.currentTarget.dataset.need === '1' })
   },
 
-  onExactAddressChange: function (e) {
-    this.setData({ exactAddress: e.detail.value })
+  // 送到买家地址 / 送到模糊地址，分段按钮二选一
+  pickExactAddress: function (e) {
+    this.setData({ exactAddress: e.currentTarget.dataset.exact === '1' })
   },
 
   pickMode: function (e) {
@@ -234,7 +234,7 @@ Page({
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.business_hours, d.order_notice, d.contact_wechat]
+        texts: [d.name, d.description, d.business_hours, d.contact_wechat]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -257,7 +257,6 @@ Page({
           description: d.description,
           min_order: d.min_order,
           business_hours: d.business_hours,
-          order_notice: d.order_notice,
           contact_wechat: d.contact_wechat,
           needs_delivery: d.needsDelivery === true,
           exact_address: d.exactAddress,

@@ -153,7 +153,13 @@ Page({
             this.loadShop()
             // 刚挂上营业中 = 开始等单，这一刻要授权最自然。
             // 被永久拒绝过的话 askOrGuide 会引导去设置。
-            if (next === 'open') askOrGuide('newOrder')
+            if (next === 'open') {
+              askOrGuide('newOrder')
+              // 开团提醒：通知订阅了这家店的买家。不等结果——服务端自己判断
+              // 是不是新的一场，同一场只发一次，所以这里多调几次也不会重复打扰人。
+              wx.cloud.callFunction({ name: 'shopSubscribe', data: { action: 'announce' } })
+                .catch(err => console.warn('开团提醒触发失败：', err))
+            }
           } else if (next === 'open') {
             // 开门被场次拦下了。这时候只弹 toast 等于把人扔在原地，
             // 直接问他要不要去设置——拦截理由本身已经说清楚该改什么了。

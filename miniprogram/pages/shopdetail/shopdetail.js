@@ -6,6 +6,7 @@
 const { withCover, clip } = require('../../utils/share.js')
 const { toLocalPath } = require('../../utils/poster.js')
 const { ORDERING_ENABLED } = require('../../config.js')
+const { TEMPLATES, askOrGuide } = require('../../utils/subscribe.js')
 
 const CART_KEY = 'shopCart'
 const NAME_MAX = 12   // 转发标题里留给店名的字数，后面还要写得下截单时间
@@ -38,7 +39,13 @@ Page({
     cartSubtotal: 0,
     canOrder: false,   // 店在营业 + 到起送价
     reachMin: false,
-    isRootPage: false  // 从转发卡片冷启动进来时页面栈只有这一页，没有上一页可返回
+    isRootPage: false, // 从转发卡片冷启动进来时页面栈只有这一页，没有上一页可返回
+
+    // 开团提醒。模板还没申请下来时整条不显示，免得点了没反应
+    subEnabled: !!TEMPLATES.shopOpen,
+    subTickets: 0,     // 还攒着几张票 = 还能收到几次开团提醒
+    subMine: false,    // 自己的店不给自己订阅
+    subBusy: false
   },
 
   onLoad: function (options) {
@@ -70,7 +77,14 @@ Page({
       }
       // 配送方案这一页用不上，但转发标题要写截单时间，顺手留下（省一次往返）
       this.batches = ((r.plan || {}).availableBatches) || []
-      this.setData({ shop: r.shop, items: r.items || [], loading: false }, () => {
+      const sub = r.subscription || {}
+      this.setData({
+        shop: r.shop,
+        items: r.items || [],
+        loading: false,
+        subTickets: sub.tickets || 0,
+        subMine: sub.isMine === true
+      }, () => {
         this.rebuild()
         this.prefetchCover()
       })
@@ -151,6 +165,55 @@ Page({
     this.setData({ cart: cart }, () => this.rebuild())
   },
 
+  // 开团提醒。微信的订阅消息是一次性的：点一次「允许」只能收一条，
+  // 所以这里是「攒票」——每点一次多一次提醒，收到一次少一次（见 cloudfunctions/shopSubscribe）。
+  //
+  // askOrGuide 必须是这个点击里的第一个调用，前面不能有任何 await，
+  // 否则真机上授权弹窗弹不出来。
+  subscribe: function () {
+    if (this.data.subBusy) return
+    askOrGuide('shopOpen').then(ok => {
+      if (!ok) return
+      this.setData({ subBusy: true })
+      return wx.cloud.callFunction({
+        name: 'shopSubscribe',
+        data: { action: 'subscribe', shopId: this.shopId }
+      }).then(res => {
+        const r = (res && res.result) || {}
+        if (!r.success) {
+          wx.showToast({ title: r.message || '订阅失败', icon: 'none' })
+          return
+        }
+        this.setData({ subTickets: r.tickets })
+        wx.showToast({ title: '下次开团会通知你', icon: 'none' })
+      })
+    }).catch(err => {
+      console.error('订阅开团提醒失败：', err)
+      wx.showToast({ title: '订阅失败，请重试', icon: 'none' })
+    }).then(() => this.setData({ subBusy: false }))
+  },
+
+  unsubscribe: function () {
+    wx.showModal({
+      title: '取消开团提醒',
+      content: '之后这家店开团就不再通知你了',
+      success: res => {
+        if (!res.confirm) return
+        wx.cloud.callFunction({
+          name: 'shopSubscribe',
+          data: { action: 'unsubscribe', shopId: this.shopId }
+        }).then(r2 => {
+          const r = (r2 && r2.result) || {}
+          if (r.success) this.setData({ subTickets: 0 })
+          else wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+        }).catch(err => {
+          console.error('取消开团提醒失败：', err)
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        })
+      }
+    })
+  },
+
   // 黄页模式下买家唯一的动作：把店长微信复制走，自己去微信谈
   copyWechat: function () {
     const wechat = (this.data.shop || {}).contact_wechat
@@ -159,6 +222,13 @@ Page({
       data: wechat,
       success: () => wx.showToast({ title: '已复制微信号', icon: 'success' })
     })
+  },
+
+  // 店名旁的「证」标：直接看店长传的原图。previewImage 认云文件 ID，不用先换临时链接
+  previewLicense: function () {
+    const url = (this.data.shop || {}).license_image
+    if (!url) return
+    wx.previewImage({ urls: [url], current: url })
   },
 
   checkout: function () {

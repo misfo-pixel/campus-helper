@@ -19,6 +19,9 @@ const TEMPLATES = {
   orderProgress: 'K7gsdZYeDJ-0npxB2n28WX8uCr47wChrIwnQRDR9_cQ',
   // 服务咨询提醒 —— 发给发帖人（二手 / 转租 / 委托有人想要）
   inquiry: 'e0y61cAJe_oAQaexZDJgVqh0gasrQ-O24bWDaR_Srm4',
+  // 开团提醒 —— 发给订阅了某家店的买家（模板是「产品截团通知」）。
+  // 置空的话店铺页的「开团提醒」整条不显示
+  shopOpen: 'IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY',
   // 商品过期提醒 —— 发给发帖人
   expiring: 'uWw8UB3-4awM9grpz7ovyxFSXeprAukc2JnLCzB2DEo',
   // 举报结果通知 —— 发给举报人

@@ -4,7 +4,12 @@
     <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
     <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
     <view class="shop-meta">
-      <view class="shop-name">{{shop.name}}</view>
+      <!-- 店长传了许可证才有这个标，点开看原图。
+           用「证」而不用对勾：平台不核实，对勾会被读成「平台认证过」 -->
+      <view class="shop-name">
+        <text>{{shop.name}}</text>
+        <text wx:if="{{shop.license_image}}" class="license-badge" catchtap="previewLicense">证</text>
+      </view>
       <view wx:if="{{shop.description}}" class="shop-desc">{{shop.description}}</view>
       <view wx:if="{{ordering}}" class="shop-info">{{shop.min_order > 0 ? "起送 $" + shop.min_order + " · " : ""}}{{shop.needs_delivery === false ? '线上服务，无需取货' : (shop.exact_address ? '送到你填的地址 · 配送费 $' + shop.flat_delivery_fee : '配送费按取货地点计算')}}</view>
       <view wx:elif="{{shop.contact_wechat}}" class="shop-info">微信：{{shop.contact_wechat}}</view>
@@ -16,15 +21,19 @@
     该店已打烊，可以先看看商品
   </view>
 
-  <view class="page-container">
-    <disclaimer-bar type="buyer" />
-
-    <!-- 店长自己写的须知。平台不生成、不审核这段内容 -->
-    <view wx:if="{{shop.order_notice}}" class="notice-box">
-      <view class="notice-title">{{ordering ? '下单须知' : '购买须知'}}</view>
-      <view class="notice-text">{{shop.order_notice}}</view>
+  <!-- 开团提醒。打烊的店更需要这个：现在买不了，开了再叫我。
+       纯线上服务没有场次，不存在「开团」，不显示 -->
+  <view wx:if="{{subEnabled && !subMine && shop.needs_delivery !== false}}" class="sub-bar">
+    <view class="sub-text">
+      <view class="sub-title">🔔 开团提醒</view>
+      <!-- 没订阅时不加说明，「开团提醒 + 订阅」已经说清楚了；订阅后这行是状态，得留着 -->
+      <view wx:if="{{subTickets > 0}}" class="sub-hint">已订阅，还会提醒你 {{subTickets}} 次</view>
     </view>
+    <view wx:if="{{subTickets > 0}}" class="sub-cancel" bindtap="unsubscribe">取消</view>
+    <view class="sub-btn {{subTickets > 0 ? 'sub-btn-more' : ''}}" bindtap="subscribe">{{subTickets > 0 ? '再加一次' : '订阅'}}</view>
+  </view>
 
+  <view class="page-container">
     <!-- 商品 -->
     <block wx:for="{{groups}}" wx:key="category">
       <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
@@ -58,6 +67,9 @@
     <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">看看其他小店 ›</view>
 
     <report-bar target-type="shop" target-id="{{shop._id}}" />
+
+    <!-- 免责一行放在最底下：进店先看到的应该是商品 -->
+    <disclaimer-bar type="buyer" />
 
     <!-- 给底部固定条留位置 -->
     <view class="cart-spacer"></view>

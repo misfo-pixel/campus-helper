@@ -42,7 +42,6 @@ Page({
     rent_max: '',
     address: '',
     contact_wechat: '',
-    wechatAutoFilled: false,
     start_date: '',
     end_date: '',
     bedroomIndex: null,
@@ -65,7 +64,7 @@ Page({
     // 读缓存，不再多打一次 login（见 utils/user.js）
     myProfile().then(profile => {
       if (profile.wechat && !this.data.contact_wechat) {
-        this.setData({ contact_wechat: profile.wechat, wechatAutoFilled: true })
+        this.setData({ contact_wechat: profile.wechat })
       }
     }).catch(err => {
       console.error('读取微信号失败：', err)
@@ -158,6 +157,12 @@ Page({
     }
     const room_type = roomType(d)
 
+    // 订阅授权必须在点击的同一拍里弹——中间隔了任何 await（传图、写库），
+    // 真机上就会报 can only be invoked by user TAP gesture，静默拿不到票。
+    // 所以放在第一个 await 之前，不等它返回，发布照常往下走。
+    // expiring：租期结束前一天 autoExpire 提醒；inquiry：有人留言时通知楼主
+    ask(['expiring', 'inquiry'])
+
     wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
 
     try {
@@ -194,9 +199,6 @@ Page({
 
       // 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
       requestReview('sublet', added._id, d.title)
-      // 租期结束前一天 autoExpire 会来提醒一次，得先有这张票
-      ask('expiring')
-
       wx.hideLoading()
       markStale('sublet')   // 列表页返回时会看到这条新发布的
       wx.showToast({ title: '已提交，审核中', icon: 'success' })

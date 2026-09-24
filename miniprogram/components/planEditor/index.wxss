@@ -94,3 +94,24 @@
   font-size: 28rpx;
   margin-bottom: 24rpx;
 }
+
+/* bare：宿主页已经给了一块浅灰底的框。
+   时间那几格的底色和框撞色，改成白的；地点卡片去掉投影、间距收紧，
+   浅灰底上的白卡本身就够分明 */
+.bare .time {
+  background: #fff;
+}
+
+.bare .time-warn {
+  background: #fdeaec;
+}
+
+.bare .card {
+  box-shadow: none;
+  margin-bottom: 16rpx;
+}
+
+.bare .add {
+  margin-bottom: 0;
+  padding: 20rpx;
+}

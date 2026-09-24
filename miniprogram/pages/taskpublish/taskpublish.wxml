@@ -7,7 +7,6 @@
   <input placeholder="报酬（美元）" type="digit" value="{{reward}}" bindinput="onInput" data-field="reward" class="card" style="padding: 24rpx;" />
   <textarea placeholder="任务描述（具体做什么、有什么要求）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
   <input placeholder="你的微信号（接单人联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
-  <view wx:if="{{wechatAutoFilled}}" class="text-light" style="margin: -12rpx 0 24rpx;">已自动填入个人资料里的微信号</view>
 
   <view class="section-title">补充信息（选填）</view>
 

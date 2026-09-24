@@ -39,7 +39,7 @@
   </view>
 
   <view wx:if="{{shopEnabled}}" bindtap="goToShop" class="card card-tap profile-row">
-    <view class="profile-row-label">🏪 我的小店</view>
+    <view class="profile-row-label">💁 我的小店</view>
     <view class="profile-row-arrow">›</view>
   </view>
 

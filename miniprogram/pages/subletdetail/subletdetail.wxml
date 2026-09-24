@@ -69,9 +69,10 @@
 
     <message-board target-type="sublet" target-id="{{item._id}}" />
 
-    <disclaimer-bar type="sublet" />
-
     <report-bar target-type="sublet" target-id="{{item._id}}" />
+
+    <!-- 免责一行放在最底下 -->
+    <disclaimer-bar type="sublet" />
     </block>
     <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
   </view>

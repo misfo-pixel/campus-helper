@@ -76,21 +76,47 @@
   border-top: 1rpx solid #d6e2f7;
 }
 
-.picker-row {
-  display: flex;
-  align-items: center;
-  padding: 24rpx;
-  font-size: 28rpx;
+/* 取货地点 / 服务时间：一张卡，每行左标签右内容 */
+.info-card {
+  padding: 0 24rpx;
 }
 
-.picker-row .placeholder {
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 0;
+}
+
+/* 取货地点那行下面才有分隔线：服务时间永远是最后一行 */
+.info-row-split {
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.info-label {
+  flex-shrink: 0;
+}
+
+.info-value {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+}
+
+.info-value.placeholder {
   color: #999;
 }
 
+.info-sub {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  margin-top: 4rpx;
+}
+
 .picker-arrow {
-  margin-left: auto;
   color: #ccc;
   font-size: 36rpx;
+  line-height: 1;
 }
 
 
@@ -143,7 +169,3 @@
   font-size: 56rpx;
 }
 
-.note-imgs-hint {
-  font-size: 24rpx;
-  margin-top: 12rpx;
-}

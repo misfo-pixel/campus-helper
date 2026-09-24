@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "点单",
+  "navigationBarTitleText": "小店详情",
   "usingComponents": {
     "disclaimer-bar": "/components/disclaimerBar/index",
     "report-bar": "/components/reportBar/index"

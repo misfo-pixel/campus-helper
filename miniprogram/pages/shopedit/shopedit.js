@@ -24,7 +24,6 @@ Page({
     description: '',
     min_order: '',
     business_hours: '',
-    order_notice: '',
     contact_wechat: '',
 
     // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
@@ -55,7 +54,7 @@ Page({
     teamPickReason: '',
     teamWarn: '',
 
-    // 资质：凭证选填。平台不核实，传了就留档，不传也能开店——
+    // 资质：凭证选填。平台不核实，传了就在小店页店名旁挂「证」标公开展示，不传也能开店——
     // 店长多是学生，硬卡一道「我已取得资质」的声明只会把人挡在门外。
     licenseImage: '',
     tempLicense: '',
@@ -138,7 +137,6 @@ Page({
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
         business_hours: shop.business_hours || '',
-        order_notice: shop.order_notice || '',
         contact_wechat: shop.contact_wechat || '',
         noteRequired: shop.note_required === true,
         note_hint: shop.note_hint || '',
@@ -159,8 +157,8 @@ Page({
     })
   },
 
-  // 服务时间和服务地点现在是两个 plan-editor 实例（排在「送到买家地址」
-  // 开关的两侧），各只抛自己那一半，所以这里按 key 合并，不能整个覆盖。
+  // 服务时间和服务地点现在是两个 plan-editor 实例（排在「送到哪里」
+  // 分段按钮的两侧），各只抛自己那一半，所以这里按 key 合并，不能整个覆盖。
   //
   // 改了服务时间要重算队伍可选性：能不能找配送队完全跟着送达时间走。
   onPlanChange: function (e) {
@@ -182,8 +180,9 @@ Page({
     this.setData({ needsDelivery: e.detail.value })
   },
 
-  onExactAddressChange: function (e) {
-    this.setData({ exactAddress: e.detail.value })
+  // 送到买家地址 / 送到模糊地址，分段按钮二选一
+  pickExactAddress: function (e) {
+    this.setData({ exactAddress: e.currentTarget.dataset.exact === '1' })
   },
 
   pickMode: function (e) {
@@ -271,7 +270,7 @@ Page({
     try {
       // 小店资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.business_hours, d.order_notice, d.contact_wechat, d.note_hint]
+        texts: [d.name, d.description, d.business_hours, d.contact_wechat, d.note_hint]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -293,7 +292,6 @@ Page({
           description: d.description,
           min_order: d.min_order,
           business_hours: d.business_hours,
-          order_notice: d.order_notice,
           contact_wechat: d.contact_wechat,
           note_required: d.noteRequired,
           note_hint: d.noteRequired ? d.note_hint : '',
@@ -314,6 +312,13 @@ Page({
         wx.showToast({ title: r.message || '保存失败', icon: 'none' })
         return
       }
+
+      // 营业中改了服务时间 = 开了新的一场。打烊中保存的话服务端直接跳过，
+      // 等店长在工作台挂上营业中时再发。
+      // 开团提醒：通知订阅了这家店的买家。不等结果——服务端自己判断
+      // 是不是新的一场，同一场只发一次，所以这里多调几次也不会重复打扰人。
+      wx.cloud.callFunction({ name: 'shopSubscribe', data: { action: 'announce' } })
+        .catch(err => console.warn('开团提醒触发失败：', err))
 
       wx.showToast({ title: '已保存', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1000)

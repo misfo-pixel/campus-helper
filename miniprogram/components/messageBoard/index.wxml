@@ -5,7 +5,7 @@
   </view>
 
   <view wx:if="{{loading}}" class="board-empty">加载中…</view>
-  <view wx:elif="{{messages.length === 0}}" class="board-empty">还没有留言，问一句「还在吗」也行</view>
+  <view wx:elif="{{messages.length === 0}}" class="board-empty">还没有留言</view>
 
   <view wx:for="{{messages}}" wx:key="_id" class="msg">
     <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="msg-avatar" />
@@ -21,21 +21,29 @@
         <text wx:if="{{item.reply_to_name}}" class="msg-reply">回复 {{item.reply_to_name}}：</text>{{item.content}}
       </view>
       <view class="msg-ops">
-        <text class="msg-op" bindtap="replyTo" data-name="{{item.nickname}}">回复</text>
+        <text class="msg-op" bindtap="replyTo" data-name="{{item.nickname}}" data-id="{{item._id}}">回复</text>
         <text wx:if="{{item.canDelete}}" class="msg-op msg-op-danger" bindtap="remove" data-id="{{item._id}}">删除</text>
         <text wx:if="{{!item.isMine}}" class="msg-op" bindtap="report" data-id="{{item._id}}">举报</text>
       </view>
     </view>
   </view>
 
-  <view class="board-input">
+  <!-- 输入框：聊天式，一行起步、打多了自己长高，发送坐在框里右下角。
+       原来是一块固定高度的灰框 + 框外右浮一个按钮：组件样式是隔离的，
+       全局的 btn-primary 进不来，那个按钮其实是微信默认的灰按钮 -->
+  <view class="composer">
     <view wx:if="{{replyToName}}" class="reply-tag">
       <text>回复 {{replyToName}}</text>
       <text class="reply-cancel" bindtap="cancelReply">×</text>
     </view>
-    <textarea value="{{draft}}" bindinput="onInput" maxlength="200"
-              placeholder="{{isOwner ? '回复买家的提问…' : '公开留言，双方都能看到'}}"
-              class="input-box"></textarea>
-    <button class="btn-primary btn-sm send-btn" bindtap="send" loading="{{sending}}">发送</button>
+    <view class="composer-box">
+      <textarea value="{{draft}}" bindinput="onInput" bindblur="onBlur" maxlength="200"
+                auto-height focus="{{focus}}" show-confirm-bar="{{false}}" cursor-spacing="24"
+                placeholder="{{isOwner ? '回复大家的提问' : '公开留言，所有人可见'}}"
+                placeholder-class="composer-ph" class="composer-input"></textarea>
+      <view class="composer-send {{canSend && !sending ? 'composer-send-on' : ''}}" bindtap="send">
+        {{sending ? '发送中' : '发送'}}
+      </view>
+    </view>
   </view>
 </view>

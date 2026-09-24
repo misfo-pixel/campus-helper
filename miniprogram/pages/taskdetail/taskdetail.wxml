@@ -55,9 +55,10 @@
 
     <message-board target-type="task" target-id="{{item._id}}" />
 
-    <disclaimer-bar type="task" />
-
     <report-bar target-type="task" target-id="{{item._id}}" />
+
+    <!-- 免责一行放在最底下 -->
+    <disclaimer-bar type="task" />
     </block>
     <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
   </view>

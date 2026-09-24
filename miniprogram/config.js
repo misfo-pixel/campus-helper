@@ -36,8 +36,8 @@
 //   - 店铺不再有 payment_enabled / payment_note / payment_qr 三个字段，
 //     shopManage 不采集、buyerOrders 不下发、买家订单页不展示。
 //   - 那个开关位换成了「下单时要买家补充说明」（note_required + note_hint）：
-//     开了之后买家必须写一段说明才能下单，可附最多 3 张图（order_notes/ 目录），
-//     存在订单的 note / note_images 上，店长在工作台能看到。
+//     开了之后买家必须写一段说明才能下单。不开也能写、也能附最多 3 张图
+//     （order_notes/ 目录），存在订单的 note / note_images 上，店长在工作台能看到。
 //     这是给「要确认尺寸、颜色、款式」的店用的，不是付款凭证通道——
 //     UI 文案、协议、提审说明三处口径必须一致，别自己拆台。
 //   - 店长协议和买家协议里描述收款展示位的段落同步删掉了：协议写着有、
@@ -74,7 +74,7 @@ const SHOP_MODULE_ENABLED = true
 //
 // ⚠️ 云函数 buyerOrders 里有一份同名常量，那边才是真正的闸门（前端拦得住
 //    手滑，拦不住改包）。改这里的时候必须同步改那里，并重新部署。
-const SHOP_MODE = 'catalog'
+const SHOP_MODE = 'order'
 
 // 配送队（配送队）。2026-09-20 先关后开，形态换了一遍：
 //

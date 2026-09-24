@@ -35,7 +35,7 @@
     <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🏪</view>
     <view style="flex: 1;">
       <view style="font-size: 32rpx; font-weight: bold;">校外服务</view>
-      <view class="text-light">校外的小店与服务，都在这儿</view>
+      <view class="text-light">长期服务，稳定委托</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>

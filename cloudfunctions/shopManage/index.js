@@ -344,7 +344,7 @@ exports.main = async (event) => {
           description: (event.description || '').trim(),
           // 计价单位。自由填而不是给枚举：零售论件、代购论份、美甲论次、
           // 摄影论小时，枚举永远差一个。空着就只显示价格，跟以前一样。
-          unit: (event.unit || '').trim().slice(0, 4),
+          unit: (event.unit || '').trim().slice(0, 6),
           specs: (event.specs || '').trim(),   // 成分与规格说明，买家端显著展示
           image: event.image || '',
           category: (event.category || '').trim(),

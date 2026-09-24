@@ -185,16 +185,17 @@
 }
 
 /* 开关坐在小节标题右边，跟小店设置那边保持一致 */
-.title-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rpx;
-  margin: 24rpx 0 8rpx;
+/* 送到哪里的分段按钮。全局 kind-switch 的轨道是页面底色，放在向导页上
+   会和背景融成一片，这里给白底，和上下的白卡片一个质感 */
+.address-switch {
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 12rpx;
 }
 
-.title-switch-label {
-  margin: 0;
+.address-switch .kind-switch-on {
+  background: #fdf7f8;
+  box-shadow: none;
 }
 
 /* 置灰：送达时间没有队能接时，「找配送队」这一项 */

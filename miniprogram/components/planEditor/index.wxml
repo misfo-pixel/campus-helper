@@ -1,6 +1,6 @@
-<view class="plan-editor">
+<view class="plan-editor {{bare ? 'bare' : ''}}">
   <block wx:if="{{part !== 'time'}}">
-  <view class="subsection-title">服务地点与配送费</view>
+  <view wx:if="{{!bare}}" class="subsection-title">服务地点与配送费</view>
   <view wx:for="{{points}}" wx:key="index" class="card row">
     <view class="row-head">
       <input placeholder="服务地点（如 Coffman 门口）" value="{{item.name}}" maxlength="20"
@@ -19,8 +19,8 @@
   </block>
 
   <block wx:if="{{part !== 'points'}}">
-  <view class="subsection-title">服务时间</view>
-  <view class="card row">
+  <view wx:if="{{!bare}}" class="subsection-title">服务时间</view>
+  <view class="{{bare ? '' : 'card row'}}">
     <!-- 场次过了就没人能下单了，但店还挂在列表里，所以这条提示要显眼 -->
     <view wx:if="{{expired}}" class="expired">
       ⚠️ 上一场（{{batch.date}}）已过，买家现在下不了单，换个日期即可。

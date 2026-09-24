@@ -15,12 +15,38 @@ const _ = db.command
 // 和 getDetail 一样的铁律：openid 只在服务端流转，绝不下发给客户端。
 
 const TYPES = {
-  item:   { collection: 'secondhand_items', adminRole: 'market_admin', label: '二手' },
-  sublet: { collection: 'sublet_items',     adminRole: 'sublet_admin', label: '转租' },
-  task:   { collection: 'task_items',       adminRole: 'task_admin',   label: '委托' }
+  item:   { collection: 'secondhand_items', adminRole: 'market_admin', label: '二手', page: 'pages/itemdetail/itemdetail' },
+  sublet: { collection: 'sublet_items',     adminRole: 'sublet_admin', label: '转租', page: 'pages/subletdetail/subletdetail' },
+  task:   { collection: 'task_items',       adminRole: 'task_admin',   label: '委托', page: 'pages/taskdetail/taskdetail' }
 }
 
 const MAX_LEN = 200
+
+// 通知最多等这么久。云函数默认 3 秒超时，前面还有好几次读写；
+// sendSubscribe 一冷启动就可能吃掉一两秒，等满了整个 add 超时，
+// 前端报「发送失败」而留言其实已经写进去了——用户重发又撞上防重复，
+// 看起来就是「留言用不了」。通知是锦上添花，宁可丢一条也不能拖垮留言。
+const NOTIFY_BUDGET_MS = 1500
+
+function within(promise, ms) {
+  return Promise.race([promise, new Promise(resolve => setTimeout(resolve, ms))])
+}
+
+// messages 集合要在控制台手动建，漏建时每次读写都报 -502005。
+// 云函数自己建一次，每个实例只试一次；已存在时 createCollection 会报错，吞掉即可。
+let collectionReady = false
+async function ensureCollection() {
+  if (collectionReady) return
+  try {
+    await db.createCollection('messages')
+  } catch (e) { /* 已经存在 */ }
+  collectionReady = true
+}
+
+function isNoCollection(err) {
+  const text = String((err && (err.errMsg || err.message)) || '')
+  return (err && err.errCode === -502005) || /COLLECTION_NOT_EXIST|collection not exist/i.test(text)
+}
 
 function timeText(value) {
   const d = new Date(value)
@@ -54,23 +80,42 @@ async function myRoles(openid) {
   return (res.data[0] && res.data[0].roles) || []
 }
 
-// 帖子的发布者。留言要通知他，删除权限也要认他。
-async function postOwner(cfg, targetId) {
+// 帖子的发布者和标题，一次读出来。发布者要收通知，删除权限也要认他。
+// 帖子不存在时 owner 为空串。
+async function loadPost(cfg, targetId) {
   try {
     const res = await db.collection(cfg.collection).doc(targetId).get()
-    return (res.data && res.data._openid) || ''
+    return { owner: (res.data && res.data._openid) || '', title: (res.data && res.data.title) || '' }
+  } catch (e) {
+    return { owner: '', title: '' }
+  }
+}
+
+async function postOwner(cfg, targetId) {
+  return (await loadPost(cfg, targetId)).owner
+}
+
+// 被回复的那条留言的作者。openid 只在这里查、只在服务端用。
+async function replyTarget(messageId) {
+  if (!messageId) return ''
+  try {
+    const res = await db.collection('messages').doc(messageId).get()
+    return (res.data && res.data.author) || ''
   } catch (e) {
     return ''
   }
 }
 
-async function postTitle(cfg, targetId) {
-  try {
-    const res = await db.collection(cfg.collection).doc(targetId).get()
-    return (res.data && res.data.title) || ''
-  } catch (e) {
-    return ''
-  }
+function notify(toUser, cfg, targetId, payload) {
+  return cloud.callFunction({
+    name: 'sendSubscribe',
+    data: {
+      tpl: 'inquiry',
+      toUser: toUser,
+      page: cfg.page + '?id=' + targetId,
+      data: Object.assign({ kind: cfg.label, time: new Date().toLocaleString('zh-CN', { hour12: false }) }, payload)
+    }
+  }).catch(e => console.warn('留言通知发送失败（不影响留言）：', e))
 }
 
 exports.main = async (event) => {
@@ -83,15 +128,21 @@ exports.main = async (event) => {
       case 'list': {
         if (!cfg || !event.targetId) return { success: false, message: '参数不对' }
 
-        const res = await db.collection('messages')
-          .where({ target_type: event.targetType, target_id: event.targetId })
-          .orderBy('created_at', 'asc')
-          .limit(200)
-          .get()
-
-        const owner = await postOwner(cfg, event.targetId)
+        // 三次读互不依赖，并行。集合还没建（一条留言都没有过）时当空列表。
+        const [res, owner, roles] = await Promise.all([
+          db.collection('messages')
+            .where({ target_type: event.targetType, target_id: event.targetId })
+            .orderBy('created_at', 'asc')
+            .limit(200)
+            .get()
+            .catch(err => {
+              if (isNoCollection(err)) return { data: [] }
+              throw err
+            }),
+          postOwner(cfg, event.targetId),
+          myRoles(openid)
+        ])
         const users = await loadUsers(res.data.map(m => m.author).concat([owner]))
-        const roles = await myRoles(openid)
         const isAdmin = roles.indexOf(cfg.adminRole) !== -1 || roles.indexOf('super_admin') !== -1
 
         return {
@@ -125,8 +176,14 @@ exports.main = async (event) => {
         const content = String(event.content || '').trim().slice(0, MAX_LEN)
         if (!content) return { success: false, message: '说点什么吧' }
 
+        await ensureCollection()
+
         // 帖子没了就别再往上贴留言
-        const owner = await postOwner(cfg, event.targetId)
+        const [post, replyAuthor] = await Promise.all([
+          loadPost(cfg, event.targetId),
+          replyTarget(event.replyToId)
+        ])
+        const owner = post.owner
         if (!owner) return { success: false, message: '内容已不存在' }
 
         // 防连点和刷屏：同一个人对同一条帖子，一分钟内不能发一模一样的话
@@ -148,34 +205,28 @@ exports.main = async (event) => {
             // 只存一个显示用的名字，不存被回复者的 openid——
             // 平铺展示成「回复 小明：…」就够了，不用把关系也建起来
             reply_to_name: String(event.replyToName || '').trim().slice(0, 20),
+            // 被回复留言的 id，只用来在服务端找回作者发通知，不下发
+            reply_to_id: String(event.replyToId || ''),
             created_at: new Date()
           }
         })
 
-        // 通知楼主有人留言。自己给自己的帖子留言不通知。
+        // 两个人可能要收通知，都不给自己发：
+        //   楼主 —— 帖子下有新留言（票是他发帖时授权的）
+        //   被回复的人 —— 有人回复了他（票是他当初留言时授权的，
+        //                  这正是「问了一句还在吗，等回音」的那一刻）
+        // 被回复的就是楼主时只发一条。
         // 发不出去很正常（对方没授权、票用完了），绝不能让它影响留言本身。
-        if (owner !== openid) {
-          try {
-            const users = await loadUsers([openid])
-            const me = users[openid] || {}
-            await cloud.callFunction({
-              name: 'sendSubscribe',
-              data: {
-                tpl: 'inquiry',
-                toUser: owner,
-                page: 'pages/home/home',
-                data: {
-                  who: me.nickname || '有位同学',
-                  kind: cfg.label,
-                  content: (await postTitle(cfg, event.targetId)) || content,
-                  time: new Date().toLocaleString('zh-CN', { hour12: false })
-                }
-              }
-            })
-          } catch (e) {
-            console.warn('留言通知发送失败（不影响留言）：', e)
-          }
+        const tasks = []
+        const needOwner = owner !== openid
+        const needReply = replyAuthor && replyAuthor !== openid && replyAuthor !== owner
+        if (needOwner || needReply) {
+          const me = (await loadUsers([openid]))[openid] || {}
+          const who = me.nickname || '有位同学'
+          if (needOwner) tasks.push(notify(owner, cfg, event.targetId, { who: who, content: post.title || content }))
+          if (needReply) tasks.push(notify(replyAuthor, cfg, event.targetId, { who: who + ' 回复你', content: content }))
         }
+        if (tasks.length) await within(Promise.all(tasks), NOTIFY_BUDGET_MS)
 
         return { success: true }
       }

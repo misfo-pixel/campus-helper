@@ -133,11 +133,25 @@ exports.main = async (event) => {
           return { success: false, message: '店铺不存在或已打烊' }
         }
 
-        const itemsRes = await db.collection('shop_items')
-          .where({ shop_id: shop._id })
-          .orderBy('created_at', 'asc')
-          .limit(200)
-          .get()
+        // 开团提醒的订阅状态顺手一起查，省买家一次跨太平洋往返。
+        // shop_subscriptions 还没建（没人订阅过）时当 0 张票。
+        const openid = cloud.getWXContext().OPENID
+        const [itemsRes, subRes] = await Promise.all([
+          db.collection('shop_items')
+            .where({ shop_id: shop._id })
+            .orderBy('created_at', 'asc')
+            .limit(200)
+            .get(),
+          openid
+            ? db.collection('shop_subscriptions')
+              .where({ shop_id: shop._id, user: openid })
+              .field({ tickets: true })
+              .limit(1)
+              .get()
+              .catch(() => ({ data: [] }))
+            : Promise.resolve({ data: [] })
+        ])
+        const sub = subRes.data[0]
 
         const plan = await resolvePlan(shop)
 
@@ -157,13 +171,19 @@ exports.main = async (event) => {
             delivery_mode: shop.delivery_mode || 'self',
             min_order: shop.min_order,
             business_hours: shop.business_hours,
-            order_notice: shop.order_notice || '',
+            // 店长主动上传、同意公开展示的许可证（见《店长责任告知书》二）
+            license_image: shop.license_image || '',
             use_category: shop.use_category === true,
             needs_delivery: shop.needs_delivery !== false,
             exact_address: shop.exact_address === true,
             flat_delivery_fee: Number(shop.flat_delivery_fee) || 0,
             contact_wechat: shop.contact_wechat,
             status: shop.status
+          },
+          // 开团提醒：我还攒着几张票；店长看自己的店时不显示订阅按钮
+          subscription: {
+            tickets: (sub && sub.tickets) || 0,
+            isMine: !!openid && shop.owner === openid
           },
           // 售罄的商品也返回，买家端灰掉展示，不然店长会被问「那件呢」
           items: itemsRes.data.map(i => ({

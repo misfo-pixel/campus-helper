@@ -51,9 +51,10 @@
 
     <message-board target-type="item" target-id="{{item._id}}" />
 
-    <disclaimer-bar type="trade" />
-
     <report-bar target-type="item" target-id="{{item._id}}" />
+
+    <!-- 免责一行放在最底下 -->
+    <disclaimer-bar type="trade" />
     </block>
     <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
   </view>

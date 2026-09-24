@@ -83,6 +83,20 @@ const TEMPLATES = {
     }
   },
 
+  // 开团提醒 —— 发给订阅了某家店的买家（shopSubscribe 的 announce 批量发）
+  //
+  // 公共库里没有「开团」模板，用的是「产品截团通知」（编号 17717，类目 信息查询）。
+  // 买家收到时最要紧的就是「几点截单」，截团时间正好装它；标题叫截团不叫开团，
+  // 但内容说的是同一场，不冲突。
+  shopOpen: {
+    id: 'IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY',
+    fields: {
+      shop: 'thing2',         // 厂家名称 → 店铺名
+      cutoff: 'time3',        // 截团时间 → 这一场的截单时刻
+      tip: 'thing4'           // 产品简介 → 服务时间
+    }
+  },
+
   // 商品过期提醒 —— 发给发帖人
   expiring: {
     id: 'uWw8UB3-4awM9grpz7ovyxFSXeprAukc2JnLCzB2DEo',
@@ -148,12 +162,24 @@ exports.main = async (event) => {
     return { success: false, pending: true }
   }
 
+  // 批量：同一条内容发给一批人（开团提醒）。逐个发，并发，互不影响，
+  // 返回每个人的结果——调用方要按结果扣票（成功扣一张，43101 说明没票了）。
+  if (Array.isArray(event.toUsers)) {
+    const results = await Promise.all(event.toUsers.map(u => sendOne(tpl, u, event)))
+    return { success: true, results: results }
+  }
+
   // 不传 toUser 就发给调用者自己。发给别人（比如买家下单后通知店长）时
   // 由调用方传对方的 openid——这个 openid 只能从数据库里查出来，
   // 不能由小程序端传进来，否则谁都能拿它给任意用户发消息。
   const toUser = event.toUser || cloud.getWXContext().OPENID
   if (!toUser) return { success: false, message: '没有接收人' }
 
+  const r = await sendOne(tpl, toUser, event)
+  return { success: r.success, errCode: r.errCode }
+}
+
+async function sendOne(tpl, toUser, event) {
   try {
     await cloud.openapi.subscribeMessage.send({
       touser: toUser,
@@ -163,12 +189,12 @@ exports.main = async (event) => {
       lang: 'zh_CN',
       data: buildData(tpl, event.data || {})
     })
-    return { success: true }
+    return { toUser: toUser, success: true }
   } catch (err) {
     // 发不出去是常态，不是异常：用户没授权（43101）、票用完了、
     // 字段不合模板（47003）。一律吞掉，只留日志——通知是锦上添花，
     // 绝不能因为发不出通知就让下单、发帖这些主流程失败。
     console.warn('订阅消息发送失败：', event.tpl, err && err.errCode, err && err.errMsg)
-    return { success: false, errCode: err && err.errCode }
+    return { toUser: toUser, success: false, errCode: err && err.errCode }
   }
 }

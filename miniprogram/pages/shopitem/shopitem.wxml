@@ -15,13 +15,15 @@
     <view class="text-light img-hint">点击{{image ? '更换' : '上传'}}商品图片</view>
   </view>
 
-  <input placeholder="单位（如 件 / 份 / 次 / 小时）" value="{{unit}}" bindinput="onInput" data-field="unit" maxlength="4" class="card" style="padding: 24rpx;" />
+  <!-- 不设 maxlength：拼音输入时还没上屏的字母也算字数，卡 4 个字连「xiaoshi」都打不进去。
+       长度在提交时再查 -->
+  <input placeholder="单位（如 件 / 份 / 次 / 小时）" value="{{unit}}" bindinput="onInput" data-field="unit" class="card" style="padding: 24rpx;" />
   <input wx:if="{{useCategory}}" placeholder="分类（如 热销 / 新品 / 其他）" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
   <textarea placeholder="商品描述（规格、数量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
-  <view class="subsection-title">成分与规格说明</view>
-  <view class="field-hint">如实说明材质、成分或服务内容。<text class="strong">涉及安全的成分必须如实标注</text>，隐瞒或错填的后果由你承担，详见《店长责任告知书》。</view>
-  <textarea placeholder="如：材质、成分、尺寸、服务时长" value="{{specs}}" bindinput="onInput" data-field="specs" class="card" style="padding: 24rpx; width: auto; height: 120rpx;"></textarea>
+  <!-- 和上面几项一样只靠框内提示，不另起小标题。
+       「涉及安全须如实标注」是《店长责任告知书》里的义务，这里只提一句 -->
+  <textarea placeholder="成分与规格说明（如材质、尺寸；涉及安全的成分须如实标注）" value="{{specs}}" bindinput="onInput" data-field="specs" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
   <view class="card avail-row">
     <view>

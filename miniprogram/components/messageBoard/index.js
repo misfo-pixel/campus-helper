@@ -24,7 +24,10 @@ Component({
     messages: [],
     isOwner: false,         // 我是不是楼主，决定输入框的占位文案
     draft: '',
+    canSend: false,         // 草稿有字才把发送点亮。WXML 里调不了 trim，只能在这里算
+    focus: false,           // 点「回复」时直接弹键盘
     replyToName: '',        // 非空时这条留言是「回复某人」
+    replyToId: '',          // 被回复的那条留言，服务端靠它找到作者发通知
     sending: false
   },
 
@@ -58,16 +61,24 @@ Component({
     },
 
     onInput: function (e) {
-      this.setData({ draft: e.detail.value })
+      const v = e.detail.value
+      this.setData({ draft: v, canSend: !!v.trim() })
     },
 
-    // 点某条留言的「回复」，只是把名字记下来当前缀，不建父子关系
+    // focus 是一次性的：失焦后要落回 false，下次点「回复」才能再触发
+    onBlur: function () {
+      this.setData({ focus: false })
+    },
+
+    // 点某条留言的「回复」：名字当前缀显示，id 交给服务端找人发通知。
+    // 展示上仍然平铺，不建父子关系。
     replyTo: function (e) {
-      this.setData({ replyToName: e.currentTarget.dataset.name || '' })
+      const ds = e.currentTarget.dataset
+      this.setData({ replyToName: ds.name || '', replyToId: ds.id || '', focus: true })
     },
 
     cancelReply: function () {
-      this.setData({ replyToName: '' })
+      this.setData({ replyToName: '', replyToId: '' })
     },
 
     send: async function () {
@@ -80,16 +91,20 @@ Component({
         return
       }
 
+      // 趁用户正等着回复的这一刻要授权——这时候他最愿意点「允许」，
+      // 有人回复他时就用这张票通知他。拿不到也无所谓，留言本身照发。
+      //
+      // 必须在第一个 await 之前调、而且不等它：原来放在机检之后，
+      // 中间隔了一次云函数往返，真机上报 can only be invoked by user TAP
+      // gesture，弹窗根本不出来。
+      ask('inquiry')
+
       this.setData({ sending: true })
       wx.showLoading({ title: '发送中', mask: true })
 
       try {
         // 公开可见的内容，一律先过机检
         if (!(await ensureContentOk({ texts: [content] }))) return
-
-        // 趁用户正等着回复的这一刻要授权——这时候他最愿意点「允许」。
-        // 拿不到也无所谓，留言本身照发。
-        await ask('inquiry')
 
         const res = await wx.cloud.callFunction({
           name: 'messages',
@@ -98,7 +113,8 @@ Component({
             targetType: d.targetType,
             targetId: d.targetId,
             content: content,
-            replyToName: d.replyToName
+            replyToName: d.replyToName,
+            replyToId: d.replyToId
           }
         })
 
@@ -109,7 +125,7 @@ Component({
           return
         }
 
-        this.setData({ draft: '', replyToName: '' })
+        this.setData({ draft: '', canSend: false, replyToName: '', replyToId: '' })
         this.load()
       } catch (err) {
         wx.hideLoading()

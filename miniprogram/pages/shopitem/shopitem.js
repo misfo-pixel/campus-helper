@@ -1,6 +1,9 @@
 // 商品编辑。带 id 进来是改，不带是加。
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
+// 和云函数 shopManage 的 saveItem 同一个数，改的时候两边一起改
+const UNIT_MAX = 6
+
 Page({
   data: {
     itemId: '',
@@ -98,6 +101,11 @@ Page({
     }
     if (d.price === '' || !(Number(d.price) >= 0)) {
       wx.showToast({ title: '请填写正确的价格', icon: 'none' })
+      return
+    }
+    // 输入框不限长（见 wxml），在这里卡。单位跟在价格后面显示，太长会挤掉商品名
+    if (d.unit.trim().length > UNIT_MAX) {
+      wx.showToast({ title: '单位最多 ' + UNIT_MAX + ' 个字', icon: 'none' })
       return
     }
 

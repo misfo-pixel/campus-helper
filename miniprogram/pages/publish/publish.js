@@ -17,8 +17,7 @@ Page({
     price: '',
     description: '',
     seller_wechat: '',
-    expire_date: '',
-    wechatAutoFilled: false
+    expire_date: ''
   },
 
   // 微信号自动填个人资料里存的那个，没存过就留空手填
@@ -28,7 +27,7 @@ Page({
     // 读缓存，不再多打一次 login（见 utils/user.js）
     myProfile().then(profile => {
       if (profile.wechat && !this.data.seller_wechat) {
-        this.setData({ seller_wechat: profile.wechat, wechatAutoFilled: true })
+        this.setData({ seller_wechat: profile.wechat })
       }
     }).catch(err => {
       console.error('读取微信号失败：', err)
@@ -101,6 +100,12 @@ Page({
       return
     }
 
+    // 订阅授权必须在点击的同一拍里弹——中间隔了任何 await（传图、写库），
+    // 真机上就会报 can only be invoked by user TAP gesture，静默拿不到票。
+    // 所以放在第一个 await 之前，不等它返回，发布照常往下走。
+    // expiring：到期前一天 autoExpire 提醒；inquiry：有人留言时通知楼主
+    ask(['expiring', 'inquiry'])
+
     wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
 
     try {
@@ -127,9 +132,6 @@ Page({
 
       // 3. 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
       requestReview('item', added._id, title)
-      // 到期前一天 autoExpire 会来提醒一次，得先有这张票
-      ask('expiring')
-
       wx.hideLoading()
       markStale('item')   // 列表页返回时会看到这条新发布的
       // 搬家清仓常常一次要发好几件，问一句，省得每件都退回列表再点进来

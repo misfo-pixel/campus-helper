@@ -135,19 +135,77 @@
   margin-top: 4rpx;
 }
 
-/* 开关直接坐在小节标题右边。
-   原来是「标题一行 + 底下一张卡里再写一遍标题和开关」，
-   同一件事说了两遍，标题也白占一行。 */
-.title-switch {
+/* 分组卡：开关当表头，打开后归它管的设置收在同一张卡里。
+   关着的时候就是一行「名称 + 开关」，和添加商品页的「当前上架」同一个样子 */
+.group {
+  padding: 24rpx;
+}
+
+.group-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24rpx;
-  margin: 24rpx 0 8rpx;
 }
 
-.title-switch-label {
-  margin: 0;
+.group-head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.group-title {
+  font-size: 30rpx;
+}
+
+.group-hint {
+  font-size: 24rpx;
+  margin-top: 4rpx;
+}
+
+.group-body {
+  margin-top: 24rpx;
+  border-top: 1rpx solid var(--color-border);
+}
+
+/* 卡里的小标签。比表头轻一档（灰、26rpx），层级靠它和灰底框拉开 */
+.group-label {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  margin: 24rpx 0 12rpx;
+}
+
+/* 卡里的浅灰底框：同一块灰底里的东西是一伙的 */
+.well {
+  background: var(--color-bg);
+  border-radius: 16rpx;
+  padding: 20rpx;
+}
+
+/* 分段按钮坐在灰底框顶上，轨道直接用框的底色，不再自带一层灰 */
+.well .well-switch {
+  padding: 0;
+  margin-bottom: 20rpx;
+  background: transparent;
+}
+
+/* 灰底上的白卡不用投影也分得清 */
+.well .pick {
+  border-color: transparent;
+  margin-bottom: 16rpx;
+}
+
+.well .pick-on {
+  border-color: var(--color-primary);
+}
+
+.well-card {
+  box-shadow: none;
+  margin-bottom: 0;
+}
+
+.well-input {
+  margin-top: 24rpx;
+  font-size: 30rpx;
 }
 
 /* 服务方式三选一。和开店向导里那套卡片同一个观感 */

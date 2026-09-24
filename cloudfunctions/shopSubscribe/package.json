@@ -1,0 +1,9 @@
+{
+  "name": "shopSubscribe",
+  "version": "1.0.0",
+  "description": "校外服务开团提醒：买家订阅、店长开团时批量通知",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

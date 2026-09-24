@@ -11,7 +11,7 @@ const _ = db.command
 //   'order'   订单 —— 完整下单流程。
 //
 // ⚠️ 改这个值要连着改 config.js，并重新部署本函数。
-const SHOP_MODE = 'catalog'
+const SHOP_MODE = 'order'
 
 // 买家侧订单：下单、看自己的单、取消。
 //

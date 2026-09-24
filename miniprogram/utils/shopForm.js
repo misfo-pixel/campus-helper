@@ -39,7 +39,7 @@ function normalizeMode(value) {
 function validatePlan(points, batches, exactAddress) {
   if (!exactAddress) {
     const kept = (points || []).filter(p => String(p.name || '').trim())
-    if (!kept.length) return '客户自取的话，至少要设一个服务地点'
+    if (!kept.length) return '至少要设一个服务地点'
 
     const names = kept.map(p => p.name.trim())
     if (new Set(names).size !== names.length) return '服务地点名字不能重复'
