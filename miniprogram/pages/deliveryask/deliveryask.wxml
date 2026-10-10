@@ -1,59 +1,103 @@
 <view class="page-container">
 
-  <!-- ========== 发一条新请求 ========== -->
-  <view class="section-title">找配送队送一趟</view>
-
-  <!-- 读失败 ≠ 平台上没有队。分开说，否则店长会以为没人可找 -->
-  <loading-spinner wx:if="{{loading}}" />
-  <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
-  <view wx:elif="{{teams.length === 0}}" class="text-light">
-    目前还没有配送队。
+  <!-- 页头一句话说清这页是干什么的：以前叫「配送状态」，店长不知道这是找人送货的地方 -->
+  <view class="hero ask-hero">
+    <view class="hero-title">找配送队</view>
+    <view class="hero-sub">把这一趟发给校园配送队，队长接单后用微信联系你。按小店设置的配送费付给队伍。</view>
   </view>
 
-  <block wx:else>
-    <view wx:for="{{teams}}" wx:key="_id"
-          class="pick {{teamIndex === index ? 'pick-on' : ''}}"
-          bindtap="pickTeam" data-index="{{index}}">
-      <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
-      <view class="pick-body">
-        <view class="pick-name">{{item.name}}</view>
-        <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
+  <view wx:if="{{noDelivery}}" class="card ask-off">
+    <view>小店设置的是「无需线下交付」，没有要送的东西。</view>
+    <text class="ask-link" bindtap="goToShopSettings">去小店设置 ›</text>
+  </view>
 
-        <!-- 队长填的可配送时段。挑队伍时最要紧的就是这个——
-             时间对不上的话，加了微信也是白聊一轮 -->
-        <view wx:if="{{item.slotTexts.length}}" class="pick-slots">
-          <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="pick-slot">{{slot}}</text>
-          <text wx:if="{{item.slotMore}}" class="pick-slot-more">还有 {{item.slotMore}} 个时段</text>
-        </view>
-        <view wx:else class="pick-slots-none">没填可配送时段，联系上再问</view>
-      </view>
+  <block wx:elif="{{shopReady}}">
+    <!-- ========== 1 送哪、几单 ========== -->
+    <view class="ask-head">
+      <view class="section-title section-title-bar">送哪、几单</view>
+      <text class="ask-tag">{{exact ? '送上门' : '送到取货点'}}</text>
     </view>
 
-    <textarea placeholder="说清楚几单、什么时候、从哪送到哪，方便队长判断接不接"
+    <view class="card lines">
+      <view wx:if="{{exact}}" class="line">
+        <view class="line-name">每单 {{flatFeeText}}</view>
+        <input class="line-count" type="number" placeholder="0" value="{{count}}" bindinput="onCount" />
+        <text class="line-unit">单</text>
+      </view>
+      <block wx:else>
+        <view wx:if="{{points.length === 0}}" class="text-light">小店设置里还没有取货点</view>
+        <view wx:for="{{points}}" wx:key="name" class="line">
+          <view class="line-name">{{item.name}}<text class="line-fee">每单 {{item.feeText}}</text></view>
+          <input class="line-count" type="number" placeholder="0" value="{{item.count}}"
+                 bindinput="onPointCount" data-index="{{index}}" />
+          <text class="line-unit">单</text>
+        </view>
+      </block>
+
+      <view class="line-foot">
+        <text class="ask-link" bindtap="goToShopSettings">改配送费 ›</text>
+        <text wx:if="{{totalText}}" class="line-total">合计 {{totalText}}</text>
+      </view>
+      <view wx:if="{{freeWarn}}" class="line-warn">{{freeWarn}}</view>
+    </view>
+
+    <textarea placeholder="几点到店取货、几点前送到、其他要求"
               value="{{note}}" bindinput="onNote" maxlength="300"
               class="card note-box"></textarea>
 
-    <button class="btn-primary" bindtap="send" loading="{{sending}}" style="margin-top: 24rpx;">
-      发送请求
-    </button>
+    <!-- ========== 2 发给谁 ========== -->
+    <view class="section-title section-title-bar">发给谁</view>
 
-    <view class="field-hint" style="margin-top: 16rpx;">
-      队长会收到提醒，然后用微信直接联系你。平台不参与你们之间的约定。
-    </view>
+    <!-- 读失败 ≠ 平台上没有队。分开说，否则店长会以为没人可找 -->
+    <loading-spinner wx:if="{{loading}}" />
+    <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
+    <view wx:elif="{{teams.length === 0}}" class="text-light">目前还没有配送队。</view>
+
+    <block wx:else>
+      <view wx:if="{{teams.length > 1}}"
+            class="pick {{teamIndex === -1 ? 'pick-on' : ''}}"
+            bindtap="pickTeam" data-index="{{-1}}">
+        <view class="pick-emoji"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
+        <view class="pick-body">
+          <view class="pick-name">发给所有配送队</view>
+          <view class="pick-desc">{{teams.length}} 支队同时收到，先接先得</view>
+        </view>
+      </view>
+
+      <view wx:for="{{teams}}" wx:key="_id"
+            class="pick {{teamIndex === index ? 'pick-on' : ''}}"
+            bindtap="pickTeam" data-index="{{index}}">
+        <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
+        <view class="pick-body">
+          <view class="pick-name">{{item.name}}</view>
+          <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
+          <view class="pick-rep {{item.no_show_count ? 'pick-rep-bad' : ''}}">{{item.repText}}</view>
+        </view>
+      </view>
+
+      <button class="btn-primary" bindtap="send" loading="{{sending}}" style="margin-top: 24rpx;">
+        发送请求{{totalText ? ' · ' + totalText : ''}}
+      </button>
+    </block>
   </block>
 
-  <!-- ========== 进度 ========== -->
-  <view class="section-title">配送记录</view>
+  <!-- ========== 发出的请求 ========== -->
+  <view class="section-title section-title-bar">发出的请求</view>
   <view wx:if="{{requestsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
   <view wx:elif="{{requests.length === 0}}" class="text-light">还没有发过请求。</view>
 
   <view wx:for="{{requests}}" wx:key="_id" class="card req">
     <view class="req-head">
-      <text class="req-team">{{item.team_name}}</text>
+      <text class="req-team">{{item.teamText}}</text>
       <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
     </view>
 
     <view class="text-light req-time">{{item.timeText}} 发出</view>
+    <view wx:if="{{item.tag}}" class="req-price">
+      <text class="ask-tag">{{item.tag}}</text>
+      <text class="req-price-detail">{{item.detail}}</text>
+      <text class="req-price-total">{{item.totalText}}</text>
+    </view>
     <view class="req-note">{{item.note}}</view>
 
     <!-- 送达照片：平台不派单也不结账，出了「说送了其实没送」的争议，
@@ -66,5 +110,12 @@
                bindtap="previewPhoto" data-urls="{{item.photos}}" data-current="{{ph}}" />
       </view>
     </block>
+
+    <!-- 有队接过的单才有对象可标、可举报 -->
+    <view wx:if="{{item.team_id}}" class="req-ops">
+      <text class="req-op" bindtap="reportTeam" data-team="{{item.team_id}}">举报</text>
+      <text wx:if="{{item.status === 'accepted'}}" class="req-op req-op-bad"
+            bindtap="markNoShow" data-id="{{item._id}}" data-name="{{item.team_name}}">没来送</text>
+    </view>
   </view>
 </view>

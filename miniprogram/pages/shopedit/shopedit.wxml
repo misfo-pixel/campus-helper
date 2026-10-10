@@ -22,9 +22,6 @@
     </view>
 
     <view wx:if="{{needsDelivery}}" class="group-body">
-      <!-- 服务时间排在最前面：能不能找配送队、送达前该什么时候通知，
-           都要按送达时间算。让店长先选配送方式再填时间，是让他在没有依据的
-           时候做决定 -->
       <view class="group-label">服务时间</view>
       <view class="well">
         <plan-editor part="time" bare="{{true}}"
@@ -33,66 +30,21 @@
       </view>
 
       <!-- 两种送法二选一，用分段按钮而不是开关：开关只说得出其中一种，
-           关掉之后是什么得靠猜。送到买家地址排前面。
-           下面的选项跟着选中的那一段走，和分段按钮同在一块灰底里 -->
-      <view class="group-label">送到哪里</view>
+           关掉之后是什么得靠猜。下面的费用跟着选中的那一段走 -->
+      <view class="group-label">{{exactAddressEnabled ? '送到哪里' : '取货点'}}</view>
       <view class="well">
-        <view class="kind-switch well-switch">
+        <view wx:if="{{exactAddressEnabled}}" class="kind-switch well-switch">
           <view class="kind-switch-item {{exactAddress ? 'kind-switch-on' : ''}}"
                 bindtap="pickExactAddress" data-exact="1">送到买家地址</view>
           <view class="kind-switch-item {{exactAddress ? '' : 'kind-switch-on'}}"
                 bindtap="pickExactAddress" data-exact="0">送到模糊地址</view>
         </view>
 
-        <!-- 只有送上门才有「谁来送」这一问；送到模糊地址是买家过来取，不存在配送方 -->
         <block wx:if="{{exactAddress}}">
-          <view class="pick {{deliveryMode === 'self' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="self">
-            <view class="pick-body">
-              <view class="pick-name">我自己送</view>
-            </view>
-          </view>
-
-          <!-- 上面填的送达时间没有一支队能接就置灰。点它只给一句解释，不改任何
-               状态——已经绑了队的店长照样能看到自己绑的那支（见下面的队伍列表） -->
-          <view wx:if="{{teamEnabled}}"
-                class="pick {{deliveryMode === 'team' ? 'pick-on' : ''}} {{teamPickDisabled ? 'pick-off' : ''}}"
-                bindtap="pickMode" data-mode="team">
-            <view class="pick-body">
-              <view class="pick-name">找配送队</view>
-            </view>
-          </view>
-
-          <!-- 选了「找配送队」才展开具体选哪一支 -->
-          <block wx:if="{{teamEnabled && deliveryMode === 'team'}}">
-            <view wx:if="{{teamsError}}" class="text-light team-empty" bindtap="loadTeams">读取配送队失败，点击重试</view>
-            <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
-
-            <!-- 绑好之后又把送达时间改到人家没空的点上：不解绑，只说一句 -->
-            <view wx:if="{{teamWarn}}" class="team-warn">{{teamWarn}}</view>
-
-            <view wx:for="{{teams}}" wx:key="_id"
-                  class="pick team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
-                  bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
-              <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
-              <view class="pick-body">
-                <view class="pick-name">
-                  {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>
-                </view>
-                <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
-                <!-- 时间对不上的队更要把时段摆出来：店长照着改送达时间就能用上 -->
-                <view wx:if="{{item.slotTexts.length}}" class="team-slots">
-                  可配送
-                  <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="team-slot">{{slot}}</text>
-                  <text wx:if="{{item.slotMore}}" class="team-slot">还有 {{item.slotMore}} 段</text>
-                </view>
-                <view wx:else class="team-slots">还没填可配送时段</view>
-              </view>
-            </view>
-          </block>
-
           <input placeholder="配送费（美元/单）" type="digit"
                  value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
                  class="card form-card well-card" />
+          <view class="field-hint fee-hint">买家下单时付这个；找配送队送时，也按这个价付给配送队。</view>
         </block>
 
         <!-- 送到模糊地址：店长设几个点，买家挑一个过来取 -->

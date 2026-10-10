@@ -55,7 +55,7 @@ function slotBlocker(shop) {
 
   const slot = (shop.batches || [])[0]
   if (!slot || !slot.date) {
-    return '先在店铺设置里设一个服务时间（日期 + 截单时间 + 送达时间），才能开门营业'
+    return '先在店铺设置里设一个服务时间（日期 + 截单时间 + 到点时间），才能开门营业'
   }
 
   const now = nowInTZ()
@@ -101,32 +101,19 @@ async function getMyShop(openid) {
   return res.data[0] || null
 }
 
-// 配送方案（服务地点 + 服务时间）属于实际送货的那一方：
-// 自己送就存在这里，外包就用配送队的那份。店长先选谁送，再决定填不填。
-// 配送这块是两个正交的问题，分两层存：
-//   exact_address  送到买家地址（true）还是买家过来取（false）
-//   delivery_mode  只有送上门才有意义——self 自己送 / team 找配送队
+// 配送只存买家看得到的那部分：送到买家地址（exact_address: true，一口价
+// flat_delivery_fee）还是送到几个取货点（pickup_points，每个点各自的费用）。
 //
-// 2026-09-20：team 模式又要指明是哪一支队了，存在 delivery_team_id 上。
-// 这不是回到老的 'outsourced'——那个值意味着整套派单对账都绑在队伍上；
-// 现在绑定只解决一个问题：送达前该通知谁。派单和结账仍然不归平台。
-//
-// 'outsourced' 和 'task'（撤掉的委托送）都是历史值，normalizeMode 把
-// 'outsourced' 收敛成 'team'，老数据的 delivery_team_id 正好能接着用。
-const DELIVERY_MODES = ['self', 'team']
-
-function normalizeMode(value) {
-  return (value === 'outsourced' || value === 'team') ? 'team' : 'self'
-}
-
+// 2026-10-10 撤掉了「谁来送」（delivery_mode / delivery_team_id）：存下来之后
+// 没有任何地方读它，每一趟找不找配送队、找哪支，都在「找配送队」页发请求时定。
+// 同时约定：这里的配送费就是付给配送队的价，发请求时直接按它算，不再另填。
+// 老数据里的 delivery_mode / delivery_team_id 留着不管。
 function pickShopFields(event) {
   // 老店铺库里没有这个字段，读出来是 undefined。默认按「有线下交付」算，
   // 否则一次保存就会把已经配置好的服务地点和场次清空。
   const needsDelivery = event.needs_delivery !== false
 
-  // 先问送不送上门，再问谁送。客户自取时「谁来送」不存在，mode 归 self 占位。
   const exact = needsDelivery && event.exact_address === true
-  const mode = exact ? normalizeMode(event.delivery_mode) : 'self'
 
   return {
     name: (event.name || '').trim(),
@@ -152,14 +139,9 @@ function pickShopFields(event) {
     // 注意：到店自取【属于】要线下交付——它就是「不送到精确地址」那一支，
     // 照样需要服务地点和时间，只是配送费填 0。
     needs_delivery: needsDelivery,
-    delivery_mode: needsDelivery ? mode : 'self',
 
     // 送到买家填的地址，还是买家到固定点位来取
     exact_address: needsDelivery ? exact : false,
-
-    // 绑定的配送队。只有「送上门 + 找配送队」这一种组合才存，
-    // 其余情况一律清空——留着一个不生效的绑定，下次切回来会静默复活。
-    delivery_team_id: mode === 'team' ? String(event.delivery_team_id || '') : '',
 
     // 送上门没有「按点位计价」这回事，改成一口价
     flat_delivery_fee: (needsDelivery && exact)
@@ -181,37 +163,13 @@ function validateShop(fields) {
   if (!fields.contact_wechat) return '请填写联系微信'
   if (fields.needs_delivery) {
     if (!fields.batches.length) {
-      return '要设一个服务时间：日期 + 截单时间 + 送达时间'
+      return '要设一个服务时间：日期 + 截单时间 + 到点时间'
     }
     if (!fields.exact_address && !fields.pickup_points.length) {
       return '客户自取的话，至少要设一个服务地点'
     }
-    // 「找配送队」不再是一个空标记，得指明是哪一支——
-    // 送达前要通知谁、买家问起来谁在送，都得有这个答案
-    if (fields.delivery_mode === 'team' && !fields.delivery_team_id) {
-      return '请选择一支配送队'
-    }
   }
   return null
-}
-
-// 队伍是否还能被绑定。放在这里而不是 validateShop 里，是因为它要查库——
-// validateShop 保持纯函数，只管「填没填」，能不能用是另一回事。
-//
-// 只拦「这支队不存在」。时间对不对得上不在这儿拦：队长随时会改自己的
-// 可配送时段，服务端一卡，店长连改个营业时间都保存不了，而且他可能早就在
-// 微信里和队长约好了那一趟。界面上该置灰的已经置灰、该警告的已经警告，
-// 真要绑一支时间对不上的，那是他们俩的事。
-async function checkTeamBindable(teamId) {
-  if (!teamId) return null
-  try {
-    const doc = await db.collection('delivery_teams').doc(teamId).get()
-    if (!doc.data) return '这支配送队暂时不可用，请重新选择'
-    return null
-  } catch (e) {
-    console.warn('校验配送队失败：', teamId, e)
-    return '这支配送队暂时不可用，请重新选择'
-  }
 }
 
 exports.main = async (event) => {
@@ -241,9 +199,6 @@ exports.main = async (event) => {
         const invalid = validateShop(fields)
         if (invalid) return { success: false, message: invalid }
 
-        const badTeam = await checkTeamBindable(fields.delivery_team_id)
-        if (badTeam) return { success: false, message: badTeam }
-
         const res = await db.collection('shops').add({
           data: Object.assign({}, fields, {
             owner: openid,
@@ -265,9 +220,6 @@ exports.main = async (event) => {
         const fields = pickShopFields(event)
         const invalid = validateShop(fields)
         if (invalid) return { success: false, message: invalid }
-
-        const badTeam = await checkTeamBindable(fields.delivery_team_id)
-        if (badTeam) return { success: false, message: badTeam }
 
         await db.collection('shops').doc(shop._id).update({
           data: Object.assign({}, fields, { updated_at: new Date() })

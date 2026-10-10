@@ -11,6 +11,7 @@ const COLLECTIONS = {
   task: 'task_items',
   group: 'group_items',
   shop: 'shops',
+  team: 'delivery_teams',
   message: 'messages'
 }
 
@@ -42,6 +43,7 @@ exports.main = async (event) => {
     // 三种内容的字段名都不一样：
     //   帖子   title  + _openid（小程序端 add 自带）
     //   店铺   name   + owner  （云函数写库不带 _openid，归属显式存）
+    //   配送队 name   + admin
     //   留言   content+ author
     let title = ''
     let ownerOpenid = ''
@@ -49,7 +51,7 @@ exports.main = async (event) => {
       const doc = await db.collection(collection).doc(targetId).get()
       const d = doc.data || {}
       title = d.title || d.name || d.content || ''
-      ownerOpenid = d._openid || d.owner || d.author || ''
+      ownerOpenid = d._openid || d.owner || d.admin || d.author || ''
     } catch (e) {
       console.warn('被举报内容已不存在：', targetType, targetId)
     }

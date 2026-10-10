@@ -42,7 +42,7 @@
     </view>
 
     <view class="slot-line">
-      <text class="slot-label">送达时间</text>
+      <text class="slot-label">到点时间</text>
       <picker mode="time" value="{{batch.deliver_time}}" bindchange="onBatchInput" data-field="deliver_time">
         <view class="time">{{batch.deliver_time}}</view>
       </picker>

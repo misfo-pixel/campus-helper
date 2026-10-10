@@ -1,0 +1,115 @@
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.block-empty {
+  text-align: center;
+  padding: 40rpx 28rpx;
+}
+
+/* ---------- 开队码 ---------- */
+.list {
+  padding: 0 28rpx;
+}
+
+.code-row {
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.code-row:last-child {
+  border-bottom: none;
+}
+
+.code-main {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+/* 要对着念给人听，等宽 + 拉开字距 */
+.code {
+  font-family: Menlo, "SF Mono", monospace;
+  font-size: 34rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  color: var(--color-primary);
+}
+
+.code-dead {
+  color: var(--color-text-light);
+  text-decoration: line-through;
+}
+
+.code-note {
+  font-size: 26rpx;
+  color: #555;
+}
+
+.code-sub {
+  display: flex;
+  align-items: center;
+  margin-top: 4rpx;
+}
+
+.code-copy {
+  margin-left: auto;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* ---------- 配送队 ---------- */
+.team {
+  padding: 28rpx;
+}
+
+.team-down {
+  opacity: .75;
+}
+
+.team-head {
+  display: flex;
+  align-items: center;
+}
+
+.team-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.team-pill {
+  margin-left: auto;
+  font-size: 22rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: #4a4a4a;
+  color: #fff;
+}
+
+.team-line {
+  margin-top: 6rpx;
+}
+
+.team-stats {
+  margin-top: 8rpx;
+  font-size: 26rpx;
+}
+
+.team-bad {
+  color: #C8102E;
+  font-weight: 700;
+}
+
+.team-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+}

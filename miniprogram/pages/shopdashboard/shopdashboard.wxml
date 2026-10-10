@@ -77,6 +77,8 @@
         </view>
 
         <view class="order-buyer">{{item.buyer_nickname || '买家'}} · {{item.pickup_info}}</view>
+        <!-- 买家选了「其他」手填的地址：不在楼栋名单里，确认能送到再接 -->
+        <view wx:if="{{item.address_unlisted}}" class="order-unlisted">名单外地址，先确认能不能送到</view>
 
         <view class="order-items">
           <view wx:for="{{item.items}}" wx:for-item="product" wx:key="name" class="order-product">
@@ -96,6 +98,10 @@
         <view class="order-contact">
           <text class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
           <text wx:if="{{item.contact_wechat}}" class="order-copy" bindtap="copyWechat" data-wechat="{{item.contact_wechat}}">复制</text>
+        </view>
+        <view wx:if="{{item.phone}}" class="order-contact">
+          <text class="text-light">手机：{{item.phone}}</text>
+          <text class="order-copy" bindtap="callBuyer" data-phone="{{item.phone}}">拨打</text>
         </view>
 
         <view wx:if="{{item.status === 'cancelled' && item.cancel_reason}}" class="order-cancel">
@@ -134,9 +140,9 @@
         <view class="entry-icon"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
         <view class="entry-label">新单提醒</view>
       </view>
-      <view wx:if="{{teamEnabled}}" class="entry card" bindtap="goToDeliveryAsk">
+      <view wx:if="{{teamEnabled && shop.needs_delivery !== false}}" class="entry card" bindtap="goToDeliveryAsk">
         <view class="entry-icon"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
-        <view class="entry-label">配送状态</view>
+        <view class="entry-label">找配送队</view>
       </view>
     </view>
   </block>

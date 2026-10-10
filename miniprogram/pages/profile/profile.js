@@ -1,5 +1,5 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
-const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED, GROUP_MODULE_ENABLED } = require('../../config.js')
+const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED, GROUP_MODULE_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
 
 Page({
   data: {
@@ -9,10 +9,12 @@ Page({
     isAdmin: false,
     isSuperAdmin: false,
     canSeeDelivery: false,  // 配送队管理员 / 有店的店长 / 已在队里的人
+    canManageTeams: false,  // 发开队码、下架配送队：超管 / 运营管理员
     shopEnabled: SHOP_MODULE_ENABLED,
     ordering: ORDERING_ENABLED,   // 黄页模式下没有订单这回事
     teamEnabled: TEAM_MODULE_ENABLED,
     groupEnabled: GROUP_MODULE_ENABLED,
+    exactAddressEnabled: EXACT_ADDRESS_ENABLED,
     pendingReports: 0
   },
   goToEdit: function () {
@@ -32,6 +34,12 @@ Page({
   },
   goToTeam: function () {
     wx.navigateTo({ url: '/pages/teamdashboard/teamdashboard' })
+  },
+  goToBuildingAdmin: function () {
+    wx.navigateTo({ url: '/pages/buildingadmin/buildingadmin' })
+  },
+  goToTeamAdmin: function () {
+    wx.navigateTo({ url: '/pages/teamadmin/teamadmin' })
   },
   goToFeedbacks: function () {
     wx.navigateTo({ url: '/pages/feedbacks/feedbacks' })
@@ -62,7 +70,8 @@ Page({
         isAdmin: isAdmin,
         isSuperAdmin: isSuper,
         // 先按角色给一次，下面再根据「有没有店 / 在不在队里」补
-        canSeeDelivery: isSuper || isOpsAdmin
+        canSeeDelivery: isSuper || isOpsAdmin,
+        canManageTeams: isSuper || isOpsAdmin
       })
       guideProfileSetupOnce(profile)
       if (isAdmin) this.loadPendingReports()

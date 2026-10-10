@@ -50,36 +50,6 @@
   margin-top: 6rpx;
 }
 
-/* 可配送时段：一个时段一个小标签，换行排。
-   用标签而不是一行逗号隔开，是因为「9-19 周六 18:00-20:00」本身就有三段，
-   连着写成一串的话，店长得逐字断句才看得出哪到哪是一个时段。 */
-.pick-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10rpx;
-  margin-top: 12rpx;
-}
-
-.pick-slot {
-  font-size: 22rpx;
-  color: var(--color-primary);
-  background: #fdf0f2;
-  border-radius: 6rpx;
-  padding: 6rpx 12rpx;
-}
-
-.pick-slot-more {
-  font-size: 22rpx;
-  color: var(--color-text-light);
-  padding: 6rpx 0;
-}
-
-.pick-slots-none {
-  font-size: 22rpx;
-  color: var(--color-text-light);
-  margin-top: 12rpx;
-}
-
 .note-box {
   width: auto;
   height: 180rpx;
@@ -122,6 +92,41 @@
   color: #3a7d44;
 }
 
+.req-status-no_show {
+  background: #fdecee;
+  color: #C8102E;
+}
+
+.req-ops {
+  display: flex;
+  justify-content: flex-end;
+  gap: 40rpx;
+  margin-top: 20rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--color-border);
+}
+
+.req-op {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+}
+
+.req-op-bad {
+  color: #C8102E;
+  font-weight: 700;
+}
+
+/* 队伍靠不靠谱：送达几单、爽约几次 */
+.pick-rep {
+  font-size: 22rpx;
+  color: #3a7d44;
+  margin-top: 8rpx;
+}
+
+.pick-rep-bad {
+  color: #C8102E;
+}
+
 .req-time {
   font-size: 22rpx;
   margin-top: 6rpx;
@@ -152,4 +157,127 @@
   height: 180rpx;
   border-radius: 12rpx;
   background: #f2f2f2;
+}
+
+/* ---------- 页头 ---------- */
+.ask-hero {
+  padding: 40rpx 36rpx 36rpx;
+}
+
+.ask-hero .hero-sub {
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+.ask-off {
+  line-height: 1.6;
+}
+
+.ask-link {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.ask-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 送上门 / 送到取货点。工作台卡片上是同一个标签 */
+.ask-tag {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-accent);
+  border-radius: 999rpx;
+  padding: 4rpx 16rpx;
+}
+
+/* ---------- 送哪、几单 ---------- */
+.lines {
+  padding: 8rpx 28rpx 24rpx;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.line-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.line-fee {
+  margin-left: 12rpx;
+  font-size: 24rpx;
+  font-weight: normal;
+  color: var(--color-text-light);
+}
+
+.line-count {
+  width: 120rpx;
+  height: 64rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  background: var(--color-bg);
+  border-radius: 12rpx;
+}
+
+.line-unit {
+  font-size: 26rpx;
+  color: var(--color-text-light);
+}
+
+.line-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20rpx;
+}
+
+.line-total {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.line-warn {
+  margin-top: 16rpx;
+  padding: 14rpx 20rpx;
+  border-radius: 12rpx;
+  background: #fdecee;
+  color: #C8102E;
+  font-size: 24rpx;
+  line-height: 1.6;
+}
+
+/* ---------- 记录里的价格行 ---------- */
+.req-price {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.req-price-detail {
+  font-size: 26rpx;
+}
+
+.req-price-total {
+  margin-left: auto;
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--color-primary);
 }

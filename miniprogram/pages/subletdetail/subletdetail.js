@@ -2,6 +2,7 @@ const { markStale } = require('../../utils/refresh.js')
 const { takePreview } = require('../../utils/preview.js')
 const { prefetchCover, detailShare } = require('../../utils/share.js')
 const { isDemand, closedLabel, reviewHint, rentText } = require('../../utils/kinds.js')
+const { today } = require('../../utils/date.js')
 
 const app = getApp()
 
@@ -10,6 +11,8 @@ Page({
     item: null,
     canDelete: false,
     isOwner: false,
+    canEditEnd: false,   // 已租出、被驳回的改日期没意义；过期的改到以后等于续上架
+    endStart: '',        // 结束日的下限：不早于今天，也不早于起租日
     seller: { nickname: '', avatarUrl: '' },
     demand: false,       // 求租帖：没有房源照片
     rentText: '',        // 月租或预算区间，拼法见 utils/kinds.js
@@ -71,6 +74,8 @@ Page({
           seller: r.seller,
           isOwner: r.isOwner,
           canDelete: r.canDelete,
+          canEditEnd: r.isOwner && ['on_sale', 'expired', 'reviewing'].indexOf(r.item.status) !== -1,
+          endStart: r.item.start_date > today() ? r.item.start_date : today(),
           partial: false,
           loading: false
         })
@@ -79,6 +84,27 @@ Page({
       .catch(err => {
         console.error('加载详情失败：', err)
         this.setData({ item: null, partial: false, loading: false, notFound: true })
+      })
+  },
+
+  // 发布者改租期结束日。已过期的改到今天以后，顺手改回在售——
+  // 到期提醒里叫人来改日期，就是想让房源接着挂，不该改完还是「已过期」
+  onEndDateChange: function (e) {
+    const item = this.data.item
+    const data = { end_date: e.detail.value }
+    const relist = item.status === 'expired'
+    if (relist) data.status = 'on_sale'
+
+    wx.cloud.database().collection('sublet_items').doc(item._id).update({ data: data })
+      .then(() => {
+        markStale('sublet')   // 返回列表时要看到这次改动
+        const next = Object.assign({}, item, data)
+        this.setData({ item: next, closed: closedLabel('sublet', next) })
+        wx.showToast({ title: relist ? '已重新上架' : '已修改', icon: 'success' })
+      })
+      .catch(err => {
+        console.error('修改租期失败：', err)
+        wx.showToast({ title: '修改失败', icon: 'none' })
       })
   },
 
@@ -96,7 +122,7 @@ Page({
             markStale('sublet')   // 返回列表时要看到这次改动
             // 从分享卡片冷启动进来时 navigateBack 退不回去，页面会留在这儿，得当场换成已结束的样子
             const item = Object.assign({}, this.data.item, { status: 'rented' })
-            this.setData({ item: item, closed: closedLabel('sublet', item) })
+            this.setData({ item: item, closed: closedLabel('sublet', item), canEditEnd: false })
             wx.showToast({ title: '已标记租出', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {

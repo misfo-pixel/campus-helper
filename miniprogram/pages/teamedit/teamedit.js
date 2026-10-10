@@ -20,7 +20,7 @@ Page({
     description: '',
     contact_wechat: '',
     payment_note: '',
-
+    create_code: ''
   },
 
   onShow: function () {
@@ -84,6 +84,10 @@ Page({
     const d = this.data
     if (d.saving) return
 
+    if (d.isNew && !d.create_code.trim()) {
+      wx.showToast({ title: '请填写开队码', icon: 'none' })
+      return
+    }
     if (!d.name.trim()) {
       wx.showToast({ title: '请填写队伍名称', icon: 'none' })
       return
@@ -113,7 +117,8 @@ Page({
           name: d.name,
           description: d.description,
           contact_wechat: d.contact_wechat,
-          payment_note: d.payment_note
+          payment_note: d.payment_note,
+          create_code: d.create_code
         }
       })
 
@@ -125,12 +130,10 @@ Page({
       }
 
       if (d.isNew) {
-        // 没有核对这一步了：建完就能被店长选到。但选不选得到取决于
-        // 可配送时段——一条不填，店长那边按送达时间一筛就把你们筛掉了，
-        // 所以这句要把人直接指到工作台去。
+        // 没有核对这一步了：建完就能被店长选到
         wx.showModal({
           title: '队伍建好了',
-          content: '去工作台填上可配送时段，店长的送达时间落在里面，才选得到你们。',
+          content: '店长现在就能选到你们。有人发来配送请求时，会出现在配送工作台。',
           showCancel: false,
           confirmText: '知道了',
           success: () => this.load()

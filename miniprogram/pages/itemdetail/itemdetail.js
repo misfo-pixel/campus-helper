@@ -4,6 +4,7 @@ const { takePreview } = require('../../utils/preview.js')
 const { timedCall } = require('../../utils/timing.js')
 const { prefetchCover, detailShare } = require('../../utils/share.js')
 const { closedLabel, reviewHint } = require('../../utils/kinds.js')
+const { today } = require('../../utils/date.js')
 
 const app = getApp()
 
@@ -12,6 +13,8 @@ Page({
     item: null,
     isOwner: false,
     canDelete: false,
+    canEditExpire: false, // 已售、被驳回的改日期没意义；过期的改到以后等于续上架
+    today: today(),       // 日期选择器的下限，不让选过去的日子（选了当晚就被 autoExpire 下掉）
     seller: { nickname: '', avatarUrl: '' },
     closed: '',          // 已结束时顶部横幅上的字（已售出 / 已结束 / 已过期…），还开着就是空串
     loading: true,       // 必须从 true 开始：第一帧 item 还是 null，不写的话 wxml 会直接落到「已下架」分支
@@ -60,7 +63,7 @@ Page({
             markStale('item')   // 返回列表时要看到这次改动
             // 从分享卡片冷启动进来时 navigateBack 退不回去，页面会留在这儿，得当场换成已结束的样子
             const item = Object.assign({}, this.data.item, { status: 'sold' })
-            this.setData({ item: item, closed: closedLabel('item', item) })
+            this.setData({ item: item, closed: closedLabel('item', item), canEditExpire: false })
             wx.showToast({ title: '已标记售出', icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {
@@ -70,6 +73,36 @@ Page({
         }
       }
     })
+  },
+
+  // 发布者改下架日期。已过期的改到今天以后，顺手改回在售——
+  // 到期提醒里叫人来改日期，就是想让东西接着挂，不该改完还是「已过期」
+  onExpireChange: function (e) {
+    this.saveExpire(e.detail.value)
+  },
+
+  // 存空串就是不自动下架，和发布时不填一样（autoExpire 会排除空串）
+  clearExpire: function () {
+    this.saveExpire('')
+  },
+
+  saveExpire: function (date) {
+    const item = this.data.item
+    const data = { expire_date: date }
+    const relist = item.status === 'expired'
+    if (relist) data.status = 'on_sale'
+
+    wx.cloud.database().collection('secondhand_items').doc(item._id).update({ data: data })
+      .then(() => {
+        markStale('item')   // 返回列表时要看到这次改动
+        const next = Object.assign({}, item, data)
+        this.setData({ item: next, closed: closedLabel('item', next) })
+        wx.showToast({ title: relist ? '已重新上架' : (date ? '已修改' : '不再自动下架'), icon: 'success' })
+      })
+      .catch(err => {
+        console.error('修改下架日期失败：', err)
+        wx.showToast({ title: '修改失败', icon: 'none' })
+      })
   },
 
   // 点卖家头像进 TA 的主页，直接停在「闲置」那一页。
@@ -121,6 +154,7 @@ Page({
           seller: r.seller,
           isOwner: r.isOwner,
           canDelete: r.canDelete,
+          canEditExpire: r.isOwner && ['on_sale', 'expired', 'reviewing'].indexOf(r.item.status) !== -1,
           partial: false,
           loading: false
         })

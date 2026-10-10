@@ -34,7 +34,21 @@
       <view class="detail-text">{{item.description}}</view>
     </view>
 
-    <view wx:if="{{item.expire_date}}" class="kv-list">
+    <!-- 发布者自己看时这一行是入口：到期提醒叫人来这儿改日期，过期的改到以后就重新上架 -->
+    <view wx:if="{{canEditExpire}}" class="kv-list">
+      <!-- picker 的日期清不掉，「不自动下架」单独放在 picker 外面，点它不会弹出日期选择 -->
+      <view class="kv-row expire-row">
+        <picker class="expire-picker" mode="date" value="{{item.expire_date}}" start="{{today}}" bindchange="onExpireChange">
+          <view class="expire-picker-inner">
+            <text class="kv-label">下架日期</text>
+            <text class="kv-value {{item.expire_date ? '' : 'form-row-empty'}}">{{item.expire_date || '不自动下架'}}</text>
+            <text class="form-row-arrow">›</text>
+          </view>
+        </picker>
+        <text wx:if="{{item.expire_date}}" class="expire-clear" bindtap="clearExpire">不自动下架</text>
+      </view>
+    </view>
+    <view wx:elif="{{item.expire_date}}" class="kv-list">
       <view class="kv-row"><text class="kv-label">下架日期</text><text class="kv-value">{{item.expire_date}}</text></view>
     </view>
 

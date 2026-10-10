@@ -55,14 +55,25 @@
   </view>
 
   <!-- ========== 管理 ==========
-       标题本身也要跟着权限走，否则普通用户会看到一个空标题。
-       配送队核对已经整个撤掉：建队即可用，和店铺「提交即开店」一个口径 -->
+       标题本身也要跟着权限走，否则普通用户会看到一个空标题。 -->
   <view wx:if="{{isAdmin}}" class="profile-group">管理</view>
 
   <!-- 举报处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">
     <image src="/images/ui/shield.svg" class="profile-row-icon"></image><view class="profile-row-label">举报处理</view>
     <view wx:if="{{pendingReports > 0}}" class="profile-row-badge">{{pendingReports}}</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <!-- 开队码 + 下架配送队：超管 / 运营管理员 -->
+  <view wx:if="{{teamEnabled && canManageTeams}}" bindtap="goToTeamAdmin" class="card card-tap profile-row">
+    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">配送队管理</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <!-- 送上门的楼栋名单：超管 / 运营管理员 -->
+  <view wx:if="{{shopEnabled && exactAddressEnabled && canManageTeams}}" bindtap="goToBuildingAdmin" class="card card-tap profile-row">
+    <image src="/images/ui/box.svg" class="profile-row-icon"></image><view class="profile-row-label">配送楼栋</view>
     <view class="profile-row-arrow">›</view>
   </view>
 

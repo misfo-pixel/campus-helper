@@ -3,7 +3,7 @@
   <image src="/images/home-header.png" mode="widthFix" class="home-header"></image>
 
   <!-- 活动横幅：config.js 的 HOME_BANNERS，按日期自动上下架 -->
-  <image wx:if="{{banner}}" src="{{banner.image}}" mode="widthFix" bindtap="onTapBanner" class="home-banner"></image>
+  <image wx:if="{{banner}}" src="{{banner.image}}" mode="aspectFill" bindtap="onTapBanner" class="home-banner"></image>
 
   <!-- 入口格，哪些模块显示由 config.js 的开关决定（见 home.js 的 TILES） -->
   <view class="tile-grid">

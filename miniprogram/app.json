@@ -55,6 +55,7 @@
     "pages/shoplist/shoplist",
     "pages/shopdetail/shopdetail",
     "pages/shopcheckout/shopcheckout",
+    "pages/buildingpick/buildingpick",
     "pages/myshoporders/myshoporders",
     "pages/shopdashboard/shopdashboard",
     "pages/shopcreate/shopcreate",
@@ -65,6 +66,7 @@
     "pages/teamdashboard/teamdashboard",
     "pages/teamedit/teamedit",
     "pages/teamadmin/teamadmin",
+    "pages/buildingadmin/buildingadmin",
     "pages/teammanifest/teammanifest",
     "pages/settlement/settlement"
   ],

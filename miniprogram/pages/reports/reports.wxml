@@ -20,11 +20,12 @@
     <view wx:if="{{item.detail}}" class="text-light report-detail">{{item.detail}}</view>
 
     <view wx:if="{{status === 'pending'}}" class="report-actions">
-      <button bindtap="removeContent" data-id="{{item._id}}" class="btn-danger btn-sm">删除内容</button>
+      <button bindtap="removeContent" data-id="{{item._id}}" data-takedown="{{item.takedownOnly}}"
+              class="btn-danger btn-sm">{{item.takedownOnly ? '下架' : '删除内容'}}</button>
       <button class="btn-sm" bindtap="dismiss" data-id="{{item._id}}">不违规</button>
     </view>
     <view wx:else class="text-light report-done">
-      已{{item.action === 'delete' ? '删除内容' : '驳回'}}
+      已{{item.action === 'delete' ? (item.takedownOnly ? '下架' : '删除内容') : '驳回'}}
     </view>
   </view>
 </view>

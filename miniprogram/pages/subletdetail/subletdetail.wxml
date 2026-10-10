@@ -36,7 +36,12 @@
       <!-- 求租帖的房型和区域是选填，空着就是都行 -->
       <view class="kv-row"><text class="kv-label">房型</text><text class="kv-value">{{item.room_type || '不限'}}</text></view>
       <view class="kv-row"><text class="kv-label">{{demand ? '想找的区域' : '地址'}}</text><text class="kv-value">{{item.address || '不限'}}</text></view>
-      <view class="kv-row"><text class="kv-label">{{demand ? '想租' : '租期'}}</text><text class="kv-value">{{item.start_date}} 至 {{item.end_date}}</text></view>
+      <!-- 发布者自己看时，点租期改结束日：到期提醒叫人来这儿改，过期的改到以后就重新上架。
+           结束日是必填（autoExpire 按它下架），所以不给「不自动下架」 -->
+      <picker wx:if="{{canEditEnd}}" mode="date" value="{{item.end_date}}" start="{{endStart}}" header-text="租期改到哪天" bindchange="onEndDateChange">
+        <view class="kv-row"><text class="kv-label">{{demand ? '想租' : '租期'}}</text><text class="kv-value">{{item.start_date}} 至 {{item.end_date}}</text><text class="form-row-arrow">›</text></view>
+      </picker>
+      <view wx:else class="kv-row"><text class="kv-label">{{demand ? '想租' : '租期'}}</text><text class="kv-value">{{item.start_date}} 至 {{item.end_date}}</text></view>
       <view class="kv-row"><text class="kv-label">家具</text><text class="kv-value">{{item.furnished ? '带家具' : '不带家具'}}</text></view>
       <view wx:if="{{item.utilities}}" class="kv-row"><text class="kv-label">每月水电</text><text class="kv-value">${{item.utilities}}</text></view>
       <view wx:if="{{item.deposit}}" class="kv-row"><text class="kv-label">押金</text><text class="kv-value">${{item.deposit}}</text></view>

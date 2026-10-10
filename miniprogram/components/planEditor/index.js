@@ -22,6 +22,8 @@
 
 const { today } = require('../../utils/date.js')
 
+// deliver_time 界面上叫「到点时间」：店长几点到取货点。字段名没改，订单快照、
+// 批次 key、配送清单都认这个名字。
 const DEFAULT_BATCH = { date: '', cutoff: '11:00', deliver_time: '12:00' }
 
 Component({

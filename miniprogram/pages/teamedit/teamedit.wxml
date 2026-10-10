@@ -9,6 +9,13 @@
 
   <!-- 队员只能看，改不了 -->
   <block wx:if="{{isNew || role === 'admin'}}">
+    <!-- 建队要管理员给的开队码：有了群发，建一支队就能收到所有店长的请求 -->
+    <block wx:if="{{isNew}}">
+      <view class="section-title">开队码</view>
+      <input placeholder="找平台管理员要，8 位，7 天内有效" value="{{create_code}}" bindinput="onInput"
+             data-field="create_code" maxlength="8" class="card form-card code-input" />
+    </block>
+
     <view class="section-title">基本信息（必填）</view>
     <view class="field-hint">店长按对账结果把配送费结给你们，微信和收款方式要填能用的。</view>
     <input placeholder="队伍名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />

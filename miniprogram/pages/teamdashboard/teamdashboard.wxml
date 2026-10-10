@@ -8,95 +8,118 @@
     <view class="empty-box">
       <view class="empty-emoji"><image src="/images/ui/delivery.svg" class="ico-lg"></image></view>
       <view class="empty-title">你还不在配送队里</view>
+      <view class="text-light">建队要平台管理员给的开队码</view>
       <button class="btn-primary" bindtap="goToEdit" style="margin-top: 40rpx;">创建配送队</button>
       <button bindtap="joinTeam" style="margin-top: 20rpx;">用邀请码加入</button>
     </view>
   </block>
 
   <block wx:else>
-    <view class="card team-head">
-      <view class="team-meta">
-        <view class="team-name">{{team.name}}</view>
-        <view class="text-light">{{role === 'admin' ? '队长' : '队员'}}</view>
-      </view>
-      <view class="team-set" bindtap="goToEdit">设置 ›</view>
-    </view>
-
-    <!-- 可配送时段。店长填了送达时间，那一趟连取货带交接按前后各半小时算，
-         整段盖得住的队伍才选得中；一条都不填，谁也选不到你们——这就是以前的
-         打烊。放在工作台而不是队伍设置里：这东西一周要改好几次，不该埋在设置页。 -->
-    <view class="card slots">
-      <view class="slots-head">
-        <view class="slots-title">可配送时段</view>
-        <text wx:if="{{role === 'admin'}}" class="slots-add" bindtap="addSlot">+ 添加</text>
-      </view>
-      <view class="text-light slots-desc">
-        {{role === 'admin' ? '填上哪天几点能出车。店长的送达时间前后各半小时都落在这几段里，才选得到你们，所以两头留宽一点。改完自动保存。' : '队长填的出车时间，店长按送达时间对着这个挑队伍。'}}
-      </view>
-
-      <view wx:if="{{slots.length === 0}}" class="text-light slots-empty">
-        {{role === 'admin' ? '一条都没填，店长现在选不到你们。不接活的时候空着就行，想接了再加回来。' : '队长还没填，店长现在选不到你们。'}}
-      </view>
-
-      <!-- 队长就地改，队员只读 -->
-      <block wx:for="{{slots}}" wx:key="index">
-        <view wx:if="{{role === 'admin'}}" class="slot-row">
-          <picker mode="date" start="{{today}}" value="{{item.date}}"
-                  bindchange="onSlotChange" data-index="{{index}}" data-field="date">
-            <view class="slot-pick slot-date">{{item.dateText}}</view>
-          </picker>
-          <picker mode="time" value="{{item.start}}"
-                  bindchange="onSlotChange" data-index="{{index}}" data-field="start">
-            <view class="slot-pick">{{item.start}}</view>
-          </picker>
-          <text class="slot-dash">-</text>
-          <picker mode="time" value="{{item.end}}"
-                  bindchange="onSlotChange" data-index="{{index}}" data-field="end">
-            <view class="slot-pick">{{item.end}}</view>
-          </picker>
-          <text class="slot-del" bindtap="removeSlot" data-index="{{index}}">删除</text>
+    <!-- 队头：一眼看到有几单要处理 -->
+    <view class="hero head">
+      <view class="head-top">
+        <view class="head-name">{{team.name}}</view>
+        <text class="head-role">{{role === 'admin' ? '队长' : '队员'}}</text>
+        <view class="head-icons">
+          <view wx:if="{{role === 'admin'}}" class="head-chip" bindtap="askReminder">
+            <image src="/images/ui/bell.svg" class="head-ico"></image>
+          </view>
+          <view class="head-chip" bindtap="goToEdit">
+            <image src="/images/ui/gear.svg" class="head-ico"></image>
+          </view>
         </view>
-        <view wx:else class="slot-row slot-readonly">{{item.text}}</view>
-      </block>
+      </view>
+      <view class="head-stats">
+        <view class="head-stat">
+          <view class="head-num {{openCount ? 'head-num-hot' : ''}}">{{openCount}}</view>
+          <view class="head-label">待联系</view>
+        </view>
+        <view class="head-stat">
+          <view class="head-num">{{acceptedCount}}</view>
+          <view class="head-label">配送中</view>
+        </view>
+      </view>
     </view>
 
-    <view class="tabs">
-      <view class="tab {{tab === 'open' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="open">进行中</view>
-      <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">已送达</view>
+    <view wx:if="{{takedown}}" class="takedown">
+      <view class="takedown-title">队伍已被下架</view>
+      <view class="takedown-desc">{{team.takedown_reason === 'no_show' ? '爽约次数太多，' : ''}}收不到新请求，手上已接的单可以送完。有异议请在「我的 → 意见反馈」联系我们。</view>
     </view>
 
-    <view wx:if="{{requestsError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
-    <view wx:elif="{{requests.length === 0}}" class="text-light empty">
-      {{tab === 'open' ? '还没有店长找你们。有人发来配送请求时，你会收到微信提醒。' : '没有记录'}}
+    <!-- ========== 待处理 ========== -->
+    <view class="section-title section-title-bar">待处理</view>
+
+    <view wx:if="{{requestsError}}" class="text-light block-empty" bindtap="retry">读取失败，点击重试</view>
+    <view wx:elif="{{active.length === 0}}" class="card block-empty">
+      <view class="text-light">暂时没有店长找你们</view>
     </view>
 
-    <view wx:for="{{requests}}" wx:key="_id" class="card req">
+    <view wx:for="{{active}}" wx:key="_id" class="card req req-{{item.status}}">
       <view class="req-head">
         <text class="req-shop">{{item.shop_name}}</text>
         <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
       </view>
-
-      <view class="text-light req-time">{{item.timeText}} 发来</view>
+      <view class="req-time">
+        {{item.timeText}} 发来
+        <text wx:if="{{item.broadcast && item.status === 'open'}}" class="req-race">群发 · 先接先得</text>
+      </view>
+      <!-- 送哪、几单、多少钱：扫一眼就能决定接不接 -->
+      <view wx:if="{{item.tag}}" class="req-price">
+        <text class="req-tag">{{item.tag}}</text>
+        <text class="req-price-detail">{{item.detail}}</text>
+        <text class="req-price-total">{{item.totalText}}</text>
+      </view>
       <view class="req-note">{{item.note}}</view>
 
       <view class="req-contact">
-        <text class="text-light">店长微信：{{item.shop_wechat || '未填写'}}</text>
+        <text class="req-wechat-label">店长微信</text>
+        <text class="req-wechat">{{item.broadcast && item.status === 'open' ? '接下后可见' : (item.shop_wechat || '没填')}}</text>
         <text wx:if="{{item.shop_wechat}}" class="req-copy"
-              bindtap="copyWechat" data-text="{{item.shop_wechat}}">复制</text>
+              bindtap="copyWechat" data-text="{{item.shop_wechat}}">复制微信</text>
       </view>
 
-      <!-- 送达照片是这套流程里唯一的凭证，所以标记送达必须传图 -->
-      <view wx:if="{{item.photos.length > 0}}" class="req-photos">
-        <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"
-               src="{{ph}}" mode="aspectFill" class="req-photo" />
-      </view>
-
-      <view wx:if="{{item.status !== 'delivered'}}" class="req-actions">
-        <button wx:if="{{item.status === 'open'}}" class="btn-sm"
-                bindtap="accept" data-id="{{item._id}}">接下这单</button>
-        <button wx:else class="btn-primary btn-sm"
-                bindtap="deliver" data-id="{{item._id}}" loading="{{uploading}}">拍照标记送达</button>
+      <view class="req-actions">
+        <block wx:if="{{item.status === 'open'}}">
+          <text class="req-decline" bindtap="decline" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">不接</text>
+          <button class="btn-primary btn-sm" bindtap="accept" data-id="{{item._id}}"
+                  loading="{{busyId === item._id}}">接下这单</button>
+        </block>
+        <!-- 去不了就退单，别不吭声：店长标「没来送」会记爽约，满 3 次下架 -->
+        <block wx:else>
+          <text class="req-decline" bindtap="release" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">退单</text>
+          <!-- 送达照片是这套流程里唯一的凭证，所以标记送达必须传图 -->
+          <button class="btn-primary btn-sm" bindtap="deliver" data-id="{{item._id}}"
+                  loading="{{busyId === item._id}}">拍照标记送达</button>
+        </block>
       </view>
     </view>
+
+    <!-- ========== 历史 ========== -->
+    <block wx:if="{{history.length}}">
+      <view class="section-title section-title-bar">历史</view>
+      <view class="card history">
+        <block wx:for="{{history}}" wx:key="_id">
+          <view wx:if="{{historyOpen || index < historyFolded}}" class="his-row">
+            <view class="his-main">
+              <view class="his-head">
+                <text class="his-shop">{{item.shop_name}}</text>
+                <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
+              </view>
+              <view class="his-time">{{item.timeText}} 发来{{item.endText ? ' · ' + item.endText + item.endVerb : ''}}</view>
+              <view wx:if="{{item.tag}}" class="his-note">{{item.tag}} · {{item.detail}} · {{item.totalText}}</view>
+            <view class="his-note">{{item.note}}</view>
+            </view>
+            <view wx:if="{{item.photos.length}}" class="his-photos">
+              <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"
+                     src="{{ph}}" mode="aspectFill" class="his-photo"
+                     bindtap="previewPhoto" data-urls="{{item.photos}}" data-current="{{ph}}" />
+            </view>
+          </view>
+        </block>
+        <view wx:if="{{history.length > historyFolded}}" class="his-more" bindtap="toggleHistory">
+          {{historyOpen ? '收起' : '展开全部 ' + history.length + ' 条'}}
+        </view>
+      </view>
+    </block>
   </block>
 </view>

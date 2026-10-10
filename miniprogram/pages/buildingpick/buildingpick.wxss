@@ -1,0 +1,97 @@
+/* 搜索框钉在顶上，名单长，翻下去也能随时改关键词 */
+.search-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 20rpx 32rpx;
+  background: var(--color-bg);
+}
+
+.search-input {
+  height: 76rpx;
+  padding: 0 28rpx;
+  border-radius: 999rpx;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  font-size: 28rpx;
+}
+
+.pick-page {
+  padding-top: 8rpx;
+}
+
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.area {
+  margin: 24rpx 8rpx 12rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  color: var(--color-primary);
+}
+
+.list {
+  padding: 0 28rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:active {
+  opacity: .6;
+}
+
+.row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 30rpx;
+}
+
+.row-on .row-name {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.row-kind {
+  flex-shrink: 0;
+  font-size: 22rpx;
+  color: var(--color-text-light);
+}
+
+.other {
+  margin-top: 32rpx;
+}
+
+.other:active {
+  opacity: .7;
+}
+
+.other-name {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.other-desc {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+}
+
+.missing {
+  margin: 16rpx 8rpx 48rpx;
+  text-align: center;
+  font-size: 24rpx;
+  line-height: 1.7;
+  color: var(--color-text-light);
+}

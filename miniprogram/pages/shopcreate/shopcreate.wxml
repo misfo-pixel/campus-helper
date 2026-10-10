@@ -57,6 +57,7 @@
 
       <!-- 两种送法二选一，和小店设置同一个分段按钮。
            向导是第一次见这两个词，所以底下多一句当前这种是什么意思 -->
+      <block wx:if="{{exactAddressEnabled}}">
       <view class="subsection-title">送到哪里</view>
       <view class="kind-switch address-switch">
         <view class="kind-switch-item {{exactAddress ? 'kind-switch-on' : ''}}"
@@ -67,57 +68,13 @@
       <view class="field-hint">
         {{exactAddress ? '买家下单时填自己的地址，送上门。' : '你设几个取货点，买家挑一个过来取。'}}
       </view>
+      </block>
 
-      <!-- 只有送上门才有「谁来送」这一问 -->
       <block wx:if="{{exactAddress}}">
-        <view class="pick pick-sm {{deliveryMode === 'self' ? 'pick-on' : ''}}" bindtap="pickMode" data-mode="self">
-          <view class="pick-body">
-            <view class="pick-name">我自己送</view>
-          </view>
-        </view>
-
-        <!-- 上面填的送达时间没有一支队能接就置灰，理由写在卡片里 -->
-        <view wx:if="{{teamEnabled}}"
-              class="pick pick-sm {{deliveryMode === 'team' ? 'pick-on' : ''}} {{teamPickDisabled ? 'pick-off' : ''}}"
-              bindtap="pickMode" data-mode="team">
-          <view class="pick-body">
-            <view class="pick-name">找配送队</view>
-            <view class="pick-desc">
-              {{teamPickDisabled ? teamPickReason : '先绑定一支队；开店后有单要送，在工作台「配送状态」里发请求。'}}
-            </view>
-          </view>
-        </view>
-
-        <block wx:if="{{teamEnabled && deliveryMode === 'team'}}">
-          <view wx:if="{{teamsError}}" class="text-light team-empty" bindtap="loadTeams">读取配送队失败，点击重试</view>
-          <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
-
-          <!-- 选完队又把送达时间改到人家没空的点上：不把选择清掉，只说一句 -->
-          <view wx:if="{{teamWarn}}" class="team-warn">{{teamWarn}}</view>
-
-          <view wx:for="{{teams}}" wx:key="_id"
-                class="pick pick-sm team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
-                bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
-            <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
-            <view class="pick-body">
-              <view class="pick-name">
-                {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>
-              </view>
-              <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>
-              <!-- 时间对不上的队更要把时段摆出来：店长照着改送达时间就能用上 -->
-              <view wx:if="{{item.slotTexts.length}}" class="team-slots">
-                可配送
-                <text wx:for="{{item.slotTexts}}" wx:for-item="slot" wx:key="index" class="team-slot">{{slot}}</text>
-                <text wx:if="{{item.slotMore}}" class="team-slot">还有 {{item.slotMore}} 段</text>
-              </view>
-              <view wx:else class="team-slots">还没填可配送时段</view>
-            </view>
-          </view>
-        </block>
-
-        <input placeholder="配送费（美元）" type="digit"
+        <input placeholder="配送费（美元/单）" type="digit"
                value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
                class="card form-card" />
+        <view class="field-hint">买家下单时付这个；找配送队送时，也按这个价付给配送队。</view>
       </block>
 
       <!-- 服务地点只有买家自取才用得上 -->

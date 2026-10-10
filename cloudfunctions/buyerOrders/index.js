@@ -120,6 +120,14 @@ async function buildOrderItems(shopId, rawItems) {
   return { items: items, subtotal: Math.round(subtotal * 100) / 100 }
 }
 
+// 不猜是美国号还是国内号：11 位以 1 开头的两边都有（1-763-… 和 137…），
+// 猜错了反而拨不通。只要 10~15 位数字就收，按买家输入的样子存
+function normalizePhone(raw) {
+  const text = String(raw || '').trim().slice(0, 30)
+  const digits = text.replace(/\D/g, '')
+  return (digits.length >= 10 && digits.length <= 15) ? text : ''
+}
+
 exports.main = async (event) => {
   const openid = cloud.getWXContext().OPENID
   const action = event.action
@@ -166,6 +174,10 @@ exports.main = async (event) => {
         let point = null
         let batch = null
         let address = ''
+        let building = null
+        let unlisted = ''      // 名单外手填的地址
+        let unit = ''
+        let phone = ''
         let fee = 0
 
         if (needsDelivery) {
@@ -175,9 +187,27 @@ exports.main = async (event) => {
           }
 
           if (exactAddress) {
-            // 送到买家自己填的地址，没有点位可选，配送费是店长定的一口价
-            address = String(event.address || '').trim().slice(0, 200)
-            if (!address) return { success: false, message: '请填写收货地址' }
+            // 送到买家地址：从楼栋名单里挑楼（见 buildings 云函数），再填房间号。
+            // 名单外的选「其他」手填（building_id: 'other'），订单上标 address_unlisted，
+            // 店长自己判断送不送得到；下单成功后再写一条意见反馈，管理员核实后加进名单。
+            // 旧版小程序还在传自由文本 address，让它更新——收下来就等于没限定
+            if (!event.building_id) return { success: false, message: '小程序有更新，请退出后重新打开再下单' }
+            unit = String(event.unit || '').trim().slice(0, 40)
+            if (!unit) return { success: false, message: '请填写房间号' }
+
+            if (event.building_id === 'other') {
+              unlisted = String(event.other_address || '').trim().slice(0, 100)
+              if (unlisted.length < 4) return { success: false, message: '请填写完整的地址' }
+              address = unlisted + ', ' + unit
+            } else {
+              try {
+                building = (await db.collection('delivery_buildings').doc(event.building_id).get()).data
+              } catch (e) {
+                building = null
+              }
+              if (!building || !building.active) return { success: false, message: '这栋楼不在配送范围内，请重新选择' }
+              address = building.name + ', ' + unit
+            }
             fee = Math.round((Number(shop.flat_delivery_fee) || 0) * 100) / 100
           } else {
             // 客户自取：到店长设的某个点来拿，费率跟着点位走
@@ -205,6 +235,12 @@ exports.main = async (event) => {
 
         const contactWechat = (event.contact_wechat || '').trim()
         if (!contactWechat) return { success: false, message: '请填写你的微信号' }
+
+        // 线下交付的单要手机号：找不到楼、送到了没人应、微信没回，都得能打通电话
+        if (needsDelivery) {
+          phone = normalizePhone(event.phone)
+          if (!phone) return { success: false, message: '请填写正确的手机号' }
+        }
 
         // 配送费全归店长。配送队那条线现在是店长和队长私下谈钱，
         // 平台不再记「店长欠队伍多少」——对账模块已经不接入了。
@@ -235,6 +271,12 @@ exports.main = async (event) => {
             needs_delivery: needsDelivery,
             exact_address: exactAddress,
             address: address,
+            // 楼栋快照：楼名以后改了，这一单还是下单时那个名字
+            building_id: building ? building._id : '',
+            building_name: building ? building.name : '',
+            address_unlisted: !!unlisted,
+            unit: unit,
+            phone: phone,
             pickup_point: point ? point.name : '',
             // 工作台和订单列表直接显示这一行：送上门显示地址，自取显示点位
             pickup_info: exactAddress ? address : (point ? point.name : '线上服务，无需取货'),
@@ -264,6 +306,35 @@ exports.main = async (event) => {
             updated_at: new Date()
           }
         })
+
+        // 名单外地址：替买家写一条意见反馈，管理员在「意见反馈」里就能看到，
+        // 核实后去「配送楼栋」加进名单。买家不用自己再去反馈页填一遍。
+        // 同一个地址已经有一条没处理的就不重复写。写不进去不影响下单。
+        if (unlisted) {
+          try {
+            const content = '下单时填了名单外的地址：' + unlisted + '（小店：' + shop.name + '）。核实在范围内的话，去「配送楼栋」加进名单。'
+            const key = unlisted.toLowerCase().replace(/\s+/g, ' ')
+            const dup = await db.collection('feedback').where({
+              type: '楼栋补录',
+              unlisted_key: key,
+              replied: db.command.neq(true)
+            }).count()
+            if (!dup.total) {
+              await db.collection('feedback').add({
+                data: {
+                  _openid: openid,   // 归属给买家，管理员回复时通知的是他
+                  type: '楼栋补录',
+                  content: content,
+                  contact: contactWechat,
+                  unlisted_key: key,
+                  createTime: db.serverDate()
+                }
+              })
+            }
+          } catch (e) {
+            console.warn('楼栋补录反馈写入失败（不影响下单）：', e)
+          }
+        }
 
         // 通知店长有新订单。店长得自己在工作台授权过才收得到，
         // 发不出去是常态，绝不能让它影响下单本身。

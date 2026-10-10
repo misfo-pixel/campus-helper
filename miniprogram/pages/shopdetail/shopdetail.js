@@ -5,7 +5,7 @@
 
 const { withCover, clip } = require('../../utils/share.js')
 const { toLocalPath } = require('../../utils/poster.js')
-const { ORDERING_ENABLED } = require('../../config.js')
+const { ORDERING_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
 const { TEMPLATES, askOrGuide } = require('../../utils/subscribe.js')
 
 const CART_KEY = 'shopCart'
@@ -30,6 +30,7 @@ function cutoffPhrase(batches) {
 Page({
   data: {
     ordering: ORDERING_ENABLED,   // 黄页模式下整套购物车/下单都不出现
+    exactAddressEnabled: EXACT_ADDRESS_ENABLED,
     loading: true,
     shop: null,
     items: [],

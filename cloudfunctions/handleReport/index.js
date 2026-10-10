@@ -12,6 +12,7 @@ const COLLECTIONS = {
   task: 'task_items',
   group: 'group_items',
   shop: 'shops',
+  team: 'delivery_teams',
   message: 'messages'
 }
 
@@ -50,6 +51,17 @@ exports.main = async (event) => {
                 updated_at: new Date()
               }
             })
+          } else if (report.targetType === 'team') {
+            // 配送队同理：底下挂着历史请求和送达照片，只下架不删。
+            // 下架后不出现在挑队列表、收不到群发；管理员可在「配送队管理」里恢复
+            await db.collection(collection).doc(report.targetId).update({
+              data: {
+                takedown: true,
+                takedown_reason: 'report',
+                takedown_at: new Date(),
+                updated_at: new Date()
+              }
+            })
           } else {
             await db.collection(collection).doc(report.targetId).remove()
           }
@@ -84,7 +96,9 @@ exports.main = async (event) => {
             toUser: report.reporter,
             data: {
               content: report.targetTitle || '你举报的内容',
-              result: action === 'delete' ? '已删除' : '未发现违规',
+              result: action === 'delete'
+                ? ((report.targetType === 'shop' || report.targetType === 'team') ? '已下架' : '已删除')
+                : '未发现违规',
               date: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
                     ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()),
               tip: action === 'delete'

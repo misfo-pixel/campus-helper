@@ -4,36 +4,33 @@
 // 现在只是一个收件箱——店长发来配送请求，队长看到后自己微信联系他。
 // 送不送、多少钱、怎么结，平台一概不管。
 //
-// 同日去掉了「服务中 / 打烊中」开关：队长在这儿填可配送时段，填了哪几段
-// 就是那几段接活，一段不填等于以前的打烊。一个状态少一个要人记得去关的地方，
-// 而且店长那边本来就要按送达时间挑队伍——光有一个「服务中」也答不了
-// 「你们周六晚上七点能不能送」。
+// 同日去掉了「服务中 / 打烊中」开关，换成队长在这儿填的「可配送时段」；
+// 2026-10-10 时段也撤了——队长不会天天去填，一过期队伍在店长那边就全灰。
+// 现在队伍一直可选，哪一趟能不能送，收到请求后在微信里定，不接就点「不接」。
 //
 // 原来那套（领活、取货清单、配送费对账）代码还在 teamOrders /
 // teammanifest / settlement 里，没接进来。等真有队伍跑起来了，
 // 照着他们实际怎么干再决定要不要恢复，比现在猜准。
 
-const { ask } = require('../../utils/subscribe.js')
+const { ask, askOrGuide } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { formatTime } = require('../../utils/date.js')
+const { describe } = require('../../utils/delivery.js')
 
-const STATUS_TEXT = { open: '待联系', accepted: '配送中', delivered: '已送达' }
-const { formatTime, today, dateText, slotText } = require('../../utils/date.js')
+const STATUS_TEXT = { open: '待联系', accepted: '配送中', delivered: '已送达', declined: '没接', no_show: '没来送' }
+const END_VERB = { delivered: ' 送达', declined: ' 回绝', no_show: ' 被标没来送' }
 
-// 可配送时段的默认值：傍晚两小时。学生队伍下了课才出车，先给一个大概率对的，
-// 队长只改不对的那一格，比三格都从头选快。
-const DEFAULT_SLOT = { start: '18:00', end: '20:00' }
-const MAX_SLOTS = 8   // 和云函数 cleanAvailability 里的上限是同一个数，改要一起改
+// 历史默认只露这么几条，工作台是拿来干活的，不是翻账本的
+const HISTORY_FOLDED = 3
 
-// 时段在界面上要显示成「9-19 周六」和整句两种形态，存的时候只存三个字段，
-// 所以每次改完都在这里补一遍展示文案。
-function decorateSlots(list) {
-  return (list || []).map(s => ({
-    date: s.date,
-    start: s.start,
-    end: s.end,
-    dateText: dateText(s.date),
-    text: slotText(s)
-  }))
+function decorateRequest(q) {
+  return Object.assign({}, q, describe(q), {
+    timeText: formatTime(q.created_at),
+    endText: formatTime(q.delivered_at || q.declined_at || q.no_show_at),
+    endVerb: END_VERB[q.status] || '',
+    // 退单的也落在 declined 里，单独说一句
+    statusText: q.released ? '退单' : (STATUS_TEXT[q.status] || q.status)
+  })
 }
 
 Page({
@@ -43,15 +40,18 @@ Page({
     requestsError: false,  // 读配送请求失败：不能显示成「还没有店长找你们」
     team: null,
     role: null,
-    tab: 'open',        // open 进行中（未送达）/ done 已送达
-    uploading: false,
-    requests: [],
-    slots: [],          // 可配送时段 [{ date, start, end, dateText, text }]
-    today: ''           // 日期选择器的下限，不让队长填到过去的日子
+    takedown: false,       // 被下架了：只剩手上的单收尾
+    active: [],            // 待联系在前、配送中在后
+    openCount: 0,
+    acceptedCount: 0,
+    history: [],           // 已送达 + 没接，最近 20 条
+    historyOpen: false,
+    historyFolded: HISTORY_FOLDED,
+    busyId: ''             // 正在处理的那一单，只让那一张卡的按钮转圈
   },
 
   onLoad: function () {
-    this.setData({ today: today() })
+    this.reqSeq = 0
   },
 
   onShow: function () {
@@ -60,12 +60,6 @@ Page({
 
   onPullDownRefresh: function () {
     this.load(() => wx.stopPullDownRefresh())
-  },
-
-  switchTab: function (e) {
-    const tab = e.currentTarget.dataset.tab
-    if (tab === this.data.tab) return
-    this.setData({ tab: tab, requests: [] }, () => this.loadRequests())
   },
 
   retry: function () {
@@ -89,16 +83,11 @@ Page({
       this.setData({
         team: r.team || null,
         role: r.role || null,
-        // 云函数已经把过期的时段滤掉了，这里拿到的就是还没过的
-        slots: decorateSlots(r.team && r.team.availability),
         loading: false,
         loadError: false
       })
 
       if (r.team) {
-        // 队长得自己授权才收得到「有人委托你配送」的提醒。
-        // 一次授权一条，所以每次打开工作台都补一次。
-        if (r.role === 'admin') ask('newOrder')
         this.loadRequests(done)
       } else if (done) {
         done()
@@ -111,107 +100,53 @@ Page({
     })
   },
 
+  // 待办和历史一次拿齐。onShow、下拉、操作完刷新可能叠在一起，
+  // 只认最后发出的那一次，晚到的旧回包直接丢掉。
   loadRequests: function (done) {
+    const seq = ++this.reqSeq
     wx.cloud.callFunction({
       name: 'deliveryRequest',
-      data: { action: 'listForTeam', done: this.data.tab === 'done' }
+      data: { action: 'listForTeam' }
     }).then(res => {
+      if (done) done()
+      if (seq !== this.reqSeq) return
       const r = (res && res.result) || {}
 
       if (!r.success) {
         this.setData({ requestsError: true })
         wx.showToast({ title: r.message || '读取失败', icon: 'none' })
-        if (done) done()
         return
       }
 
+      const active = (r.active || []).map(decorateRequest)
+      const opens = active.filter(q => q.status === 'open')
+      const accepted = active.filter(q => q.status !== 'open')
       this.setData({
         requestsError: false,
-        requests: (r.requests || []).map(q => Object.assign({}, q, {
-          statusText: STATUS_TEXT[q.status] || q.status,
-          timeText: formatTime(q.created_at)
-        }))
+        takedown: r.takedown === true,
+        active: opens.concat(accepted),
+        openCount: opens.length,
+        acceptedCount: accepted.length,
+        history: (r.history || []).map(decorateRequest)
       })
-      if (done) done()
     }).catch(err => {
+      if (done) done()
+      if (seq !== this.reqSeq) return
       console.error('读取配送请求失败：', err)
       this.setData({ requestsError: true })
       wx.showToast({ title: '读取失败', icon: 'none' })
-      if (done) done()
     })
   },
 
-  // ---- 可配送时段 ----
-  //
-  // 队长填「哪天几点能出车」，这是店长那边唯一的判断依据：店长在小店设置里
-  // 填了送达时间，按送达前后各半小时算一个窗口（取货、过去、交接都要时间），
-  // 整段盖得住的队伍才选得中，盖不住的置灰。判断在 utils/shopForm.js 的
-  // markTeams 里。所以这里一条都不填 = 谁也选不到你们，等于以前的打烊。
-  //
-  // 约到哪一趟仍然是他们俩在微信里敲定的，平台只管「能不能选」这一层。
-  //
-  // 改一下存一次：这里没有「保存」按钮。三个选择器 + 增删本来就是零碎操作，
-  // 攒着等提交，队长改完直接退出页面就全丢了。
-
-  addSlot: function () {
-    if (this.data.role !== 'admin') return
-    if (this.data.slots.length >= MAX_SLOTS) {
-      wx.showToast({ title: '最多填 ' + MAX_SLOTS + ' 个时段', icon: 'none' })
-      return
-    }
-    this.saveSlots(this.data.slots.concat({
-      date: this.data.today,
-      start: DEFAULT_SLOT.start,
-      end: DEFAULT_SLOT.end
-    }))
+  toggleHistory: function () {
+    this.setData({ historyOpen: !this.data.historyOpen })
   },
 
-  onSlotChange: function (e) {
-    const index = Number(e.currentTarget.dataset.index)
-    const field = e.currentTarget.dataset.field
-    if (!this.data.slots[index]) return
-
-    const next = this.data.slots.map((s, i) => (
-      i === index ? Object.assign({}, s, { [field]: e.detail.value }) : s
-    ))
-
-    // 结束时间不晚于开始时间的话，这一行读不出任何意思，店长也没法照着约。
-    // 不替队长猜他想改哪一头（改早了开始？还是想跨夜？），直接把这一下退回去。
-    if (next[index].end <= next[index].start) {
-      wx.showToast({ title: '结束时间要晚于开始时间', icon: 'none' })
-      return
-    }
-    this.saveSlots(next)
-  },
-
-  removeSlot: function (e) {
-    const index = Number(e.currentTarget.dataset.index)
-    this.saveSlots(this.data.slots.filter((s, i) => i !== index))
-  },
-
-  // 整份列表覆盖写。失败就把整份翻回改之前的样子——
-  // 半份新半份旧的话，队长看到的和店长看到的对不上，还查不出是哪一行没存上。
-  saveSlots: function (next) {
-    const before = this.data.slots
-    this.setData({ slots: decorateSlots(next) })
-
-    wx.cloud.callFunction({
-      name: 'deliveryManage',
-      data: {
-        action: 'setAvailability',
-        // 只把三个字段发上去，dateText / text 是界面用的，别存进库
-        availability: next.map(s => ({ date: s.date, start: s.start, end: s.end }))
-      }
-    }).then(res => {
-      const r = (res && res.result) || {}
-      if (!r.success) {
-        this.setData({ slots: before })
-        wx.showToast({ title: r.message || '保存失败', icon: 'none' })
-      }
-    }).catch(err => {
-      console.error('保存可配送时段失败：', err)
-      this.setData({ slots: before })
-      wx.showToast({ title: '保存失败', icon: 'none' })
+  // 订阅授权必须由点击触发，放在 onShow 里是弹不出来的。
+  // 一次授权只能收一条，所以给队长一个随手点的入口，接单时也顺手要一张。
+  askReminder: function () {
+    askOrGuide('newOrder').then(ok => {
+      if (ok) wx.showToast({ title: '下一条新请求会提醒你', icon: 'none' })
     })
   },
 
@@ -220,25 +155,69 @@ Page({
     if (!text) return
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制，去微信加他', icon: 'none' })
+      success: () => wx.showToast({ title: '已复制，去微信添加', icon: 'none' })
+    })
+  },
+
+  previewPhoto: function (e) {
+    const { urls, current } = e.currentTarget.dataset
+    if (!urls || !urls.length) return
+    wx.previewImage({ urls: urls, current: current })
+  },
+
+  // accept / decline / release 共用：发一个动作，成功就整份重拉
+  act: function (action, id, okText) {
+    if (this.data.busyId) return Promise.resolve()
+    this.setData({ busyId: id })
+    return wx.cloud.callFunction({
+      name: 'deliveryRequest',
+      data: { action: action, id: id }
+    }).then(res => {
+      const r = (res && res.result) || {}
+      if (r.success) {
+        if (okText) wx.showToast({ title: okText, icon: 'none' })
+      } else {
+        wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+      }
+      // 失败多半是别的队员已经处理过了，也重拉一次让界面对上
+      this.loadRequests()
+    }).catch(err => {
+      console.error(action + ' 失败：', err)
+      wx.showToast({ title: '操作失败', icon: 'none' })
+    }).then(() => {
+      this.setData({ busyId: '' })
     })
   },
 
   accept: function (e) {
-    const id = e.currentTarget.dataset.id
-    wx.cloud.callFunction({
-      name: 'deliveryRequest',
-      data: { action: 'accept', id: id }
-    }).then(res => {
-      const r = (res && res.result) || {}
-      if (r.success) {
-        this.loadRequests()
-      } else {
-        wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+    if (this.data.role === 'admin') ask('newOrder')
+    this.act('accept', e.currentTarget.dataset.id, '已接下，送到后记得拍照')
+  },
+
+  decline: function (e) {
+    const { id, broadcast } = e.currentTarget.dataset
+    wx.showModal({
+      title: '不接这一单？',
+      content: broadcast ? '只从你们的列表里移除，其他队还能接。' : '店长会收到通知，可以换一支队。',
+      confirmText: '不接',
+      confirmColor: '#C8102E',
+      success: res => {
+        if (res.confirm) this.act('decline', id, broadcast ? '已移除' : '已告诉店长')
       }
-    }).catch(err => {
-      console.error('接单失败：', err)
-      wx.showToast({ title: '操作失败', icon: 'none' })
+    })
+  },
+
+  // 接了去不了：退单。比不吭声强——店长标「没来送」会记爽约
+  release: function (e) {
+    const { id, broadcast } = e.currentTarget.dataset
+    wx.showModal({
+      title: '退掉这一单？',
+      content: broadcast ? '会放回给其他队接，店长会收到通知。' : '店长会收到通知，可以换一支队。',
+      confirmText: '退单',
+      confirmColor: '#C8102E',
+      success: res => {
+        if (res.confirm) this.act('release', id, '已退单')
+      }
     })
   },
 
@@ -248,7 +227,7 @@ Page({
   // 所以这一步是必须传图的，不给「直接标记送达」的口子。
   deliver: async function (e) {
     const id = e.currentTarget.dataset.id
-    if (this.data.uploading) return
+    if (this.data.busyId) return
 
     let chosen
     try {
@@ -265,7 +244,7 @@ Page({
     const files = (chosen.tempFiles || []).map(f => f.tempFilePath)
     if (!files.length) return
 
-    this.setData({ uploading: true })
+    this.setData({ busyId: id })
     wx.showLoading({ title: '上传中', mask: true })
 
     const uploaded = []
@@ -295,6 +274,7 @@ Page({
       if (!r.success) {
         await deleteCloudFiles(uploaded)
         wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+        this.loadRequests()
         return
       }
       wx.showToast({ title: '已标记送达', icon: 'success' })
@@ -306,7 +286,7 @@ Page({
       if (uploaded.length) await deleteCloudFiles(uploaded)
       wx.showToast({ title: '上传失败，请重试', icon: 'none' })
     } finally {
-      this.setData({ uploading: false })
+      this.setData({ busyId: '' })
     }
   },
 

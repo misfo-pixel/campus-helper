@@ -1,0 +1,109 @@
+.empty {
+  text-align: center;
+  margin-top: 120rpx;
+}
+
+.seed {
+  line-height: 1.6;
+}
+
+/* ---------- 加一栋 ---------- */
+.add-name {
+  height: 72rpx;
+  font-size: 30rpx;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.add-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.add-pick {
+  font-size: 26rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg);
+}
+
+.kind-seg {
+  display: flex;
+  padding: 4rpx;
+  border-radius: 12rpx;
+  background: var(--color-bg);
+}
+
+.kind-seg-item {
+  padding: 8rpx 18rpx;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+  border-radius: 10rpx;
+}
+
+.kind-seg-on {
+  background: var(--color-card);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.add-btn {
+  margin-top: 24rpx;
+  float: right;
+}
+
+.add::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+/* ---------- 名单 ---------- */
+.area {
+  margin: 24rpx 8rpx 12rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  color: var(--color-primary);
+}
+
+.list {
+  padding: 0 28rpx;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.row-name {
+  font-size: 28rpx;
+}
+
+.row-kind {
+  font-size: 22rpx;
+  color: var(--color-text-light);
+}
+
+/* 停用的划掉变灰，一眼看出哪些买家选不到 */
+.row-off .row-name {
+  color: var(--color-text-light);
+  text-decoration: line-through;
+}

@@ -5,10 +5,13 @@
   width: 100%;
 }
 
-/* 图是 686×300 满版出血的，圆角在这里切 */
+/* 图是 686×300 满版出血的，圆角在这里切。图从云存储现下，高度先写死占好位，
+   加载完不会把下面的入口格往下顶；没加载出来时露底色 */
 .home-banner {
   display: block;
   width: 100%;
+  height: 300rpx;
+  background: var(--color-border);
   margin: 16rpx 0 32rpx;
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);

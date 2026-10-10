@@ -9,10 +9,14 @@
 // 店长自己送还是外包给配送队，对买家是透明的——规则完全一样。
 
 const { myProfile } = require('../../utils/user.js')
+const { EXACT_ADDRESS_ENABLED } = require('../../config.js')
 const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 const CART_KEY = 'shopCart'
+
+// 上一单填的手机号 / 楼栋 / 房间号，下次直接带上。只存本机，不进云端
+const LAST_DELIVERY_KEY = 'lastDelivery'
 
 // 买家补充说明的配图。单独放一个目录，和店铺 Logo、商品图分开，
 // 将来要按订单清理时一眼能圈出范围。
@@ -38,7 +42,10 @@ Page({
     needsDelivery: true,
     // 送到我填的地址（true），还是我去固定点位自取（false）
     exactAddress: false,
-    address: '',
+    buildingId: '',
+    buildingName: '',
+    unit: '',
+    phone: '',
     flatFee: 0,
 
     points: [],
@@ -82,6 +89,20 @@ Page({
     }))
     this.setData({ cart: cart })
 
+    try {
+      const last = wx.getStorageSync(LAST_DELIVERY_KEY)
+      if (last) {
+        this.setData({
+          phone: last.phone || '',
+          buildingId: last.buildingId || '',
+          buildingName: last.buildingName || '',
+          unit: last.unit || ''
+        })
+      }
+    } catch (e) {
+      // 读不到就从空的开始填
+    }
+
     wx.cloud.callFunction({
       name: 'shopBrowse',
       data: { action: 'plan', shopId: cart.shopId }
@@ -109,7 +130,8 @@ Page({
 
       // 送到我填的地址：没有点位可选，配送费是店长定的一口价
       if (r.exact_address === true) {
-        if (!batches.length) {
+        // 送上门暂时关着（见 config.js），店长还没改成取货点之前先不接单
+        if (!EXACT_ADDRESS_ENABLED || !batches.length) {
           this.setData({ loading: false })
           wx.showModal({
             title: '暂时无法下单',
@@ -201,6 +223,15 @@ Page({
     this.setData({ [field]: e.detail.value })
   },
 
+  pickBuilding: function () {
+    wx.navigateTo({
+      url: '/pages/buildingpick/buildingpick?id=' + this.data.buildingId,
+      events: {
+        picked: b => this.setData({ buildingId: b._id, buildingName: b.name })
+      }
+    })
+  },
+
   onPointChange: function (e) {
     this.setData({ pointIndex: Number(e.detail.value) }, () => this.recalc())
   },
@@ -254,8 +285,19 @@ Page({
       wx.showToast({ title: '请填写你的微信号', icon: 'none' })
       return
     }
-    if (d.needsDelivery && d.exactAddress && !d.address.trim()) {
-      wx.showToast({ title: '请填写收货地址', icon: 'none' })
+    if (d.needsDelivery) {
+      const digits = d.phone.replace(/\D/g, '')
+      if (digits.length < 10 || digits.length > 15) {
+        wx.showToast({ title: '请填写正确的手机号', icon: 'none' })
+        return
+      }
+    }
+    if (d.needsDelivery && d.exactAddress && !d.buildingId) {
+      wx.showToast({ title: '请选择楼栋', icon: 'none' })
+      return
+    }
+    if (d.needsDelivery && d.exactAddress && !d.unit.trim()) {
+      wx.showToast({ title: '请填写房间号', icon: 'none' })
       return
     }
     if (d.needsDelivery && !d.exactAddress && d.pointIndex === null) {
@@ -276,7 +318,7 @@ Page({
     try {
       // 备注会被店长和配送员看到，属于 UGC
       if (!(await ensureContentOk({
-        texts: [d.note, d.contact_wechat],
+        texts: [d.note, d.contact_wechat, d.unit, d.buildingId === 'other' ? d.buildingName : ''],
         scene: 2
       }))) return
 
@@ -299,7 +341,10 @@ Page({
           shopId: d.cart.shopId,
           items: d.cart.items.map(i => ({ item_id: i.item_id, count: i.count })),
           pickup_point: d.exactAddress ? '' : d.points[d.pointIndex].name,
-          address: d.address,
+          building_id: d.exactAddress ? d.buildingId : '',
+          other_address: d.buildingId === 'other' ? d.buildingName : '',
+          unit: d.unit,
+          phone: d.phone,
           batch_key: batch.key,
           contact_wechat: d.contact_wechat,
           note: d.note,
@@ -315,6 +360,18 @@ Page({
       }
 
       wx.removeStorageSync(CART_KEY)
+      if (d.needsDelivery) {
+        try {
+          wx.setStorageSync(LAST_DELIVERY_KEY, {
+            phone: d.phone,
+            buildingId: d.buildingId,
+            buildingName: d.buildingName,
+            unit: d.unit
+          })
+        } catch (e) {
+          // 存不上下次再填一遍，不影响这一单
+        }
+      }
 
       wx.showModal({
         title: '订单已提交',

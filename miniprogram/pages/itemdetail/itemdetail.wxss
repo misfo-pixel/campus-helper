@@ -21,3 +21,16 @@
   background: var(--color-card);
   border-radius: var(--radius);
 }
+
+/* 发布者可改的下架日期行：左边整块是日期选择，右边「不自动下架」单独可点 */
+.expire-row { align-items: center; }
+.expire-picker { flex: 1; min-width: 0; }
+.expire-picker-inner { display: flex; align-items: center; }
+.expire-clear {
+  flex-shrink: 0;
+  margin-left: 24rpx;
+  padding-left: 24rpx;
+  font-size: 26rpx;
+  color: var(--color-primary);
+  border-left: 1rpx solid var(--color-border);
+}

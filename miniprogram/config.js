@@ -92,27 +92,37 @@ const SHOP_MODE = 'order'
 //
 // 2026-09-20 晚些时候又补了几件事：
 //   1. 「找配送队」不再是一个空标记，店铺要指明绑哪一支（delivery_team_id）。
-//      服务时间也跟着挪到了配送方式之前——可用与否要按送达时间判断。
-//   2. 队伍的「可配送时段」（delivery_teams.availability）成了唯一的接单信号：
-//      队长在工作台填几条「哪天几点能出车」，店长那一趟的送达时刻前后各留
-//      半小时（取货 + 过去 + 交接），这一整段盖得住才选得中这支队，盖不住的
-//      置灰。一条都不填 = 谁也选不到，这就替掉了原先那个「服务中 / 打烊中」
-//      开关（setOpen 已删）。少一个状态，也少一次「明明写着服务中，问了才
-//      知道那天没空」。
+//   2. 队伍的「服务中 / 打烊中」开关（setOpen）删了，换成队长在工作台填的
+//      「可配送时段」，按送达时间置灰。2026-10-10 时段也撤了：队长不会天天
+//      去填，一过期队伍就全灰，店长一支都选不了。现在队伍一直可选，哪一趟
+//      能不能送在微信里定，接不了的请求队长在工作台点「不接」。
 //   3. 队伍核对整个撤掉（pages/shopaudit + listForAudit / audit + audit_status）。
 //      建队即可用，和店铺「提交即开店」一个口径。原来留着核对是因为队伍会
 //      碰到别人的订单和买家联系方式；改成「发请求 + 队长自己微信联系店长」
 //      之后，平台既不派单也不下发买家信息，没有可核对的东西了。
 //
-// 判断留在小程序端（utils/shopForm.js 的 markTeams），服务端只拦「这支队
-// 不存在」：队长随时会改时段，服务端一卡，店长连改个营业时间都保存不了，
-// 而且他可能早就在微信里和队长约好了那一趟。
+// 2026-10-10 小店设置删掉「谁来送 / 绑定配送队」，配送费就是付给配送队的价，
+// 「配送状态」页改名「找配送队」，发请求只填单数、合计按配送费算。
+// 2026-10-10 群发 + 治理：店长可以发给所有队（先接先得）；建队要管理员发的
+// 开队码；队伍可被举报、可下架；店长可标「没来送」，满 3 次自动下架。
+// 细节见 cloudfunctions/deliveryManage 和 deliveryRequest 开头的说明。
 //
 // 刻意没做：送达前自动通知队长。那要定时触发器，而且撞上「一次性订阅消息」
 // 的配额（见 utils/subscribe.js 开头）——队长不打开小程序就攒不到票，
 // 自动通知会静默失败，而且失败了没人知道。等真有队伍在跑，看他们实际
 // 怎么用再决定，别再为一个不存在的角色先把工作流搭出来。
 const TEAM_MODULE_ENABLED = true
+
+// 「送到买家地址」（送上门）。2026-10-10 先关掉，只留「送到取货点」。
+//
+// 关的原因是送达时间没法估：取货点是店长自己定的点位和时刻，承诺得住；
+// 送上门要看店在哪、楼在哪、一趟车里排第几单，前后能差半小时，
+// 店长填的「送达时间」等于替自己控制不了的事打包票。等有了靠谱的估法再开。
+//
+// 关掉后：开店向导和小店设置里不再出现这个选项，「我的 → 配送楼栋」入口隐藏；
+// 之前已经选了送上门的店，买家暂时下不了单，店长进小店设置补上取货点保存即可。
+// 楼栋名单（delivery_buildings）和 pages/buildingpick 都留着，打开就能用。
+const EXACT_ADDRESS_ENABLED = false
 
 // 兴趣群组（pages/groupmarket，数据在 group_items）。2026-10-10 加的。
 //
@@ -128,15 +138,15 @@ const GROUP_MODULE_ENABLED = true
 // 首页广告语下面的活动横幅。按日期自动上下架，同一时间只显示排在最前的那一条，
 // 一条都没在期内就整块不显示。
 //
-// 图放在 images/banners/，686×300 的比例（首页卡片宽度），按 1.5 倍出图、存 JPG，
-// 每张控制在 150KB 以内——本地图片算进主包 2MB。源文件在仓库外的 posters/ 目录。
-// 换活动要发版；真要频繁换，再挪到云存储 + 数据库。
-//   image  本地路径
+// 图放云存储的 banners/ 目录，不进代码包（包里图片音频合计超 200K 代码质量就不过）。
+// 686×300 的比例（首页卡片宽度），750 宽出图、存 JPG，每张控制在 100KB 以内。
+// 源文件在仓库外的 posters/ 目录。换活动还是要发版；真要频繁换，再把这张表挪进数据库。
+//   image  云存储 File ID（cloud://…），控制台「存储」里上传后复制
 //   link   点了去哪（非 tabBar 页面，走 navigateTo）
 //   from / until  'YYYY-MM-DD'，两头都含，按用户手机的本地日期判断
 const HOME_BANNERS = [
   {
-    image: '/images/banners/halloween-2026.jpg',
+    image: 'cloud://cloud1-d1gv6rdj91aa53558.636c-cloud1-d1gv6rdj91aa53558-1457643521/banners/halloween-2026.jpg',
     link: '/pages/market/market',
     from: '2026-10-10',
     until: '2026-10-31'
@@ -164,6 +174,7 @@ module.exports = {
   // 到处写 SHOP_MODE === 'order' 太容易拼错，给一个布尔量
   ORDERING_ENABLED: SHOP_MODE === 'order',
   TEAM_MODULE_ENABLED: TEAM_MODULE_ENABLED,
+  EXACT_ADDRESS_ENABLED: EXACT_ADDRESS_ENABLED,
   GROUP_MODULE_ENABLED: GROUP_MODULE_ENABLED,
   HOME_BANNERS: HOME_BANNERS,
   SPONSORS_ENABLED: SPONSORS_ENABLED,

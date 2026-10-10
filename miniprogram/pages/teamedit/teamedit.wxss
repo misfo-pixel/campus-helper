@@ -87,3 +87,9 @@
   text-align: center;
   margin-top: 120rpx;
 }
+
+/* 开队码是大写字母数字，拉开字距好对着抄 */
+.code-input {
+  letter-spacing: 6rpx;
+  text-transform: uppercase;
+}

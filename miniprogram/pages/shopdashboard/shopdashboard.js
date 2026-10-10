@@ -229,6 +229,13 @@ Page({
     })
   },
 
+  // 找不到楼、到了没人应的时候用
+  callBuyer: function (e) {
+    const phone = e.currentTarget.dataset.phone
+    if (!phone) return
+    wx.makePhoneCall({ phoneNumber: phone.replace(/[^\d+]/g, ''), fail: () => {} })
+  },
+
   copyWechat: function (e) {
     const wechat = e.currentTarget.dataset.wechat
     if (!wechat) return

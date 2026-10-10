@@ -9,9 +9,23 @@ const db = cloud.database()
 //      pages/shopaudit）。建队即可用，和店铺「提交即开店」一个口径。
 //      当初留核对是因为队伍会碰到别人的订单和买家联系方式；现在平台既不
 //      派单也不下发买家信息，配送请求里只有店长自己的微信，没有可核对的东西。
-//   2. 队伍的「服务中 / 打烊中」开关（setOpen + open 字段）。能不能接活
-//      现在完全由 availability（可配送时段）表达：填了哪几段就是那几段接，
-//      一段不填等于打烊。老文档里的 open 字段没人读了，留着不管。
+//   2. 队伍的「服务中 / 打烊中」开关（setOpen + open 字段）。老文档里的
+//      open 字段没人读了，留着不管。
+//
+// 2026-10-10 加回一道门槛，并补上事后治理：
+//   1. 建队要「开队码」：管理员在「我的 → 配送队管理」里生成，一码一队，7 天
+//      过期（集合 team_create_codes）。原因是有了群发之后，任何人建一支队就能
+//      收到所有店长的请求。之前建好的队不受影响。
+//      注意和队伍自己的 join_code（拉队员用的邀请码）不是一回事。
+//   2. 队伍能被举报（submitReport 的 team 类型），管理员可以下架 / 恢复。
+//      下架 = takedown: true，不删记录：底下挂着历史请求和送达照片。
+//      下架的队不出现在挑队列表里、收不到群发、接不了新单。
+//   3. 爽约记录：店长可以把接了没来的单标成「没来送」，记在 no_show_count 上，
+//      满 3 次自动下架（deliveryRequest 的 NO_SHOW_LIMIT）（takedown_reason: 'no_show'），管理员核实后可恢复。
+//
+// 2026-10-10 又撤掉了「可配送时段」（setAvailability + availability 字段）：
+// 队长不会天天去填，时段一过期队伍在店长那边就全灰了。现在队伍一直可选，
+// 哪一趟能不能送，店长发请求后两人在微信里定。老文档里的 availability 留着不管。
 //
 // 定价不归平台。配送方案（服务地点 + 服务时间）属于实际执行配送的那一方：
 //   店长自送   → 存在 shops 上，店长在店铺设置里自己填
@@ -56,82 +70,22 @@ function cleanBatches(raw) {
   return [{ date: b.date, cutoff: b.cutoff, deliver_time: b.deliver_time }]
 }
 
-// 可配送时段。队长在工作台填「哪天几点能出车」。
-//
-// 这是队伍唯一的「接不接活」信号：店铺那一趟的送达时刻前后各半小时，
-// 整段落在某条时段里，这支队才选得中，盖不住的置灰（判断在小程序端
-// utils/shopForm.js 的 markTeams 里——服务端不拦，理由见 shopManage 的
-// checkTeamBindable）。留半小时是因为车得先取到货再过去，不是送达那一秒
-// 凭空出现。
-//
-// 和上面的 batches 不是一回事，别合并：batches 是店铺那一趟的截单时刻 +
-// 送达时刻，一家店一条；这里是队伍自己哪几段能出车，一支队好几条。
-//
-// 上限 8 条：再多就不是「最近能送」而是一张排班表了，店长也看不过来。
-const MAX_SLOTS = 8
-
-function cleanAvailability(raw) {
-  if (!Array.isArray(raw)) return []
-  const isTime = s => /^([01]\d|2[0-3]):[0-5]\d$/.test(s)
-  const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s)
-
-  return raw
-    .filter(s => s && isDate(s.date) && isTime(s.start) && isTime(s.end) && s.end > s.start)
-    .map(s => ({ date: s.date, start: s.start, end: s.end }))
-    // 按时间先后排好再存：店长看到的顺序就是时间顺序，不是队长录入的顺序。
-    // 队长那边不跟着排，免得他正改日期时整行跳走，下次进页面自然就是排好的。
-    .sort((a, b) => (a.date === b.date ? (a.start < b.start ? -1 : 1) : (a.date < b.date ? -1 : 1)))
-    .slice(0, MAX_SLOTS)
-}
-
-// 过去的时段照样存下来（和 cleanBatches 一个道理：一过期就拒绝保存，队长
-// 想加下周的都加不了），该不该露出由这里决定。
-//
-// 要按明尼苏达当地时间判断，不能用服务器时间——云函数跑在 UTC，
-// 晚上 7 点之后当天的时段会被算成「昨天的」全部消失。
-// 这段和 shopBrowse / buyerOrders 里的 nowInTZ 是同一份，云函数之间没法共享代码。
-const TZ = 'America/Chicago'
-
-function nowInTZ() {
-  const parts = {}
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: TZ,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hour12: false
-  }).formatToParts(new Date()).forEach(p => {
-    if (p.type !== 'literal') parts[p.type] = p.value
-  })
-  let hour = Number(parts.hour)
-  if (hour === 24) hour = 0
-  return {
-    date: parts.year + '-' + parts.month + '-' + parts.day,
-    minutes: hour * 60 + Number(parts.minute)
-  }
-}
-
-// 已经过完的时段不再下发。队长忘了删的上周时段，店长照着约就白约一场。
-// 队长那边也走这个过滤：他下次保存时提交的就是过滤后的列表，旧时段顺带清掉了。
-function upcomingSlots(list) {
-  const now = nowInTZ()
-  const toMinutes = hhmm => {
-    const bits = String(hhmm).split(':')
-    return Number(bits[0]) * 60 + Number(bits[1])
-  }
-  return (list || []).filter(s => {
-    if (!s || !s.date) return false
-    if (s.date < now.date) return false
-    if (s.date === now.date && toMinutes(s.end) <= now.minutes) return false
-    return true
-  })
+// 配送队管理（开队码、下架 / 恢复）归运营管理员和超管
+async function isTeamAdmin(openid) {
+  const me = await db.collection('users').where({ openid: openid }).limit(1).get()
+  const roles = (me.data[0] && me.data[0].roles) || []
+  return roles.includes('super_admin') || roles.includes('ops_admin')
 }
 
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'   // 去掉了 0/O/1/I/l
 
-function makeJoinCode() {
+function makeJoinCode(len) {
   let s = ''
-  for (let i = 0; i < 6; i++) s += CODE_CHARS.charAt(Math.floor(Math.random() * CODE_CHARS.length))
+  for (let i = 0; i < (len || 6); i++) s += CODE_CHARS.charAt(Math.floor(Math.random() * CODE_CHARS.length))
   return s
 }
+
+const CREATE_CODE_DAYS = 7
 
 async function getMyTeam(openid) {
   const asAdmin = await db.collection('delivery_teams').where({ admin: openid }).limit(1).get()
@@ -188,20 +142,15 @@ exports.main = async (event) => {
         // 邀请码只给队长看，免得队员随手转发出去
         const team = Object.assign({}, mine.team)
         if (mine.role !== 'admin') delete team.join_code
-        // 过期的时段不回给队长：他看到的这份列表，就是店长那边看到的那份
-        team.availability = upcomingSlots(team.availability)
 
         return { success: true, team: team, role: mine.role, members: members.data }
       }
 
-      // 店长在店铺设置 / 配送状态页里挑队伍时看的列表。
-      //
-      // 时段和店长那一趟对不上的队也照样返回，不在这里过滤：一来店长可能
-      // 已经绑了其中一支，服务端滤掉的话那支队会凭空消失，他会以为绑定丢了；
-      // 二来「什么时候的单」只有店长那边知道，服务端没有那个上下文。
-      // 该置灰还是该显示，由看得见上下文的那一层决定。
+      // 店长在「找配送队」页挑队伍时看的列表。
+      // 下架的队不给。送达 / 爽约次数一起带上，店长挑队时看得到这支队靠不靠谱。
       case 'listTeams': {
-        const res = await db.collection('delivery_teams').limit(50).get()
+        const res = await db.collection('delivery_teams')
+          .where({ takedown: db.command.neq(true) }).limit(50).get()
 
         const teams = res.data.map(t => ({
           _id: t._id,
@@ -210,35 +159,10 @@ exports.main = async (event) => {
           contact_wechat: t.contact_wechat,
           pickup_points: t.pickup_points || [],
           batches: t.batches || [],
-          // 队长填的可配送时段，店长拿自己的送达时间去比
-          availability: upcomingSlots(t.availability)
+          delivered_count: t.delivered_count || 0,
+          no_show_count: t.no_show_count || 0
         }))
-
-        // 还有时段可用的排前面，店长一眼看到能约的
-        teams.sort((a, b) => {
-          const an = a.availability.length ? 0 : 1
-          const bn = b.availability.length ? 0 : 1
-          return an - bn
-        })
         return { success: true, teams: teams }
-      }
-
-      // 队长改可配送时段。队员只能看——时间是队长和店长约的，队员改了会把
-      // 已经约好的一趟改没。
-      //
-      // 整份列表覆盖写，不做增删单条的接口：前端本来就拿着全量，
-      // 一次改一条还要处理「服务端这条已经不在了」的情况，不划算。
-      case 'setAvailability': {
-        const mine = await getMyTeam(openid)
-        if (!mine.team || mine.role !== 'admin') {
-          return { success: false, message: '只有队长能改可配送时段' }
-        }
-
-        const slots = cleanAvailability(event.availability)
-        await db.collection('delivery_teams').doc(mine.team._id).update({
-          data: { availability: slots, updated_at: new Date() }
-        })
-        return { success: true, availability: upcomingSlots(slots) }
       }
 
       case 'create': {
@@ -252,6 +176,21 @@ exports.main = async (event) => {
         if (!contactWechat) return { success: false, message: '请填写队长微信，店长结算时要联系你' }
         if (!paymentNote) return { success: false, message: '请填写收款方式，店长按这个结配送费' }
 
+        // 开队码：先占住（带 used: false 的条件更新，两个人拿同一个码同时提交
+        // 只有一个改得动），建队失败再还回去
+        const code = String(event.create_code || '').trim().toUpperCase()
+        if (!code) return { success: false, message: '请填写开队码' }
+        const found = await db.collection('team_create_codes').where({ code: code }).limit(1).get()
+        const ticket = found.data[0]
+        if (!ticket || ticket.used) return { success: false, message: '开队码不对或已经用过了' }
+        if (new Date(ticket.expires_at) < new Date()) return { success: false, message: '开队码过期了，找管理员要个新的' }
+        const claim = await db.collection('team_create_codes')
+          .where({ _id: ticket._id, used: false })
+          .update({ data: { used: true, used_by: openid, used_at: new Date() } })
+        if (!claim.stats || claim.stats.updated !== 1) {
+          return { success: false, message: '开队码不对或已经用过了' }
+        }
+
         let nickname = ''
         try {
           const me = await db.collection('users').where({ openid: openid }).limit(1).get()
@@ -260,24 +199,36 @@ exports.main = async (event) => {
           console.warn('读取队长昵称失败：', e)
         }
 
-        const res = await db.collection('delivery_teams').add({
-          data: {
-            name: name,
-            description: (event.description || '').trim(),
-            admin: openid,
-            admin_nickname: nickname,
-            contact_wechat: contactWechat,
-            payment_note: paymentNote,
-            pickup_points: cleanPickupPoints(event.pickup_points),
-            batches: cleanBatches(event.batches),
-            // 可配送时段在工作台填，不在建队表单里——建队时队长还不知道
-            // 自己哪天能出车。这里只占个位，免得读的地方要判 undefined。
-            // 空着就是谁也选不到这支队，队长填了第一条才开始接活。
-            availability: [],
-            join_code: makeJoinCode(),
-            created_at: new Date(),
-            updated_at: new Date()
-          }
+        let res
+        try {
+          res = await db.collection('delivery_teams').add({
+            data: {
+              name: name,
+              description: (event.description || '').trim(),
+              admin: openid,
+              admin_nickname: nickname,
+              contact_wechat: contactWechat,
+              payment_note: paymentNote,
+              pickup_points: cleanPickupPoints(event.pickup_points),
+              batches: cleanBatches(event.batches),
+              join_code: makeJoinCode(),
+              create_code: code,
+              approved_by: ticket.created_by,
+              delivered_count: 0,
+              no_show_count: 0,
+              created_at: new Date(),
+              updated_at: new Date()
+            }
+          })
+        } catch (e) {
+          await db.collection('team_create_codes').doc(ticket._id).update({
+            data: { used: false, used_by: '', used_at: null }
+          })
+          throw e
+        }
+
+        await db.collection('team_create_codes').doc(ticket._id).update({
+          data: { team_id: res._id, team_name: name }
         })
 
         // 队长本人也是成员，配送单要能派给他
@@ -302,10 +253,6 @@ exports.main = async (event) => {
         const name = (event.name || '').trim()
         if (!name) return { success: false, message: '请填写队伍名称' }
 
-        // 这里故意不碰 availability：队伍设置表单里没有这一项，跟着写一遍
-        // 就会把队长在工作台填的可配送时段清空（pickup_points / batches 现在
-        // 就是这么被清掉的——那两个已经没人填了，availability 有人填），
-        // 而清空 = 这支队从所有店长的可选列表里消失。
         await db.collection('delivery_teams').doc(mine.team._id).update({
           data: {
             name: name,
@@ -331,6 +278,7 @@ exports.main = async (event) => {
         if (!res.data.length) return { success: false, message: '邀请码不对' }
 
         const team = res.data[0]
+        if (team.takedown) return { success: false, message: '这支队已被下架' }
 
         let nickname = ''
         try {
@@ -425,6 +373,63 @@ exports.main = async (event) => {
           }
         })
         return { success: true, nickname: target.nickname || '未设昵称' }
+      }
+
+      // ---- 管理员：配送队管理 ----
+
+      // 生成一个开队码。note 记给谁的，方便日后对得上是谁建的队
+      case 'makeCreateCode': {
+        if (!(await isTeamAdmin(openid))) return { success: false, message: '没有权限' }
+        const code = makeJoinCode(8)
+        const expires = new Date(Date.now() + CREATE_CODE_DAYS * 24 * 3600 * 1000)
+        await db.collection('team_create_codes').add({
+          data: {
+            code: code,
+            note: String(event.note || '').trim().slice(0, 30),
+            created_by: openid,
+            created_at: new Date(),
+            expires_at: expires,
+            used: false
+          }
+        })
+        return { success: true, code: code, expires_at: expires }
+      }
+
+      // 管理页一次拿齐：最近的开队码 + 所有队伍（含已下架的）
+      case 'adminOverview': {
+        if (!(await isTeamAdmin(openid))) return { success: false, message: '没有权限' }
+        const [codes, teams] = await Promise.all([
+          db.collection('team_create_codes').orderBy('created_at', 'desc').limit(30).get(),
+          db.collection('delivery_teams').orderBy('created_at', 'desc').limit(100).get()
+        ])
+        return {
+          success: true,
+          codes: codes.data,
+          teams: teams.data.map(t => ({
+            _id: t._id,
+            name: t.name,
+            admin_nickname: t.admin_nickname || '',
+            contact_wechat: t.contact_wechat || '',
+            delivered_count: t.delivered_count || 0,
+            no_show_count: t.no_show_count || 0,
+            takedown: t.takedown === true,
+            takedown_reason: t.takedown_reason || '',
+            created_at: t.created_at
+          }))
+        }
+      }
+
+      // 下架 / 恢复。恢复时把爽约次数清零，否则下一次爽约又立刻自动下架
+      case 'setTakedown': {
+        if (!(await isTeamAdmin(openid))) return { success: false, message: '没有权限' }
+        if (!event.teamId) return { success: false, message: '参数不完整' }
+        const down = event.takedown === true
+        await db.collection('delivery_teams').doc(event.teamId).update({
+          data: down
+            ? { takedown: true, takedown_reason: 'admin', takedown_at: new Date(), updated_at: new Date() }
+            : { takedown: false, takedown_reason: '', no_show_count: 0, updated_at: new Date() }
+        })
+        return { success: true }
       }
 
       default:
