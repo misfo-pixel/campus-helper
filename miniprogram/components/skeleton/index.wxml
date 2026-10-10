@@ -1,0 +1,75 @@
+<view wx:if="{{type === 'grid'}}" class="grid">
+  <view wx:for="{{rows}}" wx:key="*this" class="g-card">
+    <view class="bone g-img"></view>
+    <view class="g-body">
+      <view class="bone line w90"></view>
+      <view class="bone line w60"></view>
+      <view class="bone price w40"></view>
+    </view>
+  </view>
+</view>
+
+<block wx:elif="{{type === 'row'}}">
+  <view wx:for="{{rows}}" wx:key="*this" class="card r-card">
+    <view class="bone r-img" style="width: {{thumb}}rpx; height: {{thumb}}rpx;"></view>
+    <view class="r-body">
+      <view class="bone title w80"></view>
+      <view class="bone price w40"></view>
+      <view wx:if="{{thumb >= 180}}" class="chips"><view class="bone chip"></view><view class="bone chip"></view></view>
+      <view class="bone line w60"></view>
+    </view>
+  </view>
+</block>
+
+<block wx:elif="{{type === 'text'}}">
+  <view wx:for="{{rows}}" wx:key="*this" class="card">
+    <view class="t-head">
+      <view class="bone title w55"></view>
+      <view class="bone price w20"></view>
+    </view>
+    <view class="bone line w100 gap"></view>
+    <view class="bone line w70"></view>
+  </view>
+</block>
+
+<view wx:elif="{{type === 'detail' || type === 'detail-text'}}">
+  <view wx:if="{{type === 'detail'}}" class="bone d-img"></view>
+  <view class="pad {{type === 'detail' ? 'd-sheet' : ''}}">
+    <view class="bone d-title w80"></view>
+    <view class="bone d-price w30"></view>
+    <view class="bone section w25"></view>
+    <view class="bone line w100"></view>
+    <view class="bone line w100"></view>
+    <view class="bone line w60"></view>
+  </view>
+</view>
+
+<view wx:elif="{{type === 'shop'}}">
+  <view class="s-head">
+    <view class="bone s-logo"></view>
+    <view class="r-body">
+      <view class="bone d-title w60"></view>
+      <view class="bone line w90"></view>
+      <view class="bone line w50"></view>
+    </view>
+  </view>
+  <view class="pad">
+    <view wx:for="{{rows}}" wx:key="*this" class="card r-card">
+      <view class="bone r-img" style="width: 150rpx; height: 150rpx;"></view>
+      <view class="r-body">
+        <view class="bone title w60"></view>
+        <view class="bone line w80"></view>
+        <view class="bone price w30"></view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view wx:elif="{{type === 'form'}}" class="pad">
+  <view class="bone f-title w40"></view>
+  <view wx:for="{{[0, 1, 2]}}" wx:key="*this" class="card">
+    <view class="bone section w30"></view>
+    <view class="bone field"></view>
+    <view class="bone field"></view>
+  </view>
+</view>

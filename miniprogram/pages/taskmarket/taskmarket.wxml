@@ -9,7 +9,8 @@
     <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
   </view>
 
-  <view wx:if="{{items.length === 0}}" class="empty-state">
+  <skeleton wx:if="{{loading}}" type="text" />
+  <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box tint-maroon"><image src="/images/modules/task.svg"></image></view>
     <view class="empty-state-text">还没有委托任务，来发布第一个吧</view>
     <button class="btn-primary" bindtap="goToPublish">发布委托</button>

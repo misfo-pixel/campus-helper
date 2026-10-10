@@ -1,3 +1,4 @@
+<skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
   <view class="role-hint">
     {{as === 'shop' ? '你是店长：买家把配送费一起付给了你，这些钱要结给配送队。' : '你是配送队：这些配送费由店长代收，需要向店长结算。'}}

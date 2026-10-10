@@ -1,3 +1,4 @@
+<skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
   <ban-bar />
 

@@ -1,0 +1,23 @@
+/* 先透明 200ms 再淡入：网络快时根本看不到它，不会一闪 */
+.wrap {
+  display: flex;
+  justify-content: center;
+  padding: 32rpx 0 8rpx;
+  opacity: 0;
+  animation: appear .2s ease-out .2s forwards;
+}
+
+/* 栗色弧 + 金色弧在浅栗色底圈上转 */
+.ring {
+  width: 40rpx;
+  height: 40rpx;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 4rpx solid rgba(122, 0, 25, .1);
+  border-top-color: #7A0019;
+  border-right-color: #FFCC33;
+  animation: spin .8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes appear { to { opacity: 1; } }

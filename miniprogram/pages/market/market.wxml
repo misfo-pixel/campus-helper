@@ -14,7 +14,7 @@
     <input placeholder="搜索名称" value="{{keyword}}" bindinput="onSearchInput" confirm-type="search" />
   </view>
 
-  <view wx:if="{{loading}}" class="list-foot">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="{{demand ? 'text' : 'grid'}}" />
 
   <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box tint-gold"><image src="/images/modules/market.svg"></image></view>
@@ -45,7 +45,7 @@
   </view>
 
   <!-- 触底加载的反馈。没有这个的话，滑到底会有一秒不知道在发生什么 -->
-  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <loading-spinner wx:if="{{loadingMore}}" />
   <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
 </view>
 

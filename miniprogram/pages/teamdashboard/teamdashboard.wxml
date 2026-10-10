@@ -1,3 +1,4 @@
+<skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
 
   <!-- 读取失败 / 还没加入任何队伍 / 已在队里，三种状态分开说。

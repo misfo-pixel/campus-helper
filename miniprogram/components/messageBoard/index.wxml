@@ -4,7 +4,7 @@
     <text wx:if="{{messages.length > 0}}" class="board-count">{{messages.length}}</text>
   </view>
 
-  <view wx:if="{{loading}}" class="board-empty">加载中…</view>
+  <loading-spinner wx:if="{{loading}}" />
   <view wx:elif="{{messages.length === 0}}" class="board-empty">还没有留言</view>
 
   <view wx:for="{{messages}}" wx:key="_id" class="msg">

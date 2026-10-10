@@ -4,7 +4,7 @@
     <view class="tab {{status === 'handled' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="handled">已处理</view>
   </view>
 
-  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{reports.length === 0}}" class="text-light empty">
     {{status === 'pending' ? '没有待处理的举报' : '还没有处理过的举报'}}
   </view>

@@ -7,7 +7,8 @@
     </view>
   </view>
 
-  <view wx:if="{{!loading && itemCount === 0}}" class="text-light empty">
+  <skeleton wx:if="{{loading}}" type="row" thumb="{{150}}" count="{{3}}" />
+  <view wx:elif="{{itemCount === 0}}" class="text-light empty">
     还没有商品，点下面的框加第一件
   </view>
 

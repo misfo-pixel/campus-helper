@@ -65,7 +65,7 @@
 </view>
 
 <!-- 首次进来还没拿到数据。不显示这个的话，慢网络下就是一段白屏。 -->
-<view wx:elif="{{loading}}" class="detail-state">加载中…</view>
+<skeleton wx:elif="{{loading}}" type="detail" />
 
 <!-- 分享卡片会在群里躺很久，点开时商品可能已删或已售。
      这里必须给出口，否则就是白屏——落地页不能假设数据一定还在。 -->

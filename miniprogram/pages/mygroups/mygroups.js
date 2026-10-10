@@ -20,18 +20,19 @@ const app = getApp()
 
 Page({
   data: {
-    items: []
+    items: [],
+    loading: true   // 没缓存的第一次进来先转圈，别先闪一下「还没有」
   },
 
   onLoad: function () {
     const cached = readCache(CACHE_KEY)
-    if (cached) this.setData({ items: decorate(cached) })
+    if (cached) this.setData({ items: decorate(cached), loading: false })
   },
 
   onShow: function () {
     // 复用 app.js 启动时的登录结果，不再打 login 云函数
     app.globalData.profileReady.then(profile => {
-      if (!profile) return
+      if (!profile) return this.setData({ loading: false })
       return wx.cloud.database().collection('group_items')
         .where({ _openid: profile.openid })
         .orderBy('created_at', 'desc')
@@ -39,9 +40,12 @@ Page({
         .then(res => {
           retryStuckReviews('group', res.data)
           writeCache(CACHE_KEY, res.data)
-          this.setData({ items: decorate(res.data) })
+          this.setData({ items: decorate(res.data), loading: false })
         })
-    }).catch(err => console.error('加载失败：', err))
+    }).catch(err => {
+      console.error('加载失败：', err)
+      this.setData({ loading: false })
+    })
   },
 
   goToDetail: function (e) {

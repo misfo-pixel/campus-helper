@@ -18,7 +18,7 @@
     </view>
   </view>
 
-  <view wx:if="{{loading}}" class="store-empty">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="row" thumb="{{140}}" />
 
   <view wx:elif="{{notFound}}" class="store-empty">
     <view>这个主页打不开了</view>

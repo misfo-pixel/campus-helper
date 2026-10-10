@@ -52,7 +52,7 @@
   </view>
 </view>
 
-<view wx:elif="{{loading}}" class="detail-state">加载中…</view>
+<skeleton wx:elif="{{loading}}" type="detail-text" />
 
 <view wx:else class="detail-state">
   <view class="detail-state-title">这条已经下架了</view>

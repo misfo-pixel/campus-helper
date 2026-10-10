@@ -64,6 +64,7 @@
     "pages/deliveryask/deliveryask",
     "pages/teamdashboard/teamdashboard",
     "pages/teamedit/teamedit",
+    "pages/teamadmin/teamadmin",
     "pages/teammanifest/teammanifest",
     "pages/settlement/settlement"
   ],
@@ -76,5 +77,9 @@
   },
   "sitemapLocation": "sitemap.json",
   "style": "v2",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "usingComponents": {
+    "loading-spinner": "/components/loadingSpinner/index",
+    "skeleton": "/components/skeleton/index"
+  }
 }

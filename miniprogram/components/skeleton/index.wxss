@@ -1,0 +1,71 @@
+/* 灰块统一一种颜色，和图片没加载出来时的底色（#f0ece8）一致，整体一起呼吸 */
+.bone {
+  background: #efe9e4;
+  border-radius: 8rpx;
+  animation: breathe 1.2s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* 卡片外壳照抄 app.wxss 的 .card，组件里读不到全局 class */
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(122, 0, 25, 0.06);
+}
+.pad { padding: 32rpx; }
+
+/* 文字行：高度 = 那行字的字号 */
+.title { height: 30rpx; }
+.line { height: 26rpx; margin-top: 14rpx; }
+.price { height: 32rpx; margin-top: 14rpx; }
+.section { height: 32rpx; margin: 40rpx 0 20rpx; }
+.gap { margin-top: 20rpx; }
+
+.w20 { width: 20%; } .w25 { width: 25%; } .w30 { width: 30%; } .w40 { width: 40%; }
+.w50 { width: 50%; } .w55 { width: 55%; } .w60 { width: 60%; } .w70 { width: 70%; }
+.w80 { width: 80%; } .w90 { width: 90%; } .w100 { width: 100%; }
+
+/* grid：.goods-card */
+.grid { display: flex; flex-wrap: wrap; justify-content: space-between; }
+.g-card {
+  width: calc(50% - 10rpx);
+  margin-bottom: 20rpx;
+  overflow: hidden;
+  border-radius: 20rpx;
+  background: #fff;
+  box-shadow: 0 4rpx 20rpx rgba(122, 0, 25, 0.06);
+}
+.g-img { height: 330rpx; border-radius: 0; }
+.g-body { padding: 16rpx 20rpx 20rpx; }
+.g-body .line:first-child { margin-top: 6rpx; }
+
+/* row：.sublet-card / .shop / .store-item */
+.r-card { display: flex; align-items: center; padding: 20rpx; }
+.r-img { flex-shrink: 0; margin-right: 24rpx; border-radius: 16rpx; }
+.r-body { flex: 1; min-width: 0; }
+.chips { display: flex; margin-top: 14rpx; }
+.chip { width: 96rpx; height: 34rpx; margin-right: 12rpx; border-radius: 999rpx; }
+
+/* text：.text-card-head */
+.t-head { display: flex; align-items: center; justify-content: space-between; }
+.t-head .price { margin-top: 0; }
+
+/* detail：轮播 600rpx + 往上盖 32rpx 的圆角底板（.detail-sheet） */
+.d-img { height: 600rpx; border-radius: 0; }
+.d-sheet { position: relative; margin-top: -32rpx; border-radius: 32rpx 32rpx 0 0; background: #f6f4f2; }
+.d-title { height: 44rpx; }
+.d-price { height: 48rpx; margin-top: 16rpx; }
+
+/* shop：.shop-head */
+.s-head { display: flex; align-items: center; padding: 32rpx; background: #fff; }
+.s-logo { flex-shrink: 0; width: 150rpx; height: 150rpx; margin-right: 24rpx; border-radius: 16rpx; }
+
+/* form：页标题 + 字段框 */
+.f-title { height: 44rpx; margin-bottom: 32rpx; }
+.field { height: 80rpx; margin-top: 16rpx; border-radius: 12rpx; }
+.card .section:first-child { margin-top: 0; }

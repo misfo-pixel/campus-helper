@@ -1,7 +1,8 @@
 <view class="page-container">
   <view class="page-title">我的群组</view>
 
-  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+  <skeleton wx:if="{{loading}}" type="text" />
+  <view wx:elif="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
     你还没发起过
   </view>
 

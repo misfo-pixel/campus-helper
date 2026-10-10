@@ -17,13 +17,14 @@ function decorate(list) {
 
 Page({
   data: {
-    items: []
+    items: [],
+    loading: true   // 没缓存的第一次进来先转圈，别先闪一下「还没有」
   },
 
   // 先把上次存的摆上去，onShow 里的查询回来再整页换掉
   onLoad: function () {
     const cached = readCache(CACHE_KEY)
-    if (cached) this.setData({ items: decorate(cached) })
+    if (cached) this.setData({ items: decorate(cached), loading: false })
   },
 
   onShow: function () {
@@ -36,10 +37,11 @@ Page({
       .get()
       .then(res => {
         writeCache(CACHE_KEY, res.data)
-        this.setData({ items: decorate(res.data) })
+        this.setData({ items: decorate(res.data), loading: false })
       })
       .catch(err => {
         console.error('加载失败：', err)
+        this.setData({ loading: false })
       })
   },
 

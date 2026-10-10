@@ -1,3 +1,4 @@
+<skeleton wx:if="{{loading}}" type="form" />
 <!-- 读取失败时不能往下渲染：一张空白的建队表单会让队长以为自己的队没了 -->
 <view wx:if="{{!loading && loadError}}" class="page-container">
   <view class="text-light empty" bindtap="retry">读取失败，点击重试</view>

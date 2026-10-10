@@ -1,3 +1,4 @@
+<skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{cart && !loading}}" class="page-container">
   <view class="page-title">确认订单</view>
 

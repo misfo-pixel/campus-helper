@@ -4,7 +4,7 @@
     <view class="tab {{status === 'replied' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="replied">已回复</view>
   </view>
 
-  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{items.length === 0}}" class="text-light empty">没有记录</view>
 
   <view wx:for="{{items}}" wx:key="_id" class="card fb">

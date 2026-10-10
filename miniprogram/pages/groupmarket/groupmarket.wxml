@@ -8,7 +8,8 @@
     <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
   </view>
 
-  <view wx:if="{{items.length === 0}}" class="empty-state">
+  <skeleton wx:if="{{loading}}" type="text" />
+  <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box"><image src="/images/modules/group.svg"></image></view>
     <view class="empty-state-text">还没有人发起，来当第一个吧</view>
     <button class="btn-primary" bindtap="goToPublish">发布群组</button>

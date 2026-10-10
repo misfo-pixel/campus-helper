@@ -17,19 +17,20 @@ const app = getApp()
 
 Page({
   data: {
-    items: []
+    items: [],
+    loading: true   // 没缓存的第一次进来先转圈，别先闪一下「还没有」
   },
 
   // 先把上次存的摆上去，onShow 里的查询回来再整页换掉
   onLoad: function () {
     const cached = readCache(CACHE_KEY)
-    if (cached) this.setData({ items: decorate(cached) })
+    if (cached) this.setData({ items: decorate(cached), loading: false })
   },
 
   onShow: function () {
     // 复用 app.js 启动时的登录结果，不再打 login 云函数
     app.globalData.profileReady.then(profile => {
-      if (!profile) return
+      if (!profile) return this.setData({ loading: false })
       return wx.cloud.database().collection('task_items')
         .where({ _openid: profile.openid })
         .orderBy('created_at', 'desc')
@@ -38,9 +39,12 @@ Page({
           // 卡在审核中的（送审请求没发出去之类）补审一次，没通过会弹窗
           retryStuckReviews('task', res.data)
           writeCache(CACHE_KEY, res.data)
-          this.setData({ items: decorate(res.data) })
+          this.setData({ items: decorate(res.data), loading: false })
         })
-    }).catch(err => console.error('加载失败：', err))
+    }).catch(err => {
+      console.error('加载失败：', err)
+      this.setData({ loading: false })
+    })
   },
 
   goToDetail: function (e) {

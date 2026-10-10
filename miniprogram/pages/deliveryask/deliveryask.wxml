@@ -4,7 +4,7 @@
   <view class="section-title">找配送队送一趟</view>
 
   <!-- 读失败 ≠ 平台上没有队。分开说，否则店长会以为没人可找 -->
-  <view wx:if="{{loading}}" class="text-light">加载中…</view>
+  <loading-spinner wx:if="{{loading}}" />
   <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
   <view wx:elif="{{teams.length === 0}}" class="text-light">
     目前还没有配送队。

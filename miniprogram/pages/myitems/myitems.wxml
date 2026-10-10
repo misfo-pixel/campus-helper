@@ -12,7 +12,8 @@
     <view class="btn-primary btn-sm {{posterBusy ? 'btn-busy' : ''}}" bindtap="makePoster">海报分享</view>
   </view>
 
-  <view wx:if="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
+  <skeleton wx:if="{{loading}}" type="{{demand ? 'text' : 'row'}}" thumb="{{140}}" />
+  <view wx:elif="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
     {{demand ? '你还没发过求购' : '你还没发布过闲置'}}
   </view>
 
@@ -27,7 +28,7 @@
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>
 
-  <view wx:if="{{loadingMore}}" class="list-foot">加载中…</view>
+  <loading-spinner wx:if="{{loadingMore}}" />
   <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
 </view>
 

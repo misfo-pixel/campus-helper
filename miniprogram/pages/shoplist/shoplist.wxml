@@ -8,7 +8,7 @@
     <button wx:if="{{ordering}}" class="btn-outline btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 
-  <view wx:if="{{loading}}" class="list-foot">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="row" thumb="{{130}}" />
   <view wx:elif="{{shops.length === 0}}" class="empty-state">
     <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
     <view class="empty-state-text">还没有小店开张，晚点再来看看</view>

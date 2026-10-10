@@ -1,5 +1,5 @@
 <view class="page-container">
-  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
+  <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{orders.length === 0}}" class="text-light empty">还没有订单</view>
 
   <view wx:if="{{hasPending}}" class="notice-top">平台只记录下单意向，不参与交易、不提供担保，请直接与店长沟通。</view>
