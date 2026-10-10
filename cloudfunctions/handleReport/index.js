@@ -10,6 +10,7 @@ const COLLECTIONS = {
   item: 'secondhand_items',
   sublet: 'sublet_items',
   task: 'task_items',
+  group: 'group_items',
   shop: 'shops',
   message: 'messages'
 }

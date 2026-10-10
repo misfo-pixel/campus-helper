@@ -1,6 +1,9 @@
-<!--pages/publish.wxml-->
-<view class="page-container">
-  <view class="page-title">{{demand ? '发布求购 🔎' : '发布你的闲置 ♻️'}}</view>
+<!--pages/publish/publish.wxml-->
+<view class="page-container with-submit-bar">
+  <view class="page-head">
+    <view class="icon-box tint-gold"><image src="/images/modules/market.svg"></image></view>
+    <view class="page-head-text"><view class="page-head-title">{{demand ? '发布求购' : '发布你的闲置'}}</view></view>
+  </view>
 
   <!-- 这是表单的第一个决定，会改变下面填什么，所以放最上面 -->
   <view class="kind-switch">
@@ -12,36 +15,44 @@
   </view>
 
   <view class="section-title">基本信息（必填）</view>
-
-  <!-- 图片上传区。求购没有实物可拍，整块收起来 -->
-  <view wx:if="{{!demand}}" style="display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 24rpx;">
-    <!-- 已选的图片 -->
-    <view wx:for="{{images}}" wx:key="*this" style="position: relative; width: 200rpx; height: 200rpx;">
-      <image src="{{item}}" mode="aspectFill" style="width: 200rpx; height: 200rpx; border-radius: 12rpx;"></image>
-      <!-- 右上角删除：外层透明 padding 把点击区域放大，圆点本身只画 40rpx -->
-      <view catchtap="removeImage" data-index="{{index}}" style="position: absolute; top: -20rpx; right: -20rpx; padding: 12rpx;">
-        <view style="width: 40rpx; height: 40rpx; border-radius: 50%; background: rgba(0, 0, 0, 0.6); color: #fff; font-size: 30rpx; line-height: 40rpx; text-align: center;">×</view>
+  <view class="form-group">
+    <!-- 图片上传区。求购没有实物可拍，整块收起来 -->
+    <block wx:if="{{!demand}}">
+      <view class="uploader">
+        <view class="uploader-inner">
+          <view wx:for="{{images}}" wx:key="*this" class="uploader-cell">
+            <image src="{{item}}" mode="aspectFill" class="uploader-img"></image>
+            <view catchtap="removeImage" data-index="{{index}}" class="uploader-del"><view>×</view></view>
+          </view>
+          <view wx:if="{{images.length < 6}}" bindtap="chooseImages" class="uploader-cell uploader-add">
+            <image src="/images/ui/camera.svg"></image>
+            <text>{{images.length}}/6</text>
+          </view>
+        </view>
       </view>
-    </view>
-    <!-- 添加按钮 -->
-    <view wx:if="{{images.length < 6}}" bindtap="chooseImages" style="width: 200rpx; height: 200rpx; border: 2rpx dashed #ccc; border-radius: 12rpx; display: flex; align-items: center; justify-content: center; color: #999; font-size: 60rpx;">+</view>
+    </block>
+    <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="form-input" />
+    <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="form-input" />
   </view>
 
-  <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="card" style="padding: 24rpx;" />
-  <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
-  <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="card" style="padding: 24rpx;" />
-
   <view class="section-title">详细信息（选填）</view>
-  <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 160rpx;"></textarea>
-  <!-- 不填就一直挂着，直到自己标已售。没有单独的小标题了，选完日期后要带上「自动下架」，光一个日期看不出是什么 -->
-  <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">
-    <view class="card" style="padding: 24rpx; color: {{expire_date ? '#333' : '#999'}};">
-      {{expire_date ? expire_date + ' 自动下架' : '自动下架日期（如离美日期）'}}
-    </view>
-  </picker>
+  <view class="form-group">
+    <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <!-- 不填就一直挂着，直到自己标已售 -->
+    <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">
+      <view class="form-row">
+        <text class="form-row-label">自动下架</text>
+        <text class="form-row-value {{expire_date ? '' : 'form-row-empty'}}">{{expire_date || '如离美日期'}}</text>
+        <text class="form-row-arrow">›</text>
+      </view>
+    </picker>
+  </view>
 
   <disclaimer-bar type="publish" />
+</view>
 
-
-  <button class="btn-primary" bindtap="submitPublish" style="margin-top: 32rpx;">发布</button>
+<!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
+<view class="submit-bar">
+  <button class="btn-primary" bindtap="submitPublish">发布</button>
 </view>

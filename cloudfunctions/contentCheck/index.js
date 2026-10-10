@@ -128,6 +128,11 @@ const REVIEW_TYPES = {
     collection: 'task_items',
     live: 'open',       // 任务在列表里用的是 open
     texts: d => [d.title, d.description, d.location, d.contact_wechat]
+  },
+  group: {
+    collection: 'group_items',
+    live: 'open',
+    texts: d => [d.title, d.description, d.location, d.contact_wechat]
   }
 }
 
@@ -175,7 +180,7 @@ async function review(type, id, openid) {
 
 // 两种用法：
 //   检测：{ texts: [文本...], fileIDs: [云存储 fileID...], scene: 1资料 2评论 3论坛 4社交日志 }
-//   审核：{ review: { type: 'item' | 'sublet' | 'task', id } }，见上面的 review()
+//   审核：{ review: { type: 'item' | 'sublet' | 'task' | 'group', id } }，见上面的 review()
 exports.main = async (event) => {
   const openid = cloud.getWXContext().OPENID
 

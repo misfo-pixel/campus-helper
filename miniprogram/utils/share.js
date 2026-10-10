@@ -1,4 +1,4 @@
-// 三个详情页（二手 / 转租 / 委托）的转发卡片：标题模板 + 封面预下载。
+// 四个详情页（二手 / 转租 / 委托 / 群组）的转发卡片：标题模板 + 封面预下载。
 //
 // 卡片在群里只露一行半标题，群友扫一眼就决定点不点。所以标题按「群友先筛什么」排：
 //   【动作】东西 价钱 · 时间
@@ -7,6 +7,8 @@
 //   【转】Radius 单间 $1200/月 · 12/15-5/31
 //   【找】Dinkytown 单间 预算$900/月 · 1/1-5/31
 //   【有偿】帮取 Amazon 快递 $10 · 9/20前
+//   【搭子】周六 Costco 拼车 · 10/18
+//   【群组】Freefood 俱乐部
 // 谁都能转发别人的帖子，所以一律第三人称，不写「我」。
 
 const { KINDS, isDemand, isClosed, rentText } = require('./kinds.js')
@@ -18,19 +20,21 @@ const TITLE_MAX = 14       // 卡片标题两行就截断，用户标题太长�
 
 // 用户自己常在标题里写「出 」「求 」，前面已经有【出】【找】了，去掉免得重复。
 // 后面必须跟分隔符或括号才去——「转角沙发」「收纳箱」是东西本身，不能被吃掉。
-const LEADING_TAG = /^[【\[（(]?(出|收|转租|转|找|求租|求购|求|有偿)(?:[】\]）)]\s*|[\s:：、|｜·/]+)/
+const LEADING_TAG = /^[【\[（(]?(出|收|转租|转|找|求租|求购|求|有偿|搭子|找搭子)(?:[】\]）)]\s*|[\s:：、|｜·/]+)/
 
 const DETAIL = {
   item: '/pages/itemdetail/itemdetail',
   sublet: '/pages/subletdetail/subletdetail',
-  task: '/pages/taskdetail/taskdetail'
+  task: '/pages/taskdetail/taskdetail',
+  group: '/pages/groupdetail/groupdetail'
 }
 
 // 详情还没加载出来就点了转发，只能先转发列表页
 const FALLBACK = {
   item: { title: '明尼助手 · 二手市场', path: '/pages/market/market' },
   sublet: { title: '明尼助手 · 房屋转租', path: '/pages/subletmarket/subletmarket' },
-  task: { title: '明尼助手 · 帮个忙', path: '/pages/taskmarket/taskmarket' }
+  task: { title: '明尼助手 · 帮个忙', path: '/pages/taskmarket/taskmarket' },
+  group: { title: '明尼助手 · 兴趣群组', path: '/pages/groupmarket/groupmarket' }
 }
 
 function clip(s, n) {
@@ -59,6 +63,11 @@ function shareTitle(type, doc) {
   if (isClosed(doc.status)) return '【已结束】' + name
 
   const tag = '【' + tagOf(type, doc) + '】'
+  if (type === 'group') {
+    // 没有价钱。找搭子的日期过了就不写，长期群没有日期
+    const when = doc.event_date && doc.event_date >= today() ? ' · ' + monthDay(doc.event_date) : ''
+    return tag + name + when
+  }
   const money = isDemand(doc.kind) ? ' 预算$' : ' $'
 
   if (type === 'sublet') {

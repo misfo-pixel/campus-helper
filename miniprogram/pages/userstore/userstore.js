@@ -1,4 +1,4 @@
-// 某个用户的公开主页，聚合他在三个板块发布的内容。
+// 某个用户的公开主页，聚合他在各个板块发布的内容。
 //
 // 数据统一走 getUserStore 云函数，前端只拿着一个不透明的 uid（users 文档的随机 _id）。
 // openid 全程留在服务端——这个页面的链接会被转发给陌生人，不能带永久身份标识。
@@ -11,18 +11,26 @@ const { readCache, writeCache } = require('../../utils/listCache.js')
 
 const app = getApp()
 
-const LABELS = { item: '闲置', sublet: '转租', task: '任务' }
+const LABELS = { item: '闲置', sublet: '转租', task: '任务', group: '群组' }
 const DETAIL = {
   item: '/pages/itemdetail/itemdetail',
   sublet: '/pages/subletdetail/subletdetail',
-  task: '/pages/taskdetail/taskdetail'
+  task: '/pages/taskdetail/taskdetail',
+  group: '/pages/groupdetail/groupdetail'
 }
-const TAB_ORDER = ['all', 'item', 'sublet', 'task']
-const UNITS = { item: '条', sublet: '条', task: '个' }
+const TYPES = ['item', 'sublet', 'task', 'group']
+const TAB_ORDER = ['all'].concat(TYPES)
+const UNITS = { item: '条', sublet: '条', task: '个', group: '个' }
 const PAGE_LIMIT = 20   // 跟 getUserStore 云函数里的一致：每类最多返回这么多
 // 按 uid 各存一份，先显示再刷新（见 utils/listCache.js）。逛过的人多了只留最近 10 个
 const CACHE_KEY = 'userStore.v1.'
 const CACHE_KEEP = 10
+
+function emptyBuckets() {
+  const b = {}
+  TYPES.forEach(k => { b[k] = [] })
+  return b
+}
 
 // 转发标题要有信息量：「我发布了 3 条闲置、1 条转租」比「在明尼助手的闲置」
 // 更能让群里的人点进来。每类最多拉 20 条，拉满就写 20+，不假装精确。
@@ -36,7 +44,7 @@ function countPhrase(buckets, keys) {
     .join('、')
 }
 
-// 三种记录字段各不相同，先抹平成同一个形状，模板就只用写一套
+// 几种记录字段各不相同，先抹平成同一个形状，模板就只用写一套
 function normalize(type, doc) {
   const image = thumbOf(doc)
   const cover = (doc.images && doc.images[0]) || ''   // 转发封面要大图，缩略图放大会糊
@@ -58,6 +66,15 @@ function normalize(type, doc) {
       title: doc.title,
       price: '$' + doc.reward,
       sub: doc.deadline ? '截止 ' + doc.deadline : ''
+    }
+  }
+  if (type === 'group') {
+    // 没有价钱，「找搭子 / 长期群」放在价钱那一行
+    return {
+      _id: doc._id, type: 'group', label: LABELS.group, image: image, cover: cover,
+      title: doc.title,
+      price: '',
+      sub: doc.kind === 'club' ? '长期群' : ('找搭子' + (doc.event_date ? ' · ' + doc.event_date : ''))
     }
   }
   return {
@@ -132,20 +149,19 @@ Page({
     const b = r.buckets || {}
     // 列表显示用的是抹平过的形状，详情页秒开要原始字段，另存一份（不进 setData，不占渲染）
     this.raw = {}
-    ;['item', 'sublet', 'task'].forEach(k => (b[k] || []).forEach(d => { this.raw[d._id] = d }))
-    this.buckets = {
-      item: (b.item || []).map(d => normalize('item', d)),
-      sublet: (b.sublet || []).map(d => normalize('sublet', d)),
-      task: (b.task || []).map(d => normalize('task', d))
-    }
+    this.buckets = {}
+    TYPES.forEach(k => {
+      ;(b[k] || []).forEach(d => { this.raw[d._id] = d })
+      this.buckets[k] = (b[k] || []).map(d => normalize(k, d))
+    })
     this.setData({ seller: r.seller || {}, loading: false })
     this.applyTab(this.data.tab)
     wx.setNavigationBarTitle({ title: ((r.seller || {}).nickname || '同学') + '的主页' })
   },
 
   applyTab: function (tab) {
-    const b = this.buckets || { item: [], sublet: [], task: [] }
-    const all = b.item.concat(b.sublet, b.task)
+    const b = this.buckets || emptyBuckets()
+    const all = [].concat.apply([], TYPES.map(k => b[k]))
     const shown = tab === 'all' ? all : b[tab]
 
     const tabs = TAB_ORDER.map(key => ({
@@ -188,8 +204,8 @@ Page({
   onShareAppMessage: function () {
     const name = this.data.seller.nickname || '同学'
     const tab = this.data.tab
-    const b = this.buckets || { item: [], sublet: [], task: [] }
-    const counts = countPhrase(b, tab === 'all' ? ['item', 'sublet', 'task'] : [tab])
+    const b = this.buckets || emptyBuckets()
+    const counts = countPhrase(b, tab === 'all' ? TYPES : [tab])
     // 还没加载完或者这一类是空的，就退回不带数字的说法
     const title = counts
       ? name + ' 发布了 ' + counts + '，来看看吧'

@@ -21,6 +21,16 @@ const KINDS = {
       { key: 'offer', label: '转', action: '我要转租', empty: '还没有房源，来发布第一个吧', closed: '已租出', open: '出租中' },
       { key: 'seek', label: '找', action: '我要找房', empty: '还没有人发求租，来发第一条吧', closed: '已结束', open: '进行中' }
     ]
+  },
+  // 群组没有供求，两面是「一次性」和「长期」：找搭子凑齐人就散，长期群一直招新。
+  // 找搭子可以填活动日期，过了由 autoExpire 下架；长期群不填日期，只能群主自己停
+  group: {
+    field: 'kind',
+    default: 'buddy',
+    tabs: [
+      { key: 'buddy', label: '搭子', action: '找搭子', closed: '已凑齐', open: '找人中' },
+      { key: 'club', label: '群组', action: '长期群招新', closed: '已停止招新', open: '招新中' }
+    ]
   }
 }
 
@@ -41,7 +51,7 @@ function rentText(doc) {
   return doc.rent_min + '-' + doc.rent_max
 }
 
-// 帖子已经关掉的几种状态：卖掉 / 租出 / 完成是发布者自己标的，过期是 autoExpire 按日期下的架。
+// 帖子已经关掉的几种状态：卖掉 / 租出 / 完成（委托、群组共用 done）是发布者自己标的，过期是 autoExpire 按日期下的架。
 // 列表页只查 on_sale / open，所以这些帖子只会从群里的旧转发卡片、「我的发布」点进详情页。
 const CLOSED_STATUS = ['sold', 'rented', 'done', 'expired']
 const EXPIRED_LABEL = '已过期'   // 系统按日期下的架，不分供求，也不代表东西真的出手了

@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "发布群组",
+  "usingComponents": {
+    "disclaimer-bar": "/components/disclaimerBar/index"
+  }
+}

@@ -5,7 +5,7 @@
   <button class="card avatar-row" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
     <view class="avatar-label">头像</view>
     <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar-img" />
-    <view wx:else class="avatar-img avatar-fallback">🐿️</view>
+    <image wx:else src="/images/loon.png" mode="aspectFill" class="avatar-img" />
     <view class="chevron">›</view>
   </button>
 

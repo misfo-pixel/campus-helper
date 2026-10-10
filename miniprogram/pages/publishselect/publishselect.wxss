@@ -1,1 +1,25 @@
 /* pages/publishselect/publishselect.wxss */
+.ps-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+.ps-head-icon {
+  width: 104rpx;
+  height: 104rpx;
+  margin-right: 24rpx;
+  border-radius: 28rpx;
+  transform: rotate(-4deg);
+}
+.ps-head-icon image { width: 84rpx; height: 84rpx; }
+.ps-head-title {
+  font-size: 48rpx;
+  font-weight: 800;
+  letter-spacing: 1rpx;
+  color: #22141a;
+}
+.ps-head-hl {
+  padding: 0 4rpx;
+  color: var(--color-primary);
+  background: linear-gradient(transparent 60%, var(--color-accent) 60%);
+}

@@ -22,46 +22,47 @@
        截到一块灰色「暂无图片」很难看 -->
   <view wx:elif="{{!demand}}" style="width: 100%; height: 300rpx; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #999;">暂无图片</view>
 
-  <view class="page-container">
-    <view style="font-size: 40rpx; font-weight: bold;">{{item.title}}</view>
-    <view class="price" style="font-size: 44rpx; margin: 16rpx 0;">{{demand ? '预算 ' : ''}}${{rentText}}/月</view>
+  <!-- 有图时内容区做成盖在图片下沿的圆角面板（app.wxss 的 .detail-sheet） -->
+  <view class="page-container {{item.images.length > 0 ? 'detail-sheet' : ''}}">
+    <view class="detail-title">{{item.title}}</view>
+    <view class="price detail-price">{{demand ? '预算 ' : ''}}${{rentText}}/月</view>
 
     <!-- 从列表秒开时手上只有列表那几个字段，下面这些（描述、名片、按钮…）等 getDetail 回来再画。
          不能拿不全的数据先画：比如列表没查「带不带家具」，先画出来就成了错误的「不带家具」 -->
     <block wx:if="{{!partial}}">
 
     <!-- 核心信息 -->
-    <view class="card" style="padding: 28rpx;">
+    <view class="kv-list">
       <!-- 求租帖的房型和区域是选填，空着就是都行 -->
-      <view style="margin-bottom: 12rpx;">🏠 房型：{{item.room_type || '不限'}}</view>
-      <view style="margin-bottom: 12rpx;">📍 {{demand ? '想找的区域' : '地址'}}：{{item.address || '不限'}}</view>
-      <view style="margin-bottom: 12rpx;">📅 {{demand ? '想租' : '租期'}}：{{item.start_date}} 至 {{item.end_date}}</view>
-      <view style="margin-bottom: 12rpx;">🛋 家具：{{item.furnished ? '带家具' : '不带家具'}}</view>
-      <view wx:if="{{item.utilities}}" style="margin-bottom: 12rpx;">💡 每月水电：${{item.utilities}}</view>
-      <view wx:if="{{item.deposit}}">💰 押金：${{item.deposit}}</view>
+      <view class="kv-row"><text class="kv-label">房型</text><text class="kv-value">{{item.room_type || '不限'}}</text></view>
+      <view class="kv-row"><text class="kv-label">{{demand ? '想找的区域' : '地址'}}</text><text class="kv-value">{{item.address || '不限'}}</text></view>
+      <view class="kv-row"><text class="kv-label">{{demand ? '想租' : '租期'}}</text><text class="kv-value">{{item.start_date}} 至 {{item.end_date}}</text></view>
+      <view class="kv-row"><text class="kv-label">家具</text><text class="kv-value">{{item.furnished ? '带家具' : '不带家具'}}</text></view>
+      <view wx:if="{{item.utilities}}" class="kv-row"><text class="kv-label">每月水电</text><text class="kv-value">${{item.utilities}}</text></view>
+      <view wx:if="{{item.deposit}}" class="kv-row"><text class="kv-label">押金</text><text class="kv-value">${{item.deposit}}</text></view>
     </view>
 
     <!-- 室友情况 -->
     <view wx:if="{{item.roommate_info}}">
       <view class="section-title">室友情况</view>
-      <view style="line-height: 1.6; color: #555;">{{item.roommate_info}}</view>
+      <view class="detail-text">{{item.roommate_info}}</view>
     </view>
 
     <!-- 其他说明 -->
     <view wx:if="{{item.description}}">
       <view class="section-title">其他说明</view>
-      <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+      <view class="detail-text">{{item.description}}</view>
     </view>
 
     <!-- 房东名片。已结束的帖子不给别人亮联系方式：横幅写着结束了，底下还摆着「复制微信号」，照样有人去加。
          发布者自己看的是自己的名片，不受影响。 -->
     <contact-card wx:if="{{!closed || isOwner}}" link-to-store="{{true}}" bindviewstore="goToSellerStore" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.contact_wechat}}" />
 
-    <!-- 发布者：标记已租出。已经结束的（包括过期下架的）不用再标 -->
-    <button wx:if="{{isOwner && !closed}}" bindtap="markRented" class="btn-danger" style="margin-top: 24rpx;">标记已租出</button>
-
-    <!-- 本人或管理员：删除 -->
-    <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger" style="margin-top: 24rpx;">删除</button>
+    <!-- 发布者标记已租出（已经结束的不用再标）；本人或管理员可以删除 -->
+    <view wx:if="{{(isOwner && !closed) || canDelete}}" class="owner-actions">
+      <button wx:if="{{isOwner && !closed}}" bindtap="markRented" class="btn-outline">标记已租出</button>
+      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">删除</button>
+    </view>
 
     <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->

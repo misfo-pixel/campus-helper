@@ -19,9 +19,10 @@
     </swiper-item>
   </swiper>
 
-  <view class="page-container">
-    <view style="font-size: 40rpx; font-weight: bold;">{{item.title}}</view>
-    <view class="price" style="font-size: 44rpx; margin: 16rpx 0;">${{item.price}}</view>
+  <!-- 有图时内容区做成盖在图片下沿的圆角面板（app.wxss 的 .detail-sheet） -->
+  <view class="page-container {{item.images.length > 0 ? 'detail-sheet' : ''}}">
+    <view class="detail-title">{{item.title}}</view>
+    <view class="price detail-price">${{item.price}}</view>
 
     <!-- 从列表秒开时手上只有列表那几个字段，下面这些（描述、名片、按钮…）等 getDetail 回来再画。
          不能拿不全的数据先画：比如列表没查「带不带家具」，先画出来就成了错误的「不带家具」 -->
@@ -30,20 +31,23 @@
     <!-- 描述和下架日期都是选填，没填就整行不显示，免得留一个空标题 -->
     <view wx:if="{{item.description}}">
       <view class="section-title">物品描述</view>
-      <view style="line-height: 1.6; color: #555;">{{item.description}}</view>
+      <view class="detail-text">{{item.description}}</view>
     </view>
 
-    <view wx:if="{{item.expire_date}}" class="text-light" style="margin-top: 32rpx;">下架日期：{{item.expire_date}}</view>
+    <view wx:if="{{item.expire_date}}" class="kv-list">
+      <view class="kv-row"><text class="kv-label">下架日期</text><text class="kv-value">{{item.expire_date}}</text></view>
+    </view>
 
     <!-- 卖家名片。已结束的帖子不给别人亮联系方式：横幅写着结束了，底下还摆着「复制微信号」，照样有人去加。
          发布者自己看的是自己的名片，不受影响。 -->
     <contact-card wx:if="{{!closed || isOwner}}" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.seller_wechat}}"
       link-to-store="{{true}}" bindviewstore="goToSellerStore" />
 
-    <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger" style="margin-top: 24rpx;">删除商品</button>
-
     <!-- 已经结束的（包括过期下架的）不用再标 -->
-    <button wx:if="{{isOwner && !closed}}" bindtap="markSold" class="btn-danger" style="margin-top: 24rpx;">标记已售</button>
+    <view wx:if="{{(isOwner && !closed) || canDelete}}" class="owner-actions">
+      <button wx:if="{{isOwner && !closed}}" bindtap="markSold" class="btn-outline">标记已售</button>
+      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">删除</button>
+    </view>
 
     <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->

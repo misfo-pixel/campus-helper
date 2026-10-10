@@ -10,7 +10,8 @@
 }
 
 .report-icon {
-  font-size: 26rpx;
+  width: 28rpx;
+  height: 28rpx;
 }
 
 .report-bar:active {

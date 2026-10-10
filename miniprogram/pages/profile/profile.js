@@ -1,5 +1,5 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
-const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
+const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED, GROUP_MODULE_ENABLED } = require('../../config.js')
 
 Page({
   data: {
@@ -12,6 +12,7 @@ Page({
     shopEnabled: SHOP_MODULE_ENABLED,
     ordering: ORDERING_ENABLED,   // 黄页模式下没有订单这回事
     teamEnabled: TEAM_MODULE_ENABLED,
+    groupEnabled: GROUP_MODULE_ENABLED,
     pendingReports: 0
   },
   goToEdit: function () {
@@ -40,6 +41,9 @@ Page({
   },
   goToMyTasks: function () {
     wx.navigateTo({ url: '/pages/mytasks/mytasks' })
+  },
+  goToMyGroups: function () {
+    wx.navigateTo({ url: '/pages/mygroups/mygroups' })
   },
 
   // 编辑资料返回时会再走一次 onShow，改动就刷新出来了

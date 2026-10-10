@@ -24,13 +24,6 @@
 }
 
 /* 对方没设置过头像时的兜底 */
-.contact-avatar-fallback {
-  font-size: 52rpx;
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .contact-body-tap:active { opacity: .6; }
 

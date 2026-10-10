@@ -114,6 +114,42 @@ const SHOP_MODE = 'order'
 // 怎么用再决定，别再为一个不存在的角色先把工作流搭出来。
 const TEAM_MODULE_ENABLED = true
 
+// 兴趣群组（pages/groupmarket，数据在 group_items）。2026-10-10 加的。
+//
+// 定位是「发现层」：小程序里只有群卡片和公开留言，真正的聊天在微信群里，
+// 想加入的人复制群主微信号、由群主拉进群。刻意不做两件事：
+//   1. 小程序内群聊——会把平台变成「通信服务提供者」，类目大概率要改报社交，
+//      跨太平洋 300ms 也撑不起实时聊天（留言板不做私聊是同一个理由，见 cloudfunctions/messages）
+//   2. 上传微信群二维码——群码 7 天过期、满 200 人扫不进，过期码比没有码更糟
+//
+// 关掉后首页、发布页、「我的」页的入口全部消失，已发的群组卡片还在库里。
+const GROUP_MODULE_ENABLED = true
+
+// 首页广告语下面的活动横幅。按日期自动上下架，同一时间只显示排在最前的那一条，
+// 一条都没在期内就整块不显示。
+//
+// 图放在 images/banners/，686×300 的比例（首页卡片宽度），按 1.5 倍出图、存 JPG，
+// 每张控制在 150KB 以内——本地图片算进主包 2MB。源文件在仓库外的 posters/ 目录。
+// 换活动要发版；真要频繁换，再挪到云存储 + 数据库。
+//   image  本地路径
+//   link   点了去哪（非 tabBar 页面，走 navigateTo）
+//   from / until  'YYYY-MM-DD'，两头都含，按用户手机的本地日期判断
+const HOME_BANNERS = [
+  {
+    image: '/images/banners/halloween-2026.jpg',
+    link: '/pages/market/market',
+    from: '2026-10-10',
+    until: '2026-10-31'
+  }
+]
+
+// 首页最底下的「特别感谢」圆形头像排（赞助商）。数据在云数据库 sponsors 集合
+// （控制台手动建，权限「所有用户可读」，只由管理员在控制台增删）：
+//   { name: '店名', logo: 'cloud://…', link: '/pages/shopdetail/shopdetail?id=…'（选填）,
+//     order: 1（小的在前）, active: true }
+// 没有赞助商时只显示一个「等你加入」，点了去意见反馈留联系方式。
+const SPONSORS_ENABLED = true
+
 // 延迟测量开关。开着的时候：
 //   1. 所有被包过的请求都会往 Console 打一行 [timing]
 //   2. 市场页底部出现 ping / report 两个测试按钮
@@ -128,5 +164,8 @@ module.exports = {
   // 到处写 SHOP_MODE === 'order' 太容易拼错，给一个布尔量
   ORDERING_ENABLED: SHOP_MODE === 'order',
   TEAM_MODULE_ENABLED: TEAM_MODULE_ENABLED,
+  GROUP_MODULE_ENABLED: GROUP_MODULE_ENABLED,
+  HOME_BANNERS: HOME_BANNERS,
+  SPONSORS_ENABLED: SPONSORS_ENABLED,
   DEBUG_TIMING: DEBUG_TIMING
 }

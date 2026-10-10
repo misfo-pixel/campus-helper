@@ -23,7 +23,7 @@
   <view class="{{bare ? '' : 'card row'}}">
     <!-- 场次过了就没人能下单了，但店还挂在列表里，所以这条提示要显眼 -->
     <view wx:if="{{expired}}" class="expired">
-      ⚠️ 上一场（{{batch.date}}）已过，买家现在下不了单，换个日期即可。
+      上一场（{{batch.date}}）已过，买家现在下不了单，换个日期即可。
     </view>
 
     <view class="slot-line">

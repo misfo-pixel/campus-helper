@@ -67,12 +67,12 @@
             <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
 
             <!-- 绑好之后又把送达时间改到人家没空的点上：不解绑，只说一句 -->
-            <view wx:if="{{teamWarn}}" class="team-warn">⚠️ {{teamWarn}}</view>
+            <view wx:if="{{teamWarn}}" class="team-warn">{{teamWarn}}</view>
 
             <view wx:for="{{teams}}" wx:key="_id"
                   class="pick team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
                   bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
-              <view class="pick-emoji">🛵</view>
+              <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
               <view class="pick-body">
                 <view class="pick-name">
                   {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>

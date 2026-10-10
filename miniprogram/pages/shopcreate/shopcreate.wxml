@@ -33,7 +33,7 @@
     <view class="wizard-sub">选错了也没关系，开店后在小店设置里能改。</view>
 
     <view class="pick {{needsDelivery === true ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="1">
-      <view class="pick-emoji">📦</view>
+      <view class="pick-emoji"><image src="/images/ui/box.svg" class="ico-md"></image></view>
       <view class="pick-body">
         <view class="pick-name">要</view>
         <view class="pick-desc">买家要拿到实物，或者你要上门服务。到店自取也算。</view>
@@ -41,7 +41,7 @@
     </view>
 
     <view class="pick {{needsDelivery === false ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="0">
-      <view class="pick-emoji">💻</view>
+      <view class="pick-emoji"><image src="/images/ui/laptop.svg" class="ico-md"></image></view>
       <view class="pick-body">
         <view class="pick-name">不要</view>
         <view class="pick-desc">纯线上，比如辅导、代写、设计。没有取货这一步。</view>
@@ -93,12 +93,12 @@
           <view wx:elif="{{teams.length === 0}}" class="text-light team-empty">目前还没有配送队。</view>
 
           <!-- 选完队又把送达时间改到人家没空的点上：不把选择清掉，只说一句 -->
-          <view wx:if="{{teamWarn}}" class="team-warn">⚠️ {{teamWarn}}</view>
+          <view wx:if="{{teamWarn}}" class="team-warn">{{teamWarn}}</view>
 
           <view wx:for="{{teams}}" wx:key="_id"
                 class="pick pick-sm team-pick {{deliveryTeamId === item._id ? 'pick-on' : ''}} {{item.selectable ? '' : 'pick-off'}}"
                 bindtap="pickTeam" data-id="{{item._id}}" data-selectable="{{item.selectable}}">
-            <view class="pick-emoji">🛵</view>
+            <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
             <view class="pick-body">
               <view class="pick-name">
                 {{item.name}}<text wx:if="{{item.offTime}}" class="team-closed">（这段时间没空）</text>

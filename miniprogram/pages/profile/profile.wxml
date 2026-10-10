@@ -2,7 +2,7 @@
   <!-- 用户信息区：整块点进去就是编辑资料 -->
   <view bindtap="goToEdit" class="card card-tap" style="display: flex; align-items: center; padding: 40rpx;">
     <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="profile-avatar" />
-    <view wx:else class="profile-avatar profile-avatar-fallback">🐿️</view>
+    <image wx:else src="/images/loon.png" mode="aspectFill" class="profile-avatar" />
     <view style="flex: 1; min-width: 0;">
       <view style="font-size: 36rpx; font-weight: bold;">{{nickname || '点击设置昵称'}}</view>
       <view class="text-light">{{isAdmin ? '管理员' : '普通用户'}}</view>
@@ -14,17 +14,22 @@
   <view class="profile-group">我发布的</view>
 
   <view bindtap="goToMyItems" class="card card-tap profile-row">
-    <view class="profile-row-label">♻️ 我的闲置</view>
+    <image src="/images/modules/market.svg" class="profile-row-icon"></image><view class="profile-row-label">我的闲置</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view bindtap="goToMySublets" class="card card-tap profile-row">
-    <view class="profile-row-label">🏠 我的转租</view>
+    <image src="/images/modules/sublet.svg" class="profile-row-icon"></image><view class="profile-row-label">我的转租</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view bindtap="goToMyTasks" class="card card-tap profile-row">
-    <view class="profile-row-label">🙋 我的委托</view>
+    <image src="/images/modules/task.svg" class="profile-row-icon"></image><view class="profile-row-label">我的委托</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <view wx:if="{{groupEnabled}}" bindtap="goToMyGroups" class="card card-tap profile-row">
+    <image src="/images/modules/group.svg" class="profile-row-icon"></image><view class="profile-row-label">我的群组</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
@@ -34,18 +39,18 @@
   <view wx:if="{{shopEnabled}}" class="profile-group">校外服务</view>
 
   <view wx:if="{{shopEnabled && ordering}}" bindtap="goToShopOrders" class="card card-tap profile-row">
-    <view class="profile-row-label">🧾 我的订单</view>
+    <image src="/images/ui/order.svg" class="profile-row-icon"></image><view class="profile-row-label">我的订单</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view wx:if="{{shopEnabled}}" bindtap="goToShop" class="card card-tap profile-row">
-    <view class="profile-row-label">💁 我的小店</view>
+    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">我的小店</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 配送工作台：配送队管理员 / 有店的店长 / 已在队里的人才看得到 -->
   <view wx:if="{{teamEnabled && shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card card-tap profile-row">
-    <view class="profile-row-label">🛵 我的配送</view>
+    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">我的配送</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
@@ -56,14 +61,14 @@
 
   <!-- 举报处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">
-    <view class="profile-row-label">🛡️ 举报处理</view>
+    <image src="/images/ui/shield.svg" class="profile-row-icon"></image><view class="profile-row-label">举报处理</view>
     <view wx:if="{{pendingReports > 0}}" class="profile-row-badge">{{pendingReports}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 意见反馈处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToFeedbacks" class="card card-tap profile-row">
-    <view class="profile-row-label">💬 意见反馈</view>
+    <image src="/images/modules/feedback.svg" class="profile-row-icon"></image><view class="profile-row-label">意见反馈</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
@@ -71,7 +76,7 @@
   <view class="profile-group">其他</view>
 
   <view bindtap="goToAgreement" class="card card-tap profile-row">
-    <view class="profile-row-label">📄 用户协议与免责声明</view>
+    <image src="/images/ui/doc.svg" class="profile-row-icon"></image><view class="profile-row-label">用户协议与免责声明</view>
     <view class="profile-row-arrow">›</view>
   </view>
 </view>

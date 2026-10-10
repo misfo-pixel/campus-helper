@@ -14,7 +14,7 @@
     <view wx:for="{{teams}}" wx:key="_id"
           class="pick {{teamIndex === index ? 'pick-on' : ''}}"
           bindtap="pickTeam" data-index="{{index}}">
-      <view class="pick-emoji">🛵</view>
+      <view class="pick-emoji"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
       <view class="pick-body">
         <view class="pick-name">{{item.name}}</view>
         <view wx:if="{{item.description}}" class="pick-desc">{{item.description}}</view>

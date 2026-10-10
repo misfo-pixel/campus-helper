@@ -2,7 +2,7 @@
   <!-- 店头 -->
   <view class="shop-head">
     <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
-    <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
+    <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
     <view class="shop-meta">
       <!-- 店长传了许可证才有这个标，点开看原图。
            用「证」而不用对勾：平台不核实，对勾会被读成「平台认证过」 -->
@@ -25,7 +25,7 @@
        纯线上服务没有场次，不存在「开团」，不显示 -->
   <view wx:if="{{subEnabled && !subMine && shop.needs_delivery !== false}}" class="sub-bar">
     <view class="sub-text">
-      <view class="sub-title">🔔 开团提醒</view>
+      <view class="sub-title">开团提醒</view>
       <!-- 没订阅时不加说明，「开团提醒 + 订阅」已经说清楚了；订阅后这行是状态，得留着 -->
       <view wx:if="{{subTickets > 0}}" class="sub-hint">已订阅，还会提醒你 {{subTickets}} 次</view>
     </view>
@@ -40,12 +40,12 @@
 
       <view wx:for="{{item.items}}" wx:for-item="product" wx:key="_id" class="card product">
         <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" class="product-img" />
-        <view wx:else class="product-img product-img-fallback">📦</view>
+        <view wx:else class="product-img product-img-fallback"><image src="/images/ui/box.svg" class="ico-fill"></image></view>
 
         <view class="product-meta">
           <view class="product-name {{product.available ? '' : 'product-off'}}">{{product.name}}</view>
           <view wx:if="{{product.description}}" class="text-light product-desc">{{product.description}}</view>
-          <view wx:if="{{product.specs}}" class="product-specs">⚠️ 含：{{product.specs}}</view>
+          <view wx:if="{{product.specs}}" class="product-specs">含：{{product.specs}}</view>
           <view class="product-price">${{product.price}}<text wx:if="{{product.unit}}" class="product-unit"> / {{product.unit}}</text></view>
         </view>
 

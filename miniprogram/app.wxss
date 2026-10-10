@@ -297,3 +297,336 @@
     font-size: 24rpx;
     color: rgba(255, 255, 255, .8);
   }
+
+  /* ==================== 入口格（首页 / 发布页） ==================== */
+
+  /* 白卡片 + 柔和阴影，颜色只放在图标底下那块圆角方里。
+     2026-10-10 试过海报那套粗墨线 + 硬阴影 + 整块平涂，入口页上太冲，退回到这一档。
+     图标在 images/modules/，自带墨线描边，个性靠它们就够了。 */
+  .tile-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .tile {
+    position: relative;
+    box-sizing: border-box;
+    width: calc(50% - 10rpx);
+    margin-bottom: 20rpx;
+    padding: 28rpx 24rpx;
+    border-radius: var(--radius);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  .tile:active { opacity: .85; }
+  .tile-title { margin-top: 20rpx; font-size: 32rpx; font-weight: 700; color: var(--color-text); }
+  .tile-sub { margin-top: 4rpx; font-size: 24rpx; color: var(--color-text-light); }
+
+  /* 单数个入口时最后一个铺满一行，图标挪到左边 */
+  .tile-wide {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 24rpx;
+  }
+  .tile-wide .icon-box { margin-right: 24rpx; }
+  .tile-wide .tile-title { margin-top: 0; }
+
+
+  /* 右上角的小标，比如新模块的「新」 */
+  .tile-sticker {
+    position: absolute;
+    top: 24rpx;
+    right: 24rpx;
+    padding: 2rpx 14rpx;
+    font-size: 20rpx;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--color-accent);
+    border-radius: 99rpx;
+  }
+
+  /* ==================== 自绘图标 ==================== */
+
+  /* 图标在 images/modules/（模块大图标）和 images/ui/（小图标），同一套墨线描边。
+     全项目不用系统 emoji：各家手机渲染不一样，跟这套画风也不搭。 */
+  .ico-md { display: inline-block; width: 52rpx; height: 52rpx; vertical-align: middle; }
+  .ico-lg { display: inline-block; width: 128rpx; height: 128rpx; }
+  /* 放进「没图时的灰底占位」里，按容器大小缩放 */
+  .ico-fill { width: 56%; height: 56%; }
+
+  /* ==================== 模块图标底块 ==================== */
+
+  /* 自绘模块图标垫一块淡色圆角方。同一个模块在首页、发布页、列表页头、
+     发布表单头都是同一种颜色：二手金、委托栗、校外服务奶油，其余暖灰 */
+  .icon-box {
+    flex-shrink: 0;
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: 24rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f2ee;
+  }
+  .icon-box image { width: 72rpx; height: 72rpx; }
+  .tint-gold   { background: #fff4d1; }
+  .tint-maroon { background: #f6e3e6; }
+  .tint-cream  { background: #fbf0dc; }
+
+  /* ==================== 列表页 / 表单页的页头 ==================== */
+
+  /* 模块图标 + 标题 + 一行副标题，右边可以放「+ 发布」。
+     各模块进来第一眼是同一个结构，知道自己在哪个板块 */
+  .page-head {
+    display: flex;
+    align-items: center;
+    margin-bottom: 32rpx;
+  }
+  .page-head .icon-box { width: 88rpx; height: 88rpx; margin-right: 20rpx; }
+  .page-head .icon-box image { width: 64rpx; height: 64rpx; }
+  .page-head-text { flex: 1; min-width: 0; }
+  .page-head-title { font-size: 40rpx; font-weight: 700; line-height: 1.25; color: var(--color-text); }
+  .page-head-sub { margin-top: 2rpx; font-size: 24rpx; color: var(--color-text-light); }
+
+  /* ==================== 搜索框 ==================== */
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    height: 80rpx;
+    padding: 0 28rpx;
+    margin-bottom: 28rpx;
+    border-radius: 40rpx;
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  .search-bar image { width: 32rpx; height: 32rpx; margin-right: 16rpx; flex-shrink: 0; }
+  .search-bar input { flex: 1; font-size: 28rpx; }
+
+  /* ==================== 空状态 ==================== */
+
+  .empty-state {
+    padding: 96rpx 32rpx;
+    text-align: center;
+  }
+  .empty-state .icon-box { width: 144rpx; height: 144rpx; margin: 0 auto 24rpx; border-radius: 40rpx; }
+  .empty-state .icon-box image { width: 104rpx; height: 104rpx; }
+  .empty-state-text { font-size: 28rpx; color: var(--color-text-light); }
+  .empty-state .btn-primary { display: inline-flex; width: auto !important; margin-top: 32rpx; padding: 0 48rpx; }
+
+  /* ==================== 列表卡片 ==================== */
+
+  /* 二手「在卖」的两列图片卡 */
+  .goods-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .goods-card {
+    width: calc(50% - 10rpx);
+    margin-bottom: 20rpx;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  .goods-card:active { opacity: .9; }
+  .goods-img { display: block; width: 100%; height: 330rpx; background: #f0ece8; }
+  .goods-body { padding: 16rpx 20rpx 20rpx; }
+  .goods-title {
+    font-size: 28rpx;
+    line-height: 1.4;
+    height: 78rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .goods-price { margin-top: 8rpx; font-size: 32rpx; }
+
+  /* 文字为主的列表卡（求购、求租、委托）：标题一行，价钱靠右，描述两行 */
+  .text-card-head { display: flex; align-items: baseline; }
+  .text-card-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 30rpx;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .text-card-price { margin-left: 20rpx; flex-shrink: 0; }
+  .text-card-desc {
+    margin-top: 12rpx;
+    font-size: 26rpx;
+    color: var(--color-text-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .text-card-meta { margin-top: 12rpx; font-size: 24rpx; color: var(--color-text-light); }
+
+  /* 小灰标签：房型、截止日期这类短信息 */
+  .chip {
+    display: inline-block;
+    margin-right: 12rpx;
+    padding: 2rpx 14rpx;
+    font-size: 22rpx;
+    color: #6b5f57;
+    background: #f5f2ee;
+    border-radius: 8rpx;
+  }
+
+  /* ==================== 发布表单 ==================== */
+
+  /* 同一节的输入框收进一张卡，中间细线分隔。原来每个框一张卡，
+     满屏浮着十几张小卡片，看不出哪些是一组。字段名仍写在 placeholder 里 */
+  /* 分隔线画在每一项的顶上，再用 -1rpx 把它往上提：第一项的线被卡片的
+     overflow: hidden 切掉，其余各项的线正好落在两项中间。
+     WXSS 不支持 :last-child / > / + 这些选择器，靠这个办法绕开，
+     字段按 wx:if 显隐时也不用管谁是最后一项 */
+  .form-group {
+    overflow: hidden;
+    padding: 0 28rpx;
+    margin-bottom: 24rpx;
+    border-radius: var(--radius);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  .form-input,
+  .form-textarea,
+  .form-row,
+  .form-pair,
+  .uploader {
+    margin-top: -1rpx;
+    border-top: 1rpx solid var(--color-border);
+  }
+  .form-input {
+    display: block;
+    height: 100rpx;
+    min-height: 100rpx;
+    font-size: 30rpx;
+  }
+  .form-textarea {
+    display: block;
+    width: auto;
+    height: 160rpx;
+    padding: 28rpx 0;
+    font-size: 30rpx;
+  }
+
+  /* 选完之后框里只剩值的项（日期、下拉）：左边写是哪一项，右边是值 */
+  .form-row {
+    display: flex;
+    align-items: center;
+    min-height: 100rpx;
+    font-size: 30rpx;
+  }
+  .form-row-label { flex-shrink: 0; }
+  .form-row-value { margin-left: auto; text-align: right; }
+  .form-row-empty { color: #b3b3b3; }
+  .form-row-arrow { margin-left: 12rpx; color: #ccc; font-size: 36rpx; line-height: 1; }
+  /* 两个并排的输入（预算区间、卧室/卫生间） */
+  /* 里面的两项各自加 .form-pair-item，右边那项再加 .form-pair-right */
+  .form-pair { display: flex; }
+  .form-pair-item { flex: 1; min-width: 0; }
+  .form-pair .form-input,
+  .form-pair .form-row { margin-top: 0; border-top: none; }
+  .form-pair-right { margin-left: 24rpx; padding-left: 24rpx; border-left: 1rpx solid var(--color-border); }
+
+  /* 选图：一行三张，加图那格带相机图标和张数 */
+  /* 每格都带右边距，容器往右多伸出同样的 20rpx 抵掉，三格正好排满一行 */
+  .uploader {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 24rpx 0 4rpx;
+  }
+  .uploader-inner {
+    display: flex;
+    flex-wrap: wrap;
+    width: calc(100% + 20rpx);
+    margin-right: -20rpx;
+  }
+  .uploader-cell {
+    position: relative;
+    width: calc((100% - 60rpx) / 3);
+    height: 196rpx;
+    margin: 0 20rpx 20rpx 0;
+  }
+  .uploader-img { width: 100%; height: 100%; border-radius: 16rpx; }
+  .uploader-add {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2rpx dashed #d9d2cb;
+    border-radius: 16rpx;
+    background: #faf8f6;
+    font-size: 22rpx;
+    color: var(--color-text-light);
+  }
+  .uploader-add image { width: 64rpx; height: 64rpx; margin-bottom: 6rpx; }
+  /* 右上角删除：外层透明 padding 把点击区域放大，圆点本身只画 40rpx */
+  .uploader-del { position: absolute; top: -20rpx; right: -20rpx; padding: 12rpx; }
+  .uploader-del view {
+    width: 40rpx; height: 40rpx; border-radius: 50%;
+    background: rgba(0, 0, 0, .6); color: #fff;
+    font-size: 30rpx; line-height: 40rpx; text-align: center;
+  }
+
+  /* 发布按钮钉在底部，长表单不用滑到底才找得到。页面底部留出它的高度 */
+  .with-submit-bar { padding-bottom: calc(176rpx + env(safe-area-inset-bottom)); }
+  .submit-bar button { width: 100% !important; }
+  .submit-bar {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 10;
+    padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, .04);
+  }
+
+  /* ==================== 详情页 ==================== */
+
+  /* 有图时，内容区做成一张盖在图片下沿的圆角面板 */
+  .detail-sheet {
+    position: relative;
+    margin-top: -32rpx;
+    border-radius: 32rpx 32rpx 0 0;
+    background: var(--color-bg);
+  }
+  .detail-title { font-size: 40rpx; font-weight: 700; line-height: 1.35; }
+  .detail-price { margin-top: 12rpx; font-size: 48rpx; }
+  .detail-text { line-height: 1.7; color: #555; white-space: pre-wrap; }
+
+  /* 「房型 / 地址 / 租期」这种成对信息：左灰标签，右值 */
+  .kv-list {
+    overflow: hidden;
+    padding: 0 28rpx;
+    margin-top: 32rpx;
+    border-radius: var(--radius);
+    background: var(--color-card);
+    box-shadow: var(--shadow-card);
+  }
+  /* 分隔线的画法同 .form-group */
+  .kv-row {
+    display: flex;
+    margin-top: -1rpx;
+    padding: 24rpx 0;
+    font-size: 28rpx;
+    border-top: 1rpx solid var(--color-border);
+  }
+  .kv-label { flex-shrink: 0; width: 160rpx; color: var(--color-text-light); }
+  .kv-value { flex: 1; min-width: 0; text-align: right; }
+
+  /* 发布者的操作按钮并排放，不再一颗颗竖着排满屏红框 */
+  /* 普通按钮被基础库定死 184px 宽（见 .btn-danger 的说明），并排时要放开。
+     「标记已售」用栗色框、「删除」用红框，尺寸都照 .btn-danger 的胶囊 */
+  .owner-actions { display: flex; margin: 24rpx -10rpx 0; }
+  .owner-actions button { flex: 1; width: auto !important; margin: 0 10rpx !important; }
+  .owner-actions .btn-outline { height: 80rpx; border-radius: 999rpx; border-width: 1rpx; }

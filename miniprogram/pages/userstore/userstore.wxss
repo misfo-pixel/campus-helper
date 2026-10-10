@@ -80,3 +80,4 @@
 .store-badge-item   { background: #FAEEDA; color: #854F0B; }
 .store-badge-sublet { background: #E1F5EE; color: #0F6E56; }
 .store-badge-task   { background: #EEEDFE; color: #3C3489; }
+.store-badge-group  { background: #FBEAF0; color: #993556; }

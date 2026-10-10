@@ -70,6 +70,18 @@ const TEXTS = {
     link: '/pages/agreement/agreement'
   },
 
+  // 群组详情
+  group: {
+    brief: '明尼助手只展示信息，不组织活动',
+    title: '组队提示',
+    lines: [
+      '本平台不组织、不赞助任何活动，也不管理任何群，只展示用户自行发布的信息。',
+      '群和活动由发起人自行负责，平台与其不存在任何合作或代表关系。',
+      '线下见面请约在公共场所，涉及拼车、合租、AA 付款时务必核实对方身份。'
+    ],
+    link: '/pages/agreement/agreement'
+  },
+
   // 各类发布页
   publish: {
     brief: '内容由你负责，微信号会公开展示',

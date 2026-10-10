@@ -3,7 +3,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 帖子留言板。二手 / 转租 / 委托三个详情页共用。
+// 帖子留言板。二手 / 转租 / 委托 / 群组四个详情页共用。
 //
 // 定位刻意做成【公开的异步问答】，不是私聊：
 //   - 所有人可见，所以它和帖子本身是同一类 UGC，走同一套治理（机检 + 举报 + 删除），
@@ -17,7 +17,8 @@ const _ = db.command
 const TYPES = {
   item:   { collection: 'secondhand_items', adminRole: 'market_admin', label: '二手', page: 'pages/itemdetail/itemdetail' },
   sublet: { collection: 'sublet_items',     adminRole: 'sublet_admin', label: '转租', page: 'pages/subletdetail/subletdetail' },
-  task:   { collection: 'task_items',       adminRole: 'task_admin',   label: '委托', page: 'pages/taskdetail/taskdetail' }
+  task:   { collection: 'task_items',       adminRole: 'task_admin',   label: '委托', page: 'pages/taskdetail/taskdetail' },
+  group:  { collection: 'group_items',      adminRole: 'group_admin',  label: '群组', page: 'pages/groupdetail/groupdetail' }
 }
 
 const MAX_LEN = 200

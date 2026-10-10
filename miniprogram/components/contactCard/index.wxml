@@ -4,7 +4,7 @@
        所以不给点击反馈，也不给箭头。 -->
   <view class="contact-body {{linkToStore ? 'contact-body-tap' : ''}}" bindtap="onTapProfile">
     <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="contact-avatar" />
-    <view wx:else class="contact-avatar contact-avatar-fallback">🐿️</view>
+    <image wx:else src="/images/loon.png" mode="aspectFill" class="contact-avatar" />
     <view class="contact-meta">
       <view class="contact-name">{{nickname || '校园用户'}}</view>
       <view class="contact-wechat">微信：{{maskedWechat || '未填写'}}</view>

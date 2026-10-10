@@ -115,6 +115,6 @@ Page({
   },
 
   goToPublish: function () {
-    wx.navigateTo({ url: '/pages/subletpublish/subletpublish' })
+    wx.navigateTo({ url: '/pages/subletpublish/subletpublish?kind=' + this.data.kind })
   }
 })

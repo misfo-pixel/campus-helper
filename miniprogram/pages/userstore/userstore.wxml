@@ -37,10 +37,10 @@
       <image class="store-thumb" src="{{item.image || '/images/default-goods-image.png'}}" mode="aspectFill" lazy-load></image>
       <view class="store-item-meta">
         <view class="store-item-title">{{item.title}}</view>
-        <view class="price" style="margin-top: 8rpx;">{{item.price}}</view>
+        <view wx:if="{{item.price}}" class="price" style="margin-top: 8rpx;">{{item.price}}</view>
         <view wx:if="{{item.sub}}" class="text-light" style="font-size: 24rpx; margin-top: 4rpx;">{{item.sub}}</view>
       </view>
-      <!-- 「全部」页签下混着三种内容，得标出来这条是什么 -->
+      <!-- 「全部」页签下混着几种内容，得标出来这条是什么 -->
       <view wx:if="{{tab === 'all'}}" class="store-badge store-badge-{{item.type}}">{{item.label}}</view>
       <view wx:else class="store-arrow">›</view>
     </view>

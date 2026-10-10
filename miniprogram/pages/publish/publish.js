@@ -21,7 +21,11 @@ Page({
   },
 
   // 微信号自动填个人资料里存的那个，没存过就留空手填
-  onLoad: function () {
+  // 从列表页「求购 / 找房」那一面点进来时带 kind，表单直接停在同一面
+  onLoad: function (options) {
+    if (options && CFG.tabs.some(t => t.key === options.kind)) {
+      this.setData({ kind: options.kind, demand: isDemand(options.kind) })
+    }
     // 选图即上传：选完就在后台传，点发布时多半已经传完（见 utils/publish.js）
     this.uploader = createUploader('secondhand')
     // 读缓存，不再多打一次 login（见 utils/user.js）

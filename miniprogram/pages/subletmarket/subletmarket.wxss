@@ -1,1 +1,7 @@
 /* pages/subletmarket/subletmarket.wxss */
+.sublet-card { display: flex; padding: 20rpx; }
+.sublet-img { flex-shrink: 0; width: 200rpx; height: 200rpx; margin-right: 24rpx; border-radius: 16rpx; background: #f0ece8; }
+.sublet-body { flex: 1; min-width: 0; }
+.sublet-price { margin: 8rpx 0 12rpx; font-size: 34rpx; }
+.sublet-unit { font-size: 24rpx; font-weight: 400; }
+.sublet-addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

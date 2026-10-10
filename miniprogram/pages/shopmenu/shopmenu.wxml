@@ -16,7 +16,7 @@
 
     <view wx:for="{{item.items}}" wx:for-item="product" wx:key="_id" class="card product">
       <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" class="product-img" />
-      <view wx:else class="product-img product-img-fallback">📦</view>
+      <view wx:else class="product-img product-img-fallback"><image src="/images/ui/box.svg" class="ico-fill"></image></view>
 
       <view class="product-meta">
         <view class="product-name {{product.available ? '' : 'product-off'}}">{{product.name}}</view>

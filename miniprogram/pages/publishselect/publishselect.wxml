@@ -1,34 +1,21 @@
 <!--pages/publishselect/publishselect.wxml-->
 <view class="page-container">
-  <view style="font-size: 44rpx; font-weight: bold; margin-bottom: 8rpx;">发布</view>
-
-  <!-- 发布闲置 -->
-  <view bindtap="publishItem" class="card" style="display: flex; align-items: center; padding: 32rpx;">
-    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">♻️</view>
-    <view style="flex: 1;">
-      <view style="font-size: 32rpx; font-weight: bold;">发布闲置</view>
-      <view class="text-light">闲置变现金，几步搞定</view>
-    </view>
-    <view style="color: #ccc; font-size: 40rpx;">›</view>
+  <!-- 比列表页头的系统字标题多一点设计感，又不像首页那样整条出图：
+       自绘邮筒图标歪一点 + 「分享」两个字金色划线 -->
+  <view class="ps-head">
+    <view class="icon-box tint-gold ps-head-icon"><image src="/images/ui/mailbox.svg"></image></view>
+    <view class="ps-head-title">有什么要<text class="ps-head-hl">分享</text>的？</view>
   </view>
 
-  <!-- 发布转租 -->
-  <view bindtap="publishSublet" class="card" style="display: flex; align-items: center; padding: 32rpx;">
-    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🏠</view>
-    <view style="flex: 1;">
-      <view style="font-size: 32rpx; font-weight: bold;">发布转租</view>
-      <view class="text-light">找到下一位租客</view>
+  <!-- 和首页同一套入口格（app.wxss 的 .tile） -->
+  <view class="tile-grid">
+    <view wx:for="{{tiles}}" wx:key="key" bindtap="onTapTile" data-url="{{item.url}}"
+          class="tile {{item.wide ? 'tile-wide' : ''}}">
+      <view class="icon-box {{item.color ? 'tint-' + item.color : ''}}"><image src="/images/modules/{{item.key}}.svg"></image></view>
+      <view>
+        <view class="tile-title">{{item.title}}</view>
+        <view class="tile-sub">{{item.sub}}</view>
+      </view>
     </view>
-    <view style="color: #ccc; font-size: 40rpx;">›</view>
-  </view>
-
-  <!-- 发布委托 -->
-  <view bindtap="publishTask" class="card" style="display: flex; align-items: center; padding: 32rpx;">
-    <view style="font-size: 44rpx; width: 88rpx; height: 88rpx; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 24rpx;">🙋</view>
-    <view style="flex: 1;">
-      <view style="font-size: 32rpx; font-weight: bold;">发布委托</view>
-      <view class="text-light">求购物品/找人帮忙</view>
-    </view>
-    <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>
 </view>

@@ -1,0 +1,54 @@
+<view class="page-container with-submit-bar">
+  <view class="page-head">
+    <view class="icon-box"><image src="/images/modules/group.svg"></image></view>
+    <view class="page-head-text"><view class="page-head-title">{{kind === 'buddy' ? '找搭子' : '长期群招新'}}</view></view>
+  </view>
+
+  <view class="kind-switch">
+    <view wx:for="{{kinds}}" wx:for-item="k" wx:key="key"
+          bindtap="onTapKind" data-key="{{k.key}}"
+          class="kind-switch-item {{kind === k.key ? 'kind-switch-on' : ''}}">
+      {{k.action}}
+    </view>
+  </view>
+
+  <view class="section-title">基本信息（必填）</view>
+  <view class="form-group">
+    <input placeholder="{{kind === 'buddy' ? '找什么搭子（如 周六 Costco 拼车、乐队缺鼓手）' : '群名（如 Freefood 俱乐部）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <textarea placeholder="{{kind === 'buddy' ? '具体安排、还差几个人、对搭子有什么要求' : '这个群是做什么的、多久活动一次、适合谁加入'}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <input placeholder="你的微信号（想加入的人加你，你拉进群）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
+  </view>
+
+  <view class="section-title">补充信息（选填）</view>
+  <view class="form-group">
+    <block wx:if="{{kind === 'buddy'}}">
+      <picker mode="date" value="{{event_date}}" start="{{today}}" bindchange="onDateChange">
+        <view class="form-row">
+          <text class="form-row-label">活动日期</text>
+          <text class="form-row-value {{event_date ? '' : 'form-row-empty'}}">{{event_date || '过了这天自动下架'}}</text>
+          <text class="form-row-arrow">›</text>
+        </view>
+      </picker>
+      <input placeholder="地点（如 Coffman、Dinkytown）" value="{{location}}" bindinput="onInput" data-field="location" class="form-input" />
+    </block>
+    <view class="uploader">
+      <view class="uploader-inner">
+        <view wx:for="{{images}}" wx:key="*this" class="uploader-cell">
+          <image src="{{item}}" mode="aspectFill" class="uploader-img"></image>
+          <view catchtap="removeImage" data-index="{{index}}" class="uploader-del"><view>×</view></view>
+        </view>
+        <view wx:if="{{images.length < maxImages}}" bindtap="chooseImages" class="uploader-cell uploader-add">
+          <image src="/images/ui/camera.svg"></image>
+          <text>{{images.length}}/{{maxImages}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <disclaimer-bar type="publish" />
+</view>
+
+<!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
+<view class="submit-bar">
+  <button class="btn-primary" bindtap="submitPublish">发布</button>
+</view>

@@ -15,7 +15,7 @@ const REASONS = [
 
 Component({
   properties: {
-    targetType: String,   // item 闲置 / sublet 转租 / task 委托 / shop 店铺
+    targetType: String,   // item 闲置 / sublet 转租 / task 委托 / group 群组 / shop 店铺
     targetId: String
   },
 

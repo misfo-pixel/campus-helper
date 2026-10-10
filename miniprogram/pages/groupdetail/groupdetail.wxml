@@ -1,0 +1,61 @@
+<view wx:if="{{item}}">
+  <!-- 分享卡片在群里躺久了，点开时可能早就凑齐了。放最顶上，免得有人白去加群主 -->
+  <view wx:if="{{closed}}" class="closed-banner">
+    <view class="closed-banner-label">{{closed}}</view>
+    <view class="closed-banner-hint">{{reviewHint || (isOwner ? '别人点开时也会先看到这一条' : '不用再联系群主了')}}</view>
+  </view>
+
+  <swiper wx:if="{{item.images.length > 0}}" style="width: 100%; height: 500rpx;" indicator-dots circular bindchange="onSwiperChange">
+    <swiper-item wx:for="{{item.images}}" wx:for-item="img" wx:key="*this">
+      <view style="position: relative; width: 100%; height: 100%; background: #f0f0f0;">
+        <image wx:if="{{index === 0 && item.thumb}}" src="{{item.thumb}}" mode="aspectFill" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></image>
+        <image wx:if="{{index <= shownUpTo}}" src="{{img}}" mode="aspectFill" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></image>
+      </view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 有图时内容区做成盖在图片下沿的圆角面板（app.wxss 的 .detail-sheet） -->
+  <view class="page-container {{item.images.length > 0 ? 'detail-sheet' : ''}}">
+    <view class="badge">{{kindLabel}}</view>
+    <view class="detail-title" style="margin-top: 12rpx;">{{item.title}}</view>
+
+    <block wx:if="{{!partial}}">
+
+    <view class="section-title">介绍</view>
+    <view class="detail-text">{{item.description}}</view>
+
+    <view wx:if="{{item.event_date || item.location}}" class="kv-list">
+      <view wx:if="{{item.event_date}}" class="kv-row"><text class="kv-label">日期</text><text class="kv-value">{{item.event_date}}</text></view>
+      <view wx:if="{{item.location}}" class="kv-row"><text class="kv-label">地点</text><text class="kv-value">{{item.location}}</text></view>
+    </view>
+
+    <!-- 已结束的不给别人亮联系方式，群主自己看的不受影响 -->
+    <block wx:if="{{!closed || isOwner}}">
+      <view wx:if="{{!isOwner}}" class="text-light" style="margin-top: 32rpx;">加群主微信，由群主拉你进群</view>
+      <contact-card link-to-store="{{true}}" bindviewstore="goToSellerStore" avatar="{{seller.avatarUrl}}" nickname="{{seller.nickname}}" wechat="{{item.contact_wechat}}" />
+    </block>
+
+    <view wx:if="{{(isOwner && !closed) || canDelete}}" class="owner-actions">
+      <button wx:if="{{isOwner && !closed}}" bindtap="markDone" class="btn-outline">{{closeText}}</button>
+      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">删除</button>
+    </view>
+
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">看看更多群组 ›</view>
+
+    <message-board target-type="group" target-id="{{item._id}}" />
+
+    <report-bar target-type="group" target-id="{{item._id}}" />
+
+    <disclaimer-bar type="group" />
+    </block>
+    <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
+  </view>
+</view>
+
+<view wx:elif="{{loading}}" class="detail-state">加载中…</view>
+
+<view wx:else class="detail-state">
+  <view class="detail-state-title">这条已经下架了</view>
+  <view class="text-light" style="margin-top: 12rpx;">可能已经凑齐，或者被发布者删掉了</view>
+  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">看看别的群组</button>
+</view>

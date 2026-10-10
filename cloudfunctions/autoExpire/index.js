@@ -32,7 +32,18 @@ exports.main = async (event, context) => {
       expiredCount++
     }
 
-    // 3. 到期前一天提醒发帖人。
+    // 3. 找搭子：活动日期 event_date 过了的下架。日期选填，和二手一样要排除空串。
+    //    长期群不填日期，永远走不到这里，只能群主自己点「停止招新」
+    const groups = await db.collection('group_items')
+      .where({ status: 'open', event_date: _.gt('').and(_.lt(todayStr)) })
+      .get()
+      .catch(() => ({ data: [] }))   // 集合还没建（一个群都没发过）时别把整个任务带崩
+    for (const g of groups.data) {
+      await db.collection('group_items').doc(g._id).update({ data: { status: 'expired' } })
+      expiredCount++
+    }
+
+    // 4. 到期前一天提醒发帖人。
     //    放在下架之后跑：先把今天该下的下掉，再看明天该提醒谁，
     //    两批数据不会重叠。发不出去（没授权、票用完）一律忽略。
     const tomorrow = new Date(today.getTime() + 86400000)

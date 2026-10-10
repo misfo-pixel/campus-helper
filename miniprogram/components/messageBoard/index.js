@@ -1,4 +1,4 @@
-// 帖子留言板。挂在二手 / 转租 / 委托三个详情页底部。
+// 帖子留言板。挂在二手 / 转租 / 委托 / 群组四个详情页底部。
 //
 // 公开的异步问答，不是私聊：所有人可见，所以治理上和帖子本身同一类
 // （机检 + 举报 + 删除），不用把平台升级成「通信服务提供者」。
@@ -15,7 +15,7 @@ const REASONS = ['虚假信息 / 诈骗', '色情低俗', '广告骚扰', '违�
 
 Component({
   properties: {
-    targetType: String,     // item / sublet / task
+    targetType: String,     // item / sublet / task / group
     targetId: String
   },
 

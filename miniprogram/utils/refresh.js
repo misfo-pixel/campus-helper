@@ -15,7 +15,7 @@ function bag() {
   return app.globalData.staleKeys
 }
 
-// 发布、删除、改状态之后调用。key 用 'item' / 'sublet' / 'task'
+// 发布、删除、改状态之后调用。key 用 'item' / 'sublet' / 'task' / 'group'
 function markStale(key) {
   try {
     bag()[key] = true

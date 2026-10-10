@@ -1,1 +1,66 @@
 /* pages/home/home.wxss */
+
+.home-header {
+  display: block;
+  width: 100%;
+}
+
+/* 图是 686×300 满版出血的，圆角在这里切 */
+.home-banner {
+  display: block;
+  width: 100%;
+  margin: 16rpx 0 32rpx;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+.sponsor-title {
+  margin: 24rpx 0 20rpx;
+  font-size: 26rpx;
+  color: var(--color-text-light);
+}
+.sponsor-tag {
+  margin-left: 12rpx;
+  padding: 2rpx 10rpx;
+  font-size: 20rpx;
+  color: #bbb;
+  border: 1rpx solid #ddd;
+  border-radius: 6rpx;
+}
+.sponsor-row {
+  white-space: nowrap;
+  width: 100%;
+}
+.sponsor {
+  display: inline-block;
+  width: 136rpx;
+  margin-right: 16rpx;
+  text-align: center;
+  vertical-align: top;
+}
+.sponsor-logo {
+  display: block;
+  width: 112rpx;
+  height: 112rpx;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+}
+.sponsor-slot {
+  box-sizing: border-box;
+  border: 2rpx dashed #ccc;
+  background: transparent;
+  box-shadow: none;
+  color: #bbb;
+  font-size: 48rpx;
+  line-height: 108rpx;
+}
+.sponsor-name {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: var(--color-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

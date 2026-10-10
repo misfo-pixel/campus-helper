@@ -23,7 +23,8 @@ function debugInfo(t0) {
 const TYPES = {
   item: { collection: 'secondhand_items', adminRole: 'market_admin' },
   sublet: { collection: 'sublet_items', adminRole: 'sublet_admin' },
-  task: { collection: 'task_items', adminRole: 'task_admin' }
+  task: { collection: 'task_items', adminRole: 'task_admin' },
+  group: { collection: 'group_items', adminRole: 'group_admin' }
 }
 
 async function findUser(openid, fields) {

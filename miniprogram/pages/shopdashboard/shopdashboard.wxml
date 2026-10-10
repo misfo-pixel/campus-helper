@@ -3,7 +3,7 @@
   <!-- 还没开店 -->
   <block wx:if="{{!shop}}">
     <view class="empty-apply">
-      <view class="empty-emoji">🏪</view>
+      <view class="empty-emoji"><image src="/images/modules/shop.svg" class="ico-lg"></image></view>
       <view class="empty-title">你还没有小店</view>
       <view class="text-light empty-desc">{{ordering ? '开店后就能上架商品、接收订单。' : '开店后就能上架商品，买家看到后会直接加你微信。'}}</view>
       <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">开一家小店</button>
@@ -29,7 +29,7 @@
     <!-- 店头 + 营业状态开关 -->
     <view class="shop-head card">
       <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
-      <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
+      <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
       <view class="shop-meta">
         <view class="shop-name">{{shop.name}}</view>
         <view class="text-light shop-cat">{{shop.category}}</view>
@@ -122,19 +122,19 @@
 
     <view class="entries">
       <view class="entry card" bindtap="goToMenu">
-        <view class="entry-icon">🏪</view>
+        <view class="entry-icon"><image src="/images/modules/shop.svg" class="ico-md"></image></view>
         <view class="entry-label">商品管理</view>
       </view>
       <view class="entry card" bindtap="goToSettings">
-        <view class="entry-icon">⚙️</view>
+        <view class="entry-icon"><image src="/images/ui/gear.svg" class="ico-md"></image></view>
         <view class="entry-label">小店设置</view>
       </view>
       <view wx:if="{{ordering}}" class="entry card" bindtap="enableOrderAlert">
-        <view class="entry-icon">🔔</view>
+        <view class="entry-icon"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
         <view class="entry-label">新单提醒</view>
       </view>
       <view wx:if="{{teamEnabled}}" class="entry card" bindtap="goToDeliveryAsk">
-        <view class="entry-icon">🛵</view>
+        <view class="entry-icon"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
         <view class="entry-label">配送状态</view>
       </view>
     </view>

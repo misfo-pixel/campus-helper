@@ -5,7 +5,7 @@
   <view wx:if="{{loadError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
   <block wx:elif="{{!team}}">
     <view class="empty-box">
-      <view class="empty-emoji">🛵</view>
+      <view class="empty-emoji"><image src="/images/ui/delivery.svg" class="ico-lg"></image></view>
       <view class="empty-title">你还不在配送队里</view>
       <button class="btn-primary" bindtap="goToEdit" style="margin-top: 40rpx;">创建配送队</button>
       <button bindtap="joinTeam" style="margin-top: 20rpx;">用邀请码加入</button>

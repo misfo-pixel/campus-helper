@@ -1,0 +1,36 @@
+.group-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 28rpx;
+}
+.group-card-main { flex: 1; min-width: 0; }
+.group-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+.group-card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 32rpx;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-card-desc {
+  margin-top: 12rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.group-card-meta { margin-top: 12rpx; font-size: 24rpx; }
+.group-card-thumb {
+  width: 136rpx;
+  height: 136rpx;
+  margin-left: 20rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}

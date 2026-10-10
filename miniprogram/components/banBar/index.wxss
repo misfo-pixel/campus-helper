@@ -11,8 +11,10 @@
 }
 
 .ban-icon {
-  font-size: 22rpx;
+  width: 24rpx;
+  height: 24rpx;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .ban-text {

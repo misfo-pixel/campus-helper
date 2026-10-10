@@ -25,6 +25,11 @@ const TYPES = {
     collection: 'task_items',
     status: 'open',      // 注意任务用的是 open，不是 on_sale
     field: { title: true, reward: true, images: true, thumb: true, deadline: true }
+  },
+  group: {
+    collection: 'group_items',
+    status: 'open',
+    field: { title: true, kind: true, images: true, thumb: true, event_date: true }
   }
 }
 

@@ -4,7 +4,7 @@
 </view>
 
 <view wx:elif="{{!loading}}" class="page-container">
-  <view class="page-title">{{isNew ? '创建配送队 🛵' : '队伍设置'}}</view>
+  <view class="page-title">{{isNew ? '创建配送队' : '队伍设置'}}</view>
 
   <!-- 队员只能看，改不了 -->
   <block wx:if="{{isNew || role === 'admin'}}">

@@ -9,13 +9,6 @@
   background: var(--color-bg);
 }
 
-.profile-avatar-fallback {
-  font-size: 56rpx;
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 /* ===== 「我的」页面的分组 ===== */
 
@@ -34,6 +27,7 @@
   align-items: center;
   padding: 32rpx;
 }
+.profile-row-icon { width: 44rpx; height: 44rpx; margin-right: 20rpx; flex-shrink: 0; }
 .profile-row-label { flex: 1; font-size: 30rpx; }
 .profile-row-arrow { color: #ccc; font-size: 40rpx; }
 .profile-row-badge {

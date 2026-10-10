@@ -1,17 +1,22 @@
 <view class="page-container">
-  <view class="list-head">
-    <view class="page-title" style="margin-bottom: 0;">校外服务 🏪</view>
-    <button wx:if="{{ordering}}" class="btn-sm" bindtap="goToMyOrders">我的订单</button>
+  <view class="page-head">
+    <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
+    <view class="page-head-text">
+      <view class="page-head-title">校外服务</view>
+      <view class="page-head-sub">长期服务，稳定委托</view>
+    </view>
+    <button wx:if="{{ordering}}" class="btn-outline btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 
-  <view wx:if="{{loading}}" class="text-light empty">加载中…</view>
-  <view wx:elif="{{shops.length === 0}}" class="text-light empty">
-    还没有小店开张，晚点再来看看
+  <view wx:if="{{loading}}" class="list-foot">加载中…</view>
+  <view wx:elif="{{shops.length === 0}}" class="empty-state">
+    <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
+    <view class="empty-state-text">还没有小店开张，晚点再来看看</view>
   </view>
 
   <view wx:for="{{shops}}" wx:key="_id" class="card shop" bindtap="goToShop" data-id="{{item._id}}">
     <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="shop-logo" />
-    <view wx:else class="shop-logo shop-logo-fallback">🏪</view>
+    <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
 
     <view class="shop-meta">
       <view class="shop-name-row">

@@ -160,6 +160,10 @@ Page({
     clearTimeout(this.searchTimer)
   },
 
+  goToPublish: function () {
+    wx.navigateTo({ url: '/pages/publish/publish?kind=' + this.data.kind })
+  },
+
   goToDetail: function (e) {
     const id = e.currentTarget.dataset.id
     stashFrom('item', this.data.items, id)   // 详情页先拿它画首屏，不白屏等网络

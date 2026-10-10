@@ -22,13 +22,6 @@
   background: var(--color-bg);
 }
 
-.avatar-fallback {
-  font-size: 52rpx;
-  background: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
 .chevron {
   color: #ccc;
