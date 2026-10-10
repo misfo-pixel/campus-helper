@@ -15,6 +15,7 @@ Page({
     ordering: ORDERING_ENABLED,
     loading: true,
     saving: false,
+    deleting: false,
 
     name: '',
     logo: '',          // 已保存的云文件 ID，或本次新选的本地临时路径
@@ -230,6 +231,35 @@ Page({
     } finally {
       this.setData({ saving: false })
     }
+  },
+
+  // 能不能删由云函数判断（有没办完的订单、是不是被下架了），这里只负责确认
+  removeShop: function () {
+    if (this.data.deleting) return
+    wx.showModal({
+      title: '删除小店',
+      content: '店铺、商品和买家的开团订阅会一起删掉，不能恢复。已有的订单记录会保留。',
+      confirmText: '删除',
+      confirmColor: '#C8102E',
+      success: res => {
+        if (!res.confirm) return
+        this.setData({ deleting: true })
+        wx.cloud.callFunction({ name: 'shopManage', data: { action: 'remove' } }).then(r => {
+          const result = (r && r.result) || {}
+          if (!result.success) {
+            wx.showModal({ title: '删不了', content: result.message || '删除失败，请重试', showCancel: false })
+            return
+          }
+          wx.showToast({ title: '已删除', icon: 'success' })
+          setTimeout(() => wx.switchTab({ url: '/pages/profile/profile' }), 1000)
+        }).catch(err => {
+          console.error('删除小店失败：', err)
+          wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+        }).then(() => {
+          this.setData({ deleting: false })
+        })
+      }
+    })
   },
 
   openAgreement: function () {

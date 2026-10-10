@@ -202,3 +202,11 @@
   font-size: 30rpx;
 }
 
+.delete-shop {
+  margin: 56rpx auto 24rpx;
+  padding: 16rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #C8102E;
+}
+

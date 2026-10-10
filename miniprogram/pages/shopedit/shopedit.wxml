@@ -103,4 +103,7 @@
   </view>
 
   <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">保存</button>
+
+  <!-- 不常用又不可撤销，放最底下、做成文字，别和「保存」抢 -->
+  <view class="delete-shop" bindtap="removeShop">{{deleting ? '删除中...' : '删除小店'}}</view>
 </view>

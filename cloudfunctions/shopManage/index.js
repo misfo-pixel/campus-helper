@@ -1,6 +1,7 @@
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
+const _ = db.command
 
 // 店长自助管理：店铺资料 + 商品。
 //
@@ -248,6 +249,55 @@ exports.main = async (event) => {
         await db.collection('shops').doc(shop._id).update({
           data: { status: event.status, updated_at: new Date() }
         })
+        return { success: true }
+      }
+
+      // 店长自己删店。删掉店铺、商品、开团订阅和还没人接的配送请求；
+      // 订单和办过的配送请求留着——上面有店名快照，买家和配送队的记录不能跟着没了。
+      //
+      // 两种情况不让删：
+      //   1. 还有没办完的订单，或者配送队已经接了的请求——对面还在等，
+      //      店一删，买家连店长微信都查不到了
+      //   2. 被举报下架的店——删了就能重开一家，下架等于没下架
+      case 'remove': {
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有店铺' }
+        if (shop.takedown) {
+          return { success: false, message: '店铺因违规被下架，不能自行删除，如有异议请通过意见反馈联系我们' }
+        }
+
+        const busyOrders = await db.collection('shop_orders')
+          .where({ shop_id: shop._id, status: _.in(['pending', 'accepted', 'delivering']) })
+          .count()
+        if (busyOrders.total > 0) {
+          return { success: false, message: '还有 ' + busyOrders.total + ' 单没完成，处理完再删' }
+        }
+        const busyRequests = await db.collection('delivery_requests')
+          .where({ shop_id: shop._id, status: 'accepted' })
+          .count()
+        if (busyRequests.total > 0) {
+          return { success: false, message: '有配送队接了你的请求还没送完，等送达或标「没来送」后再删' }
+        }
+
+        const items = await db.collection('shop_items')
+          .where({ shop_id: shop._id }).field({ image: true }).limit(1000).get()
+        const files = [shop.logo, shop.license_image]
+          .concat(items.data.map(i => i.image))
+          .filter(f => typeof f === 'string' && f.indexOf('cloud://') === 0)
+
+        await db.collection('shop_items').where({ shop_id: shop._id }).remove()
+        await db.collection('shop_subscriptions').where({ shop_id: shop._id }).remove()
+        await db.collection('delivery_requests').where({ shop_id: shop._id, status: 'open' }).remove()
+        await db.collection('shops').doc(shop._id).remove()
+
+        // 图片删不掉不影响结果，店已经没了。deleteFile 一次最多 50 个
+        for (let i = 0; i < files.length; i += 50) {
+          try {
+            await cloud.deleteFile({ fileList: files.slice(i, i + 50) })
+          } catch (e) {
+            console.warn('删除店铺图片失败（不影响结果）：', e)
+          }
+        }
         return { success: true }
       }
 
