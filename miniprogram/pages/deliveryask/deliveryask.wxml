@@ -12,36 +12,35 @@
   </view>
 
   <block wx:elif="{{shopReady}}">
-    <!-- ========== 1 送哪、几单 ========== -->
-    <view class="ask-head">
-      <view class="section-title section-title-bar">送哪、几单</view>
-      <text class="ask-tag">{{exact ? '送上门' : '送到取货点'}}</text>
+    <!-- ========== 订单详情 ==========
+         时间和地点读小店设置，单数按这一场的订单数，店长这里不填 -->
+    <view class="section-title section-title-bar">订单详情</view>
+
+    <view wx:if="{{expired}}" class="card ask-off">
+      <view>小店现在没有开着的服务时间，先去开一场。</view>
+      <text class="ask-link" bindtap="goToShopSettings">去小店设置 ›</text>
     </view>
 
-    <view class="card lines">
-      <view wx:if="{{exact}}" class="line">
-        <view class="line-name">每单 {{flatFeeText}}</view>
-        <input class="line-count" type="number" placeholder="0" value="{{count}}" bindinput="onCount" />
+    <view wx:else class="card lines">
+      <view class="line-depart">{{departText}}</view>
+      <view wx:if="{{lines.length === 0}}" class="text-light line-empty">暂无订单</view>
+      <view wx:for="{{lines}}" wx:key="name" class="line">
+        <view class="line-name">
+          {{item.name}}
+          <view class="line-fee">{{item.arrive ? '约 ' + item.arrive + ' 到 · ' : ''}}每单 {{item.feeText}}</view>
+        </view>
+        <text class="line-count-text">{{item.count}}</text>
         <text class="line-unit">单</text>
       </view>
-      <block wx:else>
-        <view wx:if="{{points.length === 0}}" class="text-light">小店设置里还没有取货点</view>
-        <view wx:for="{{points}}" wx:key="name" class="line">
-          <view class="line-name">{{item.name}}<text class="line-fee">每单 {{item.feeText}}</text></view>
-          <input class="line-count" type="number" placeholder="0" value="{{item.count}}"
-                 bindinput="onPointCount" data-index="{{index}}" />
-          <text class="line-unit">单</text>
-        </view>
-      </block>
 
       <view class="line-foot">
-        <text class="ask-link" bindtap="goToShopSettings">改配送费 ›</text>
+        <text class="ask-link" bindtap="goToShopSettings">改时间或配送费 ›</text>
         <text wx:if="{{totalText}}" class="line-total">合计 {{totalText}}</text>
       </view>
       <view wx:if="{{freeWarn}}" class="line-warn">{{freeWarn}}</view>
     </view>
 
-    <textarea placeholder="几点到店取货、几点前送到、其他要求"
+    <textarea placeholder="其他要求（选填）"
               value="{{note}}" bindinput="onNote" maxlength="300"
               class="card note-box"></textarea>
 
@@ -93,12 +92,13 @@
     </view>
 
     <view class="text-light req-time">{{item.timeText}} 发出</view>
-    <view wx:if="{{item.tag}}" class="req-price">
-      <text class="ask-tag">{{item.tag}}</text>
-      <text class="req-price-detail">{{item.detail}}</text>
+    <view wx:if="{{item.totalText}}" class="req-price">
+      <text wx:if="{{item.tag}}" class="ask-tag">{{item.tag}}</text>
+      <text wx:if="{{item.departText}}" class="req-depart">{{item.departText}}</text>
       <text class="req-price-total">{{item.totalText}}</text>
+      <view wx:for="{{item.rows}}" wx:for-item="row" wx:key="*this" class="req-row">{{row}}</view>
     </view>
-    <view class="req-note">{{item.note}}</view>
+    <view wx:if="{{item.note}}" class="req-note">{{item.note}}</view>
 
     <!-- 送达照片：平台不派单也不结账，出了「说送了其实没送」的争议，
          能拿出来的只有这个 -->

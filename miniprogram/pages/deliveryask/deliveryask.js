@@ -10,8 +10,9 @@
 //
 // 队伍多于一支时可以「发给所有队」，先接先得（规则在 deliveryRequest 云函数里）。
 //
-// 钱按小店设置里的配送费算，店长这里只填单数：送上门填一个总单数，
-// 送到取货点按点各填各的。单价不在这儿改——两个数等价是有意的约定。
+// 店长这里什么数都不填（2026-10-10 改）：几点出发、各点约几点到读小店设置，
+// 每个点几单按这一场的订单数，钱按小店设置的配送费算。发出去以后单数还跟着
+// 订单变，送达时定格。算法都在 deliveryRequest 云函数里，这页只管显示。
 
 // teamIndex 取这个值表示群发
 const ALL_TEAMS = -1
@@ -37,7 +38,7 @@ const TEAM_REPORT_REASONS = ['接了单没来送', '骚扰 / 态度恶劣', '虚
 
 const { formatTime } = require('../../utils/date.js')
 const { ask } = require('../../utils/subscribe.js')
-const { money, describe } = require('../../utils/delivery.js')
+const { money, departText, describe } = require('../../utils/delivery.js')
 
 Page({
   data: {
@@ -50,74 +51,42 @@ Page({
     sending: false,
     requests: [],
 
-    // 这一趟送哪、几单。跟着小店设置走
-    shopReady: false,      // 店铺读到了才知道是送上门还是取货点
+    // 这一场送哪、几单。云函数 preview 算好给的
+    shopReady: false,
     noDelivery: false,     // 小店设置的是无需线下交付
-    exact: true,
-    flatFee: 0,
-    flatFeeText: '',
-    count: '',             // 送上门：几单
-    points: [],            // 取货点：[{ name, fee, feeText, count }]
+    expired: false,        // 没有开着的服务时间
+    departText: '',        // '10-19 周日 12:00 出发'
+    lines: [],             // [{ name, arrive, count, feeText }]
     totalText: '',
-    freeWarn: ''           // 选中的地方配送费是 0
+    freeWarn: ''           // 有单的点配送费是 0
   },
 
   onShow: function () {
-    this.loadShop()
+    this.loadPreview()
     this.loadTeams()
     this.loadRequests()
   },
 
-  // 只在店铺读到之前填一次：店长从设置页改完配送费回来，单数别被清掉，
-  // 但单价要跟上新的
-  loadShop: function () {
-    wx.cloud.callFunction({ name: 'shopManage', data: { action: 'getMine' } }).then(res => {
+  // 从设置页改完时间或配送费回来会再走 onShow，这里跟着刷新
+  loadPreview: function (done) {
+    wx.cloud.callFunction({ name: 'deliveryRequest', data: { action: 'preview' } }).then(res => {
       const r = (res && res.result) || {}
-      const shop = r.shop
-      if (!r.success || !shop) return
-
-      const old = {}
-      this.data.points.forEach(p => { old[p.name] = p.count })
+      if (!r.success) return
+      const lines = (r.lines || []).map(l => Object.assign({}, l, { feeText: money(l.fee) }))
+      const free = lines.find(l => l.fee <= 0)
       this.setData({
         shopReady: true,
-        noDelivery: shop.needs_delivery === false,
-        exact: shop.exact_address === true,
-        flatFee: Number(shop.flat_delivery_fee) || 0,
-        flatFeeText: money(shop.flat_delivery_fee),
-        points: (shop.pickup_points || []).map(p => ({
-          name: p.name,
-          fee: Number(p.fee) || 0,
-          feeText: money(p.fee),
-          count: old[p.name] || ''
-        }))
-      }, () => this.recompute())
+        noDelivery: r.noDelivery === true,
+        expired: r.expired === true,
+        departText: r.batch ? departText(r.batch.date, r.batch.depart_time) : '',
+        lines: lines,
+        totalText: lines.length ? money(r.total) : '',
+        freeWarn: free ? ((r.exact ? '配送费' : '「' + free.name + '」的配送费') + '是 $0，配送队拿不到钱，先去小店设置填上') : ''
+      })
     }).catch(err => {
-      console.error('读取小店失败：', err)
-    })
-  },
-
-  onCount: function (e) {
-    this.setData({ count: e.detail.value }, () => this.recompute())
-  },
-
-  onPointCount: function (e) {
-    const i = Number(e.currentTarget.dataset.index)
-    this.setData({ ['points[' + i + '].count']: e.detail.value }, () => this.recompute())
-  },
-
-  // 合计和「配送费是 0」的提醒，和云函数 buildLines 是同一套算法；
-  // 这里只是给店长看，真正的钱数以云函数算的为准
-  recompute: function () {
-    const d = this.data
-    const lines = d.exact
-      ? [{ name: '送上门', fee: d.flatFee, count: Number(d.count) || 0 }]
-      : d.points.map(p => ({ name: p.name, fee: p.fee, count: Number(p.count) || 0 }))
-    const used = lines.filter(l => l.count > 0)
-    const free = used.find(l => l.fee <= 0)
-    const total = used.reduce((sum, l) => sum + l.fee * l.count, 0)
-    this.setData({
-      totalText: used.length ? money(total) : '',
-      freeWarn: free ? ((d.exact ? '配送费' : '「' + free.name + '」的配送费') + '是 $0，配送队拿不到钱，先去小店设置填上') : ''
+      console.error('读取这一场的订单失败：', err)
+    }).then(() => {
+      if (done) done()
     })
   },
 
@@ -126,6 +95,7 @@ Page({
   },
 
   onPullDownRefresh: function () {
+    this.loadPreview()
     this.loadRequests(() => wx.stopPullDownRefresh())
   },
 
@@ -263,25 +233,18 @@ Page({
     const d = this.data
     if (d.sending) return
 
-    if (!d.totalText) {
-      wx.showToast({ title: '至少填一单', icon: 'none' })
+    if (!d.lines.length) {
+      wx.showToast({ title: '这一场还没有订单', icon: 'none' })
       return
     }
     if (d.freeWarn) {
       wx.showToast({ title: d.freeWarn, icon: 'none' })
       return
     }
-    if (!d.note.trim()) {
-      wx.showToast({ title: '写一下几点取货、几点前送到', icon: 'none' })
-      return
-    }
     if (d.teamIndex === null) {
       wx.showToast({ title: '选一支配送队，或者发给所有队', icon: 'none' })
       return
     }
-
-    const counts = {}
-    d.points.forEach(p => { counts[p.name] = Number(p.count) || 0 })
 
     this.setData({ sending: true })
     wx.showLoading({ title: '发送中', mask: true })
@@ -291,10 +254,7 @@ Page({
       data: {
         action: 'create',
         teamId: d.teamIndex === ALL_TEAMS ? 'all' : d.teams[d.teamIndex]._id,
-        note: d.note.trim(),
-        // 单价不传，云函数按店铺上的配送费现算
-        count: d.exact ? (Number(d.count) || 0) : undefined,
-        counts: d.exact ? undefined : counts
+        note: d.note.trim()
       }
     }).then(res => {
       wx.hideLoading()
@@ -303,12 +263,7 @@ Page({
         wx.showToast({ title: r.message || '发送失败', icon: 'none' })
         return
       }
-      this.setData({
-        note: '',
-        teamIndex: null,
-        count: '',
-        points: d.points.map(p => Object.assign({}, p, { count: '' }))
-      }, () => this.recompute())
+      this.setData({ note: '', teamIndex: null })
       this.loadRequests()
       wx.showToast({
         title: r.teamCount > 1 ? '已发给 ' + r.teamCount + ' 支队' : '已发出',

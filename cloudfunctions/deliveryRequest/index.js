@@ -30,40 +30,105 @@ const db = cloud.database()
 // 和 deliveryManage 的说明里写的是同一个数，改要一起改
 const NO_SHOW_LIMIT = 3
 
-const MAX_COUNT = 200   // 一趟最多填几单，防手滑多打个 0
-
-// 这一趟送哪、每单多少钱、几单。
+// 这一趟送哪、几单、每单多少钱，不再让店长填（2026-10-10 改）：
+// 单数按这一场的订单现数，送到哪、几点出发、各点约几点到都从小店设置里读。
+// 请求发出后，没办完之前每次读都重新数一遍——截单前还有人下单、店长拒了某一单，
+// 队长看到的单数跟着变；送达那一刻定格存下来。
 //
-// 价格不让店长另填：小店设置里的配送费就是付给配送队的价（2026-10-10 约定，
-// 两个数等价，省得店长对买家一个价、对队伍一个价）。所以只收单数，单价
-// 从店铺上现读，不信前端传来的钱数。
-//   送上门   一行：{ name: '送上门', fee: flat_delivery_fee, count }
-//   取货点   每个点一行：{ name: 点名, fee: 点的费用, count }，0 单的点不要
-// 返回 { lines, total } 或 { error }。
-function buildLines(shop, event) {
-  const toCount = v => Math.max(0, Math.min(MAX_COUNT, Math.floor(Number(v) || 0)))
+// 价格是小店设置里的配送费（2026-10-10 约定：配送费就是付给配送队的价）。
+// 发出时存一份快照，之后店长改价不影响已发出的请求；发出后才冒出来的点用现价。
+//   送上门   一行：{ name: '送上门', fee, count }
+//   取货点   每个有单的点一行：{ name, fee, count, arrive }，arrive = 出发时间 + 这个点的分钟数
+
+const TZ = 'America/Chicago'
+
+function todayInTZ() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).format(new Date())
+}
+
+// '12:00' + 15 → '12:15'，封顶 23:59。和小程序端 utils/date.js 的 addMinutes 是同一份
+function addMinutes(hhmm, minutes) {
+  const bits = String(hhmm || '').split(':')
+  if (bits.length !== 2) return ''
+  const total = Math.min(23 * 60 + 59, Number(bits[0]) * 60 + Number(bits[1]) + (Number(minutes) || 0))
+  const pad = n => (n < 10 ? '0' + n : '' + n)
+  return pad(Math.floor(total / 60)) + ':' + pad(total % 60)
+}
+
+// 小店当前那一场。老场次只有 deliver_time，当出发时间用
+function currentBatch(shop) {
+  const b = (shop.batches || [])[0]
+  if (!b || !b.date) return null
+  return { date: b.date, cutoff: b.cutoff, depart_time: b.depart_time || b.deliver_time }
+}
+
+// 这一场每个取货点几单。取消了的不算，其余（含店长还没确认的）都算
+async function countOrders(shopId, batchDate) {
+  const res = await db.collection('shop_orders')
+    .where({ shop_id: shopId, batch_date: batchDate, status: db.command.neq('cancelled') })
+    .field({ pickup_point: true, exact_address: true })
+    .limit(1000)
+    .get()
+  const counts = {}
+  res.data.forEach(o => {
+    const key = o.exact_address ? '送上门' : (o.pickup_point || '')
+    if (key) counts[key] = (counts[key] || 0) + 1
+  })
+  return counts
+}
+
+// snapshot：已发出请求上存的 lines，用来沿用发出时的价
+function buildLines(shop, depart, counts, snapshot) {
+  const oldFee = {}
+  for (const l of snapshot || []) oldFee[l.name] = l.fee
+  const feeOf = (name, current) => (oldFee[name] !== undefined ? oldFee[name] : (Number(current) || 0))
+
   let lines
   if (shop.exact_address) {
-    lines = [{ name: '送上门', fee: Number(shop.flat_delivery_fee) || 0, count: toCount(event.count) }]
+    lines = [{ name: '送上门', fee: feeOf('送上门', shop.flat_delivery_fee), count: counts['送上门'] || 0, arrive: '' }]
   } else {
-    const counts = event.counts || {}
-    lines = (shop.pickup_points || []).map(p => ({
+    const points = shop.pickup_points || []
+    lines = points.map(p => ({
       name: p.name,
-      fee: Number(p.fee) || 0,
-      count: toCount(counts[p.name])
+      fee: feeOf(p.name, p.fee),
+      count: counts[p.name] || 0,
+      arrive: p.eta_minutes ? addMinutes(depart, p.eta_minutes) : ''
     }))
+    // 点位被店长删了，但这一场已经有人选了它下单——单子还在，照样要送
+    Object.keys(counts).forEach(name => {
+      if (name !== '送上门' && !points.some(p => p.name === name)) {
+        lines.push({ name: name, fee: feeOf(name, 0), count: counts[name], arrive: '' })
+      }
+    })
   }
   lines = lines.filter(l => l.count > 0)
-  if (!lines.length) return { error: '至少填一单' }
-
-  // 配送费为 0 的话配送队白跑，让店长先去设置里填
-  const free = lines.find(l => l.fee <= 0)
-  if (free) {
-    return { error: (shop.exact_address ? '配送费' : '「' + free.name + '」的配送费') + '是 $0，先去小店设置填上' }
-  }
-
   const total = Math.round(lines.reduce((sum, l) => sum + l.fee * l.count, 0) * 100) / 100
   return { lines: lines, total: total }
+}
+
+// 没办完的请求按订单现数刷新。店铺删了就留着原来的快照
+async function withLive(requests) {
+  const live = requests.filter(q => q.batch_date && (q.status === 'open' || q.status === 'accepted'))
+  if (!live.length) return requests
+
+  const shopIds = [...new Set(live.map(q => q.shop_id))]
+  const shops = {}
+  const res = await db.collection('shops').where({ _id: db.command.in(shopIds) }).limit(100).get()
+  res.data.forEach(sh => { shops[sh._id] = sh })
+
+  const fresh = {}
+  await Promise.all(live.map(async q => {
+    const shop = shops[q.shop_id]
+    if (!shop) return
+    // 店长发出后又改了这一场的出发时间，就按新的算
+    const b = currentBatch(shop)
+    const depart = (b && b.date === q.batch_date) ? b.depart_time : q.depart_time
+    const counts = await countOrders(shop._id, q.batch_date)
+    fresh[q._id] = Object.assign({ depart_time: depart }, buildLines(shop, depart, counts, q.lines))
+  }))
+  return requests.map(q => (fresh[q._id] ? Object.assign({}, q, fresh[q._id]) : q))
 }
 
 async function getMyShop(openid) {
@@ -126,6 +191,28 @@ exports.main = async (event) => {
   try {
     switch (event.action) {
 
+      // 「找配送队」页上方那块：这一场几点出发、每个点几单、合计多少，发之前先给店长看
+      case 'preview': {
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有小店' }
+        if (shop.needs_delivery === false) return { success: true, noDelivery: true }
+
+        const batch = currentBatch(shop)
+        const expired = !batch || batch.date < todayInTZ()
+        const priced = expired
+          ? { lines: [], total: 0 }
+          : buildLines(shop, batch.depart_time, await countOrders(shop._id, batch.date))
+        return {
+          success: true,
+          noDelivery: false,
+          exact: shop.exact_address === true,
+          batch: batch,
+          expired: expired,
+          lines: priced.lines,
+          total: priced.total
+        }
+      }
+
       // 店长发起。teamId 为 'all' 时群发给所有队，先接先得
       case 'create': {
         const shop = await getMyShop(openid)
@@ -133,13 +220,23 @@ exports.main = async (event) => {
 
         if (shop.needs_delivery === false) return { success: false, message: '小店设置的是无需线下交付' }
 
-        // 旧版小程序不传单数，照旧只存说明，等新版铺开后去掉这个分支
-        const legacy = event.count === undefined && event.counts === undefined
-        const priced = legacy ? { lines: [], total: 0 } : buildLines(shop, event)
-        if (priced.error) return { success: false, message: priced.error }
+        // 旧版小程序还会传 count / counts，一概不认，按订单现数
+        const batch = currentBatch(shop)
+        if (!batch) return { success: false, message: '先在小店设置里设好服务时间' }
+        if (batch.date < todayInTZ()) return { success: false, message: '这一场已经过去了，先在小店设置里开新的一场' }
 
+        const counts = await countOrders(shop._id, batch.date)
+        const priced = buildLines(shop, batch.depart_time, counts)
+        if (!priced.lines.length) return { success: false, message: '这一场还没有订单，有人下单了再发' }
+
+        // 配送费为 0 的话配送队白跑，让店长先去设置里填
+        const free = priced.lines.find(l => l.fee <= 0)
+        if (free) {
+          return { success: false, message: (shop.exact_address ? '配送费' : '「' + free.name + '」的配送费') + '是 $0，先去小店设置填上' }
+        }
+
+        // 时间、地点、单数都自动带上了，说明只写别的要求，可以不填
         const note = String(event.note || '').trim().slice(0, 300)
-        if (!note) return { success: false, message: legacy ? '说清楚几单、什么时候、送到哪' : '写一下几点取货、几点前送到' }
         if (!event.teamId) return { success: false, message: '请选择配送队' }
 
         const broadcast = event.teamId === 'all'
@@ -183,7 +280,10 @@ exports.main = async (event) => {
             broadcast: broadcast,
             target_team_ids: teams.map(t => t._id),
             declined_team_ids: [],
-            // 快照：店长事后改了配送费，已发出的请求还按发出时的价
+            // 哪一场、几点出发。lines 里的单数没办完前每次读都按订单重数（见 withLive），
+            // 价格沿用这里存下的
+            batch_date: batch.date,
+            depart_time: batch.depart_time,
             address_type: shop.exact_address ? 'exact' : 'points',
             lines: priced.lines,
             total: priced.total,
@@ -207,7 +307,8 @@ exports.main = async (event) => {
             data: {
               buyer: shop.name,
               orderType: broadcast ? '配送委托·先接先得' : '配送委托',
-              content: note,
+              content: batch.date.slice(5) + ' ' + batch.depart_time + ' 出发 · ' +
+                priced.lines.reduce((n, l) => n + l.count, 0) + ' 单',
               amount: priced.total,   // 按小店设置的配送费算出的合计，钱不经过平台
               time: nowText(false)
             }
@@ -245,7 +346,7 @@ exports.main = async (event) => {
         ])
 
         // 群发的接下来之前不给店长微信
-        const active = activeRes.data.map(q => (
+        const active = (await withLive(activeRes.data)).map(q => (
           (q.broadcast && q.status === 'open') ? Object.assign({}, q, { shop_wechat: '' }) : q
         ))
         return {
@@ -268,7 +369,7 @@ exports.main = async (event) => {
           .orderBy('created_at', 'desc')
           .limit(50)
           .get()
-        return { success: true, requests: res.data }
+        return { success: true, requests: await withLive(res.data) }
       }
 
       // 队长接下这一单。群发的先接先得：带着 status: 'open' 做条件更新，
@@ -427,12 +528,18 @@ exports.main = async (event) => {
           .slice(0, 6)
         if (!photos.length) return { success: false, message: '至少传一张送达照片' }
 
+        // 单数送到这一刻为止都跟着订单走，送达就定格存下来
+        const final = (await withLive([req]))[0]
+
         // 条件更新：照片传到一半，店长那边可能已经标了「没来送」，别把它盖成送达
         const done = await db.collection('delivery_requests')
           .where({ _id: event.id, status: db.command.in(['open', 'accepted']) })
           .update({
             data: {
               status: 'delivered',
+              lines: final.lines || [],
+              total: final.total || 0,
+              depart_time: final.depart_time || '',
               photos: photos,
               delivered_at: new Date(),
               delivered_by: openid

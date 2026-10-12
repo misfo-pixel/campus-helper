@@ -44,8 +44,8 @@ function addDays(dateStr, n) {
 // 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开——
 // 买家看不到一个已经过去的场次，哪怕店长还没回来改。
 //
-// key 用 日期#送达时间：同一支配送队名下的店长天然共用一个 key，
-// 配送队工作台按它分组，正好是「这一趟」。
+// key 用 日期#出发时间，下单时拿它对回是哪一场（buyerOrders 那份要一致）。
+// 老场次只有 deliver_time（当时叫送达时间），当出发时间用，key 不变。
 //
 // isToday / isTomorrow 给买家端拼文案用——场次可能在好几天后，
 // 光靠「今天/明天」两个词表达不了。
@@ -58,12 +58,15 @@ function expandBatches(batches) {
     if (b.date < now.date) return null
     if (b.date === now.date && now.minutes >= cutoffMin) return null
     const isToday = b.date === now.date
+    const depart = b.depart_time || b.deliver_time
     return {
-      key: b.date + '#' + b.deliver_time,
+      key: b.date + '#' + depart,
       label: '',
       date: b.date,
       cutoff: b.cutoff,
-      deliver_time: b.deliver_time,
+      depart_time: depart,
+      // 旧版小程序读这个字段显示时间。新版铺开后删掉
+      deliver_time: depart,
       isToday: isToday,
       isTomorrow: b.date === tomorrow,
       minutesLeft: isToday ? cutoffMin - now.minutes : null

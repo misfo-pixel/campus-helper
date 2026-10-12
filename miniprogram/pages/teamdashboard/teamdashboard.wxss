@@ -231,6 +231,16 @@
   font-size: 26rpx;
 }
 
+.req-depart {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.req-row {
+  width: 100%;
+  font-size: 26rpx;
+}
+
 .req-price-total {
   margin-left: auto;
   font-size: 34rpx;

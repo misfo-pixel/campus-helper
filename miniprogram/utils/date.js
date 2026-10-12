@@ -29,7 +29,19 @@ function formatTime(value) {
     ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
 }
 
+// '12:00' + 15 → '12:15'。取货点的预计送达 = 出发时间 + 路上要多久。
+// 过了午夜就停在 23:59：一趟车不会开到第二天，真算出来那么晚说明填错了，
+// 显示 23:59 比绕回 00:10 更容易让人发现
+function addMinutes(hhmm, minutes) {
+  const bits = String(hhmm || '').split(':')
+  if (bits.length !== 2) return ''
+  const total = Math.min(23 * 60 + 59, Number(bits[0]) * 60 + Number(bits[1]) + (Number(minutes) || 0))
+  const pad = n => (n < 10 ? '0' + n : '' + n)
+  return pad(Math.floor(total / 60)) + ':' + pad(total % 60)
+}
+
 module.exports = {
   today: today,
-  formatTime: formatTime
+  formatTime: formatTime,
+  addMinutes: addMinutes
 }

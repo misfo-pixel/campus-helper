@@ -9,6 +9,7 @@
 // 店长自己送还是外包给配送队，对买家是透明的——规则完全一样。
 
 const { myProfile } = require('../../utils/user.js')
+const { addMinutes } = require('../../utils/date.js')
 const { EXACT_ADDRESS_ENABLED } = require('../../config.js')
 const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
@@ -165,9 +166,12 @@ Page({
         return
       }
 
+      // 每个点各自几点到 = 出发时间 + 这个点的分钟数。场次只开一场，按第一场算
+      const depart = batches[0].depart_time || batches[0].deliver_time
       this.setData({
         points: points,
-        pointLabels: points.map(p => p.name + '  $' + p.fee),
+        pointLabels: points.map(p => p.name + '  $' + p.fee +
+          (p.eta_minutes ? ' · 约 ' + addMinutes(depart, p.eta_minutes) + ' 到' : '')),
         batches: batches,
         batchLabels: batches.map(b => this.batchLabel(b)),
         batchParts: batches.map(b => this.batchPart(b)),
@@ -189,7 +193,7 @@ Page({
     }).catch(err => console.error('读取微信号失败：', err))
   },
 
-  // main「09-20 周日 18:00 送达」，sub「当天 08:00 截单」/「还有 3 小时截单」
+  // main「09-20 周日 18:00 出发」，sub「当天 08:00 截单」/「还有 3 小时截单」
   batchPart: function (b) {
     let sub
     if (b.isToday && b.minutesLeft != null) {
@@ -199,10 +203,10 @@ Page({
     } else {
       sub = '当天 ' + b.cutoff + ' 截单'
     }
-    return { main: this.whenText(b) + ' ' + b.deliver_time + ' 送达', sub: sub }
+    return { main: this.whenText(b) + ' ' + (b.depart_time || b.deliver_time) + ' 出发', sub: sub }
   },
 
-  // 滚轮里一项一行：「09-20 周日 18:00 送达（当天 08:00 截单）」
+  // 滚轮里一项一行：「09-20 周日 18:00 出发（当天 08:00 截单）」
   batchLabel: function (b) {
     const p = this.batchPart(b)
     return p.main + '（' + p.sub + '）'
@@ -379,8 +383,8 @@ Page({
                  (r.needs_delivery === false
                    ? '这是线上服务，没有取货环节。\n\n'
                    : (d.exactAddress
-                       ? '预计 ' + r.batch_date + ' ' + r.deliver_time + ' 送到你填的地址。\n\n'
-                       : '请在 ' + r.batch_date + ' ' + r.deliver_time + ' 到取货地点自取。\n\n')) +
+                       ? r.batch_date + ' ' + r.deliver_time + ' 出发，送到你填的地址。\n\n'
+                       : '预计 ' + r.batch_date + ' ' + r.deliver_time + ' 送到取货地点，到时过去取。\n\n')) +
                  '平台只记录下单意向，不参与交易。',
         showCancel: false,
         confirmText: '知道了',

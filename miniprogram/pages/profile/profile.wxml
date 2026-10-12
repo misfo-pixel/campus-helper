@@ -67,7 +67,7 @@
 
   <!-- 开队码 + 下架配送队：超管 / 运营管理员 -->
   <view wx:if="{{teamEnabled && canManageTeams}}" bindtap="goToTeamAdmin" class="card card-tap profile-row">
-    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">配送队管理</view>
+    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">配送管理</view>
     <view class="profile-row-arrow">›</view>
   </view>
 

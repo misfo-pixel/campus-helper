@@ -63,13 +63,14 @@
         {{item.timeText}} 发来
         <text wx:if="{{item.broadcast && item.status === 'open'}}" class="req-race">群发 · 先接先得</text>
       </view>
-      <!-- 送哪、几单、多少钱：扫一眼就能决定接不接 -->
-      <view wx:if="{{item.tag}}" class="req-price">
-        <text class="req-tag">{{item.tag}}</text>
-        <text class="req-price-detail">{{item.detail}}</text>
+      <!-- 几点出发、送哪、几单、多少钱：扫一眼就能决定接不接。单数没办完前跟着订单变 -->
+      <view wx:if="{{item.totalText}}" class="req-price">
+        <text wx:if="{{item.tag}}" class="req-tag">{{item.tag}}</text>
+        <text wx:if="{{item.departText}}" class="req-depart">{{item.departText}}</text>
         <text class="req-price-total">{{item.totalText}}</text>
+        <view wx:for="{{item.rows}}" wx:for-item="row" wx:key="*this" class="req-row">{{row}}</view>
       </view>
-      <view class="req-note">{{item.note}}</view>
+      <view wx:if="{{item.note}}" class="req-note">{{item.note}}</view>
 
       <view class="req-contact">
         <text class="req-wechat-label">店长微信</text>
@@ -106,8 +107,8 @@
                 <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
               </view>
               <view class="his-time">{{item.timeText}} 发来{{item.endText ? ' · ' + item.endText + item.endVerb : ''}}</view>
-              <view wx:if="{{item.tag}}" class="his-note">{{item.tag}} · {{item.detail}} · {{item.totalText}}</view>
-            <view class="his-note">{{item.note}}</view>
+              <view wx:if="{{item.totalText}}" class="his-note">{{item.departText ? item.departText + ' · ' : ''}}{{item.detail}} · {{item.totalText}}</view>
+              <view wx:if="{{item.note}}" class="his-note">{{item.note}}</view>
             </view>
             <view wx:if="{{item.photos.length}}" class="his-photos">
               <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"

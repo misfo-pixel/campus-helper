@@ -180,13 +180,7 @@
   color: var(--color-primary);
 }
 
-.ask-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* 送上门 / 送到取货点。工作台卡片上是同一个标签 */
+/* 送上门才有的标签（取货点是默认，不标）。工作台卡片上是同一个 */
 .ask-tag {
   flex-shrink: 0;
   font-size: 22rpx;
@@ -218,20 +212,27 @@
 }
 
 .line-fee {
-  margin-left: 12rpx;
+  margin-top: 4rpx;
   font-size: 24rpx;
   font-weight: normal;
   color: var(--color-text-light);
 }
 
-.line-count {
-  width: 120rpx;
-  height: 64rpx;
-  text-align: center;
-  font-size: 32rpx;
+.line-depart {
+  padding: 20rpx 0;
+  font-size: 30rpx;
   font-weight: 700;
-  background: var(--color-bg);
-  border-radius: 12rpx;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.line-empty {
+  padding: 24rpx 0;
+  font-size: 26rpx;
+}
+
+.line-count-text {
+  font-size: 36rpx;
+  font-weight: 800;
 }
 
 .line-unit {
@@ -271,7 +272,13 @@
   margin-top: 12rpx;
 }
 
-.req-price-detail {
+.req-depart {
+  font-size: 26rpx;
+  font-weight: 600;
+}
+
+.req-row {
+  width: 100%;
   font-size: 26rpx;
 }
 

@@ -56,7 +56,7 @@ function slotBlocker(shop) {
 
   const slot = (shop.batches || [])[0]
   if (!slot || !slot.date) {
-    return '先在店铺设置里设一个服务时间（日期 + 截单时间 + 到点时间），才能开门营业'
+    return '先在店铺设置里设一个服务时间（日期 + 截单时间 + 出发时间），才能开门营业'
   }
 
   const now = nowInTZ()
@@ -77,7 +77,9 @@ function cleanPickupPoints(raw) {
       // 一句话就是服务地点（「Coffman 门口」），不再拆名称 + 具体位置两格。
       // 它同时是订单里引用的标识符，所以限长，别让它长成一段描述。
       name: String(p.name).trim().slice(0, 20),
-      fee: Math.max(0, Number(p.fee) || 0)
+      fee: Math.max(0, Number(p.fee) || 0),
+      // 出发后多久到这个点（分钟）。买家看到的预计送达 = 场次的出发时间 + 它
+      eta_minutes: Math.max(0, Math.min(180, Math.floor(Number(p.eta_minutes) || 0)))
     }))
 }
 
@@ -91,9 +93,11 @@ function cleanBatches(raw) {
   const isTime = t => /^([01]\d|2[0-3]):[0-5]\d$/.test(t)
   const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s)
   const b = raw[0]
-  if (!b || !isDate(b.date) || !isTime(b.cutoff) || !isTime(b.deliver_time)) return []
-  if (b.deliver_time <= b.cutoff) return []
-  return [{ date: b.date, cutoff: b.cutoff, deliver_time: b.deliver_time }]
+  // 2026-10-10 前的场次只有 deliver_time（当时叫送达时间），当出发时间收
+  const depart = b && (b.depart_time || b.deliver_time)
+  if (!b || !isDate(b.date) || !isTime(b.cutoff) || !isTime(depart)) return []
+  if (depart <= b.cutoff) return []
+  return [{ date: b.date, cutoff: b.cutoff, depart_time: depart }]
 }
 
 // 拿到自己的店。没有就返回 null，不算错误——新用户本来就没有店。
@@ -164,7 +168,7 @@ function validateShop(fields) {
   if (!fields.contact_wechat) return '请填写联系微信'
   if (fields.needs_delivery) {
     if (!fields.batches.length) {
-      return '要设一个服务时间：日期 + 截单时间 + 到点时间'
+      return '要设一个服务时间：日期 + 截单时间 + 出发时间'
     }
     if (!fields.exact_address && !fields.pickup_points.length) {
       return '客户自取的话，至少要设一个服务地点'

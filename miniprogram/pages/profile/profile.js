@@ -1,6 +1,22 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
 const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED, GROUP_MODULE_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
 
+const DELIVERY_ACCESS_KEY = 'deliveryAccess.v1'
+
+function readDeliveryAccess() {
+  try {
+    return wx.getStorageSync(DELIVERY_ACCESS_KEY) === true
+  } catch (e) {
+    return false
+  }
+}
+
+function writeDeliveryAccess(canSee) {
+  try {
+    wx.setStorageSync(DELIVERY_ACCESS_KEY, canSee)
+  } catch (e) {}
+}
+
 Page({
   data: {
     nickname: '',
@@ -69,13 +85,13 @@ Page({
         avatarUrl: profile.avatarUrl,
         isAdmin: isAdmin,
         isSuperAdmin: isSuper,
-        // 先按角色给一次，下面再根据「有没有店 / 在不在队里」补
-        canSeeDelivery: isSuper || isOpsAdmin,
+        // 角色给不了的，先用上次查到的结果顶上，下面再在后台核一遍
+        canSeeDelivery: isSuper || isOpsAdmin || readDeliveryAccess(),
         canManageTeams: isSuper || isOpsAdmin
       })
       guideProfileSetupOnce(profile)
       if (isAdmin) this.loadPendingReports()
-      if (TEAM_MODULE_ENABLED && SHOP_MODULE_ENABLED && !this.data.canSeeDelivery) this.checkDeliveryAccess()
+      if (TEAM_MODULE_ENABLED && SHOP_MODULE_ENABLED && !isSuper && !isOpsAdmin) this.checkDeliveryAccess()
     }).catch(err => {
       console.error('加载个人资料失败：', err)
     })
@@ -83,6 +99,7 @@ Page({
 
   // 配送工作台不对普通用户开放，但店长和已经在队里的人得能进去。
   // 角色判断不出来的这两种情况，只能实际查一下。
+  // 两次云函数跨太平洋要好几百毫秒，所以结果记在本地，下次进来先显示。
   checkDeliveryAccess: function () {
     Promise.all([
       wx.cloud.callFunction({ name: 'shopManage', data: { action: 'getMine' } }),
@@ -90,7 +107,9 @@ Page({
     ]).then(([shopRes, teamRes]) => {
       const hasShop = !!((shopRes && shopRes.result && shopRes.result.shop))
       const inTeam = !!((teamRes && teamRes.result && teamRes.result.team))
-      if (hasShop || inTeam) this.setData({ canSeeDelivery: true })
+      const canSee = hasShop || inTeam
+      writeDeliveryAccess(canSee)
+      if (canSee !== this.data.canSeeDelivery) this.setData({ canSeeDelivery: canSee })
     }).catch(err => {
       console.error('判断配送入口权限失败：', err)
     })

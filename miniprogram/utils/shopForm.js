@@ -32,7 +32,8 @@ function validatePlan(points, batches, exactAddress) {
   // 店长连改商品、改联系方式都保存不了。
   const batch = (batches || [])[0]
   if (!batch || !batch.date) return '请选择服务时间的日期'
-  if (batch.deliver_time <= batch.cutoff) return '到点时间要晚于截单时间'
+  // 老场次只有 deliver_time，店长没碰服务时间就保存时还是老样子
+  if ((batch.depart_time || batch.deliver_time) <= batch.cutoff) return '出发时间要晚于截单时间'
   return null
 }
 

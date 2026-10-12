@@ -59,11 +59,13 @@ function currentSession(shop) {
   if (b.date < now.date) return null
   if (b.date === now.date && now.minutes >= toMinutes(b.cutoff)) return null
 
+  // 老场次只有 deliver_time，当出发时间用——key 和改名前一样，不会因此重发一遍
+  const depart = b.depart_time || b.deliver_time
   return {
-    key: b.date + '#' + b.cutoff + '#' + b.deliver_time,
+    key: b.date + '#' + b.cutoff + '#' + depart,
     // time 类型字段要「2026-09-25 16:00」这种格式。明尼苏达当地时间，不换算
     cutoff: b.date + ' ' + b.cutoff,
-    tip: '服务时间 ' + b.date.slice(5) + ' ' + b.deliver_time
+    tip: '服务时间 ' + b.date.slice(5) + ' ' + depart + ' 出发'
   }
 }
 

@@ -53,7 +53,7 @@ exports.main = async (event) => {
             })
           } else if (report.targetType === 'team') {
             // 配送队同理：底下挂着历史请求和送达照片，只下架不删。
-            // 下架后不出现在挑队列表、收不到群发；管理员可在「配送队管理」里恢复
+            // 下架后不出现在挑队列表、收不到群发；管理员可在「配送管理」里恢复
             await db.collection(collection).doc(report.targetId).update({
               data: {
                 takedown: true,

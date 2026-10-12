@@ -80,6 +80,7 @@
       <!-- 服务地点只有买家自取才用得上 -->
       <plan-editor wx:if="{{!exactAddress}}" part="points"
                    init-points="{{planPoints}}"
+                   depart-time="{{planBatches[0].depart_time || planBatches[0].deliver_time}}"
                    bind:change="onPlanChange" />
     </block>
   </block>

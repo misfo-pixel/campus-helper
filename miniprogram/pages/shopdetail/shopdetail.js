@@ -21,9 +21,11 @@ function cutoffPhrase(batches) {
   if (!b || !b.cutoff) return ''
 
   const day = b.date ? b.date.slice(5) + ' ' : ''
-  // 群友问完「几点截单」，下一个问题就是「几点能拿」，所以两个时间都写上
-  return b.deliver_time
-    ? day + b.cutoff + ' 截单，' + b.deliver_time + ' 送达'
+  // 群友问完「几点截单」，下一个问题就是「几点能拿」。各取货点到的时间不一样，
+  // 标题里写不下，就写出发时间，具体几点到在下单页选点时看
+  const depart = b.depart_time || b.deliver_time
+  return depart
+    ? day + b.cutoff + ' 截单，' + depart + ' 出发'
     : day + b.cutoff + ' 截单'
 }
 

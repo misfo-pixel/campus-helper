@@ -13,6 +13,13 @@
       <input type="digit" value="{{item.fee}}" placeholder="0"
              bindinput="onPointInput" data-index="{{index}}" data-field="fee" class="fee-input" />
     </view>
+    <picker mode="selector" range="{{etaLabels}}" value="{{item.etaIndex}}"
+            bindchange="onEtaChange" data-index="{{index}}">
+      <view class="fee-line">
+        <text class="text-light">出发后多久到</text>
+        <text class="eta">{{item.eta_minutes}} 分钟<text wx:if="{{item.arriveText}}" class="eta-at"> · 约 {{item.arriveText}} 到</text></text>
+      </view>
+    </picker>
   </view>
 
   <view class="add" bindtap="addPoint">+ 添加服务地点</view>
@@ -42,9 +49,9 @@
     </view>
 
     <view class="slot-line">
-      <text class="slot-label">到点时间</text>
-      <picker mode="time" value="{{batch.deliver_time}}" bindchange="onBatchInput" data-field="deliver_time">
-        <view class="time">{{batch.deliver_time}}</view>
+      <text class="slot-label">出发时间</text>
+      <picker mode="time" value="{{batch.depart_time}}" bindchange="onBatchInput" data-field="depart_time">
+        <view class="time">{{batch.depart_time}}</view>
       </picker>
     </view>
   </view>

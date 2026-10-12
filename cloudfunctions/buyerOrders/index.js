@@ -49,6 +49,13 @@ function toMinutes(hhmm) {
   return Number(bits[0]) * 60 + Number(bits[1])
 }
 
+// '12:00' + 15 → '12:15'，封顶 23:59。和小程序端 utils/date.js 的 addMinutes 是同一份
+function addMinutes(hhmm, minutes) {
+  const total = Math.min(23 * 60 + 59, toMinutes(hhmm) + (Number(minutes) || 0))
+  const pad = n => (n < 10 ? '0' + n : '' + n)
+  return pad(Math.floor(total / 60)) + ':' + pad(total % 60)
+}
+
 
 // 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开。
 // 这里必须和 shopBrowse 里那份保持一致：买家看到什么场次由那边算，
@@ -59,12 +66,13 @@ function expandBatches(batches) {
     if (!b.date) return null
     if (b.date < now.date) return null
     if (b.date === now.date && now.minutes >= toMinutes(b.cutoff)) return null
+    const depart = b.depart_time || b.deliver_time
     return {
-      key: b.date + '#' + b.deliver_time,
+      key: b.date + '#' + depart,
       label: '',
       date: b.date,
       cutoff: b.cutoff,
-      deliver_time: b.deliver_time
+      depart_time: depart
     }
   }).filter(Boolean)
 }
@@ -257,6 +265,9 @@ exports.main = async (event) => {
 
         const total = Math.round((built.subtotal + feeCharged) * 100) / 100
 
+        // 这一单预计几点到：取货点 = 出发时间 + 这个点的分钟数；送上门估不了，就写出发时间
+        const deliverTime = batch ? (point ? addMinutes(batch.depart_time, point.eta_minutes) : batch.depart_time) : ''
+
         const res = await db.collection('shop_orders').add({
           data: {
             shop_id: shop._id,
@@ -283,7 +294,8 @@ exports.main = async (event) => {
             batch_key: batch ? batch.key : '',
             batch_label: batch ? batch.label : '',
             batch_date: batch ? batch.date : '',
-            deliver_time: batch ? batch.deliver_time : '',
+            depart_time: batch ? batch.depart_time : '',
+            deliver_time: deliverTime,
 
             delivery_mode: shop.delivery_mode || 'self',
             delivery_team_id: '',
@@ -369,7 +381,7 @@ exports.main = async (event) => {
           total: total,
           needs_delivery: needsDelivery,
           batch_label: batch ? batch.label : '',
-          deliver_time: batch ? batch.deliver_time : '',
+          deliver_time: deliverTime,
           batch_date: batch ? batch.date : '',
           contact_wechat: shop.contact_wechat
         }

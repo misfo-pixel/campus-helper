@@ -20,17 +20,31 @@
 // 组件自己持有编辑中的状态，每次改动通过 change 事件把自己那一半抛给父页面，
 // 父页面提交时直接用最后一次拿到的值。
 
-const { today } = require('../../utils/date.js')
+const { today, addMinutes } = require('../../utils/date.js')
 
-// deliver_time 界面上叫「到点时间」：店长几点到取货点。字段名没改，订单快照、
-// 批次 key、配送清单都认这个名字。
-const DEFAULT_BATCH = { date: '', cutoff: '11:00', deliver_time: '12:00' }
+// 服务时间填的是「几点出发」，不是几点送到：出发是店长自己定得了的，
+// 送到几点要看去哪个点。所以每个取货点各填一个「出发后多久到」，
+// 买家看到的预计送达 = 出发时间 + 这个点的分钟数。
+// 填分钟数而不是具体时刻：店长改了出发时间，各点的预计送达自动跟着走，不用挨个改。
+//
+// 2026-10-10 之前的场次只有 deliver_time（当时叫送达时间），读的时候当出发时间用。
+const DEFAULT_BATCH = { date: '', cutoff: '11:00', depart_time: '12:00' }
+
+const ETA_OPTIONS = [5, 10, 15, 20, 30, 45, 60, 90]
+const DEFAULT_ETA = 15
+
+function etaIndex(minutes) {
+  const i = ETA_OPTIONS.indexOf(minutes)
+  return i >= 0 ? i : ETA_OPTIONS.indexOf(DEFAULT_ETA)
+}
 
 Component({
   properties: {
     initPoints: { type: Array, value: [] },
     initBatches: { type: Array, value: [] },
     part: { type: String, value: 'all' },
+    // part="points" 时出发时间在另一个实例里，由父页面传进来，用来算各点「约几点到」
+    departTime: { type: String, value: '' },
     // 嵌在宿主页的分组卡里用（小店设置的「线下交付」）：标题和外框由宿主页给，
     // 组件只出内容，免得卡里套卡、标题说两遍
     bare: { type: Boolean, value: false }
@@ -39,6 +53,7 @@ Component({
   data: {
     points: [],
     batch: Object.assign({}, DEFAULT_BATCH),
+    etaLabels: ETA_OPTIONS.map(m => m + ' 分钟'),
     today: '',
     expired: false,
     seeded: false
@@ -52,6 +67,10 @@ Component({
   },
 
   observers: {
+    departTime: function () {
+      this.refreshArrive()
+    },
+
     // 父页面读完云端数据才会把值灌进来，只认第一次。
     // 之后组件自己管状态，否则父页面每次 setData 都会把用户正在编辑的内容冲掉。
     'initPoints, initBatches': function (points, batches) {
@@ -61,17 +80,29 @@ Component({
       // 老数据里可能有好几条，只取第一条——其余的在界面上没有位置放
       const first = (batches || [])[0] || {}
       this.setData({
-        points: (points || []).map(p => ({
-          name: p.name || '',
-          fee: p.fee === 0 ? '0' : String(p.fee || '')
-        })),
+        points: (points || []).map(p => {
+          const eta = ETA_OPTIONS[etaIndex(Number(p.eta_minutes))]
+          return {
+            name: p.name || '',
+            fee: p.fee === 0 ? '0' : String(p.fee || ''),
+            eta_minutes: eta,
+            etaIndex: etaIndex(eta),
+            arriveText: ''
+          }
+        }),
         batch: {
           date: first.date || '',
           cutoff: first.cutoff || DEFAULT_BATCH.cutoff,
-          deliver_time: first.deliver_time || DEFAULT_BATCH.deliver_time
+          depart_time: first.depart_time || first.deliver_time || DEFAULT_BATCH.depart_time
         },
         seeded: true
-      }, () => this.refreshExpired())
+      }, () => {
+        this.refreshExpired()
+        this.refreshArrive()
+        // 老数据读进来会补上默认值（出发时间、各点 15 分钟），马上交给父页面——
+        // 不然店长不碰这一块直接保存，界面上看到的值存不进去
+        this.emit()
+      })
     }
   },
 
@@ -82,12 +113,24 @@ Component({
       this.setData({ expired: !!d && !!this.data.today && d < this.data.today })
     },
 
+    // 各点「约几点到」。只出地点的那个实例拿父页面传进来的出发时间
+    refreshArrive: function () {
+      const depart = this.data.part === 'points' ? this.data.departTime : this.data.batch.depart_time
+      const patch = {}
+      this.data.points.forEach((p, i) => {
+        patch['points[' + i + '].arriveText'] = depart ? addMinutes(depart, p.eta_minutes) : ''
+      })
+      if (Object.keys(patch).length) this.setData(patch)
+    },
+
     // 只抛自己负责的那一半。两个实例同时存在时，谁都不碰对方的字段——
     // 父页面用 'points' in detail / 'batches' in detail 判断该更新哪个。
     emit: function () {
       const part = this.data.part
       const detail = {}
-      if (part !== 'time') detail.points = this.data.points
+      if (part !== 'time') {
+        detail.points = this.data.points.map(p => ({ name: p.name, fee: p.fee, eta_minutes: p.eta_minutes }))
+      }
       if (part !== 'points') detail.batches = [Object.assign({}, this.data.batch)]
       this.triggerEvent('change', detail)
     },
@@ -100,11 +143,28 @@ Component({
       this.setData({ ['points[' + idx + '].' + field]: e.detail.value }, () => this.emit())
     },
 
+    onEtaChange: function (e) {
+      const idx = Number(e.currentTarget.dataset.index)
+      const i = Number(e.detail.value)
+      this.setData({
+        ['points[' + idx + '].eta_minutes']: ETA_OPTIONS[i],
+        ['points[' + idx + '].etaIndex']: i
+      }, () => {
+        this.refreshArrive()
+        this.emit()
+      })
+    },
+
     addPoint: function () {
       this.setData({
-        points: this.data.points.concat({ name: '', fee: '' }),
+        points: this.data.points.concat({
+          name: '', fee: '', eta_minutes: DEFAULT_ETA, etaIndex: etaIndex(DEFAULT_ETA), arriveText: ''
+        }),
         seeded: true
-      }, () => this.emit())
+      }, () => {
+        this.refreshArrive()
+        this.emit()
+      })
     },
 
     removePoint: function (e) {
@@ -120,6 +180,7 @@ Component({
       const field = e.currentTarget.dataset.field
       this.setData({ ['batch.' + field]: e.detail.value, seeded: true }, () => {
         this.refreshExpired()
+        this.refreshArrive()
         this.emit()
       })
     }

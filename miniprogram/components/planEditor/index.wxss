@@ -40,6 +40,15 @@
   color: var(--color-text-light);
 }
 
+.eta {
+  margin-left: auto;
+  font-size: 28rpx;
+}
+
+.eta-at {
+  color: var(--color-text-light);
+}
+
 .fee-input {
   width: 120rpx;
   text-align: right;

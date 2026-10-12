@@ -50,6 +50,7 @@
         <!-- 送到模糊地址：店长设几个点，买家挑一个过来取 -->
         <plan-editor wx:if="{{!exactAddress}}" part="points" bare="{{true}}"
                      init-points="{{planPoints}}"
+                     depart-time="{{planBatches[0].depart_time || planBatches[0].deliver_time}}"
                      bind:change="onPlanChange" />
       </view>
     </view>
