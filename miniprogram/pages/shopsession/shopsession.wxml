@@ -1,0 +1,77 @@
+<skeleton wx:if="{{loading}}" type="form" />
+<view wx:else class="page-container">
+  <view class="head">
+    <text class="head-date">{{dateLabel}}</text>
+    <text wx:if="{{stateText}}" class="{{stateText === '已成团' ? 'gb-sticker' : 'head-state'}}">{{stateText}}</text>
+    <text wx:elif="{{editing}}" class="head-state">已有 {{count}} 单</text>
+  </view>
+
+  <!-- 同一天别家也开了：同类的错开更容易成团 -->
+  <view wx:if="{{others.length}}" class="others">
+    <view class="others-title">这天还有</view>
+    <view wx:for="{{others}}" wx:key="shop_name" class="others-row">
+      <text class="others-name">{{item.shop_name}}</text>
+      <text class="text-light">{{item.depart_time}} 出发 · {{item.points[0]}}</text>
+    </view>
+  </view>
+
+  <view class="form-group">
+    <picker wx:if="{{!editing || (!locked && !closed)}}" mode="date" start="{{dateStart}}" end="{{dateEnd}}" value="{{date}}" bindchange="onDate">
+      <view class="form-row">
+        <text class="form-row-label">日期</text>
+        <text class="form-row-value">{{dateLabel}}</text>
+        <text class="form-row-arrow">›</text>
+      </view>
+    </picker>
+
+    <picker mode="time" value="{{depart_time}}" bindchange="onDepart" disabled="{{locked || closed}}">
+      <view class="form-row">
+        <text class="form-row-label">出发时间</text>
+        <text class="form-row-value">{{depart_time}}</text>
+        <text wx:if="{{!locked && !closed}}" class="form-row-arrow">›</text>
+      </view>
+    </picker>
+
+    <picker mode="time" value="{{cutoff}}" bindchange="onCutoff" disabled="{{locked || closed}}">
+      <view class="form-row">
+        <text class="form-row-label">截单</text>
+        <text class="form-row-value">{{cutoffLabel}}</text>
+        <text wx:if="{{!locked && !closed}}" class="form-row-arrow">›</text>
+      </view>
+    </picker>
+
+    <picker mode="selector" range="{{minLabels}}" value="{{minIndex}}" bindchange="onMin" disabled="{{closed}}">
+      <view class="form-row">
+        <text class="form-row-label">成团门槛</text>
+        <text class="form-row-value">{{minLabels[minIndex]}}</text>
+        <text wx:if="{{!closed}}" class="form-row-arrow">›</text>
+      </view>
+    </picker>
+
+    <view class="form-row">
+      <text class="form-row-label">每周重复</text>
+      <switch class="form-row-value" checked="{{repeat}}" color="#7A0019" bindchange="onRepeat" />
+    </view>
+  </view>
+
+  <block wx:if="{{!exactAddress}}">
+    <view class="section-title">取货点</view>
+    <view wx:if="{{points.length}}" class="form-group">
+      <view wx:for="{{points}}" wx:key="name" class="form-row point {{locked || closed ? 'point-locked' : ''}}"
+            bindtap="togglePoint" data-index="{{index}}">
+        <view class="point-check {{item.on ? 'point-on' : ''}}">{{item.on ? '✓' : ''}}</view>
+        <text class="point-name">{{item.name}}</text>
+        <text class="form-row-value text-light">约 {{item.arrive}} 到{{item.fee > 0 ? ' · $' + item.fee : ''}}</text>
+      </view>
+    </view>
+    <view wx:else class="card no-points" bindtap="goToSettings">还没有取货点，去小店设置添加 ›</view>
+  </block>
+
+  <view class="confirm-line {{tooEarly ? 'confirm-warn' : ''}}">
+    {{tooEarly ? '出发太早，留不出确认时间' : '买家需在 ' + confirmLabel + ' 前确认'}}
+  </view>
+
+  <button class="btn-primary" bindtap="submit" loading="{{saving}}">{{editing ? '保存' : '开团'}}</button>
+
+  <view wx:if="{{editing && stateText !== '已取消' && stateText !== '未成团'}}" class="cancel" bindtap="cancelSession">取消这一场</view>
+</view>

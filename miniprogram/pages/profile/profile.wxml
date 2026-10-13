@@ -33,10 +33,10 @@
     <view class="profile-row-arrow">›</view>
   </view>
 
-  <!-- ========== 校外服务 ==========
+  <!-- ========== 一起拼团 ==========
        「我的订单」是买家视角（我在别人店里点的），
        「我的小店」是店长视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
-  <view wx:if="{{shopEnabled}}" class="profile-group">校外服务</view>
+  <view wx:if="{{shopEnabled}}" class="profile-group">一起拼团</view>
 
   <view wx:if="{{shopEnabled && ordering}}" bindtap="goToShopOrders" class="card card-tap profile-row">
     <image src="/images/ui/order.svg" class="profile-row-icon"></image><view class="profile-row-label">我的订单</view>
@@ -62,6 +62,12 @@
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">
     <image src="/images/ui/shield.svg" class="profile-row-icon"></image><view class="profile-row-label">举报处理</view>
     <view wx:if="{{pendingReports > 0}}" class="profile-row-badge">{{pendingReports}}</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <!-- 开店码：超管 / 运营管理员。开店要凭码，和配送队开关无关 -->
+  <view wx:if="{{shopEnabled && canManageTeams}}" bindtap="goToShopCodes" class="card card-tap profile-row">
+    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">开店码</view>
     <view class="profile-row-arrow">›</view>
   </view>
 

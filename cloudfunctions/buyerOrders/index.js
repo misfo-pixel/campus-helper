@@ -3,7 +3,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 校外服务的形态。和小程序端 miniprogram/config.js 的 SHOP_MODE 是一对，
+// 一起拼团（原校外服务）的形态。和小程序端 miniprogram/config.js 的 SHOP_MODE 是一对，
 // 两边必须一致——那边管界面（黄页模式下根本不渲染购物车），这边是真闸门：
 // 界面拦得住手滑，拦不住有人直接调云函数。
 //
@@ -15,19 +15,24 @@ const SHOP_MODE = 'order'
 
 // 买家侧订单：下单、看自己的单、取消。
 //
-// 配送模型：全部走服务时间，买家到服务地点自取（不送到公寓门口）。
-// 服务地点和场次由实际送货的那一方定：店长自送就用店铺自己的，外包就用配送队的。
-// 店长自己送和外包给配送队跑同一套规则，区别只在配送费最后归谁。
+// 2026-10-11 起是「一起拼团」：每一单都挂在店长开的某一场（shop_sessions）上。
+//   forming    拼团中。截单前随时能取消，不算什么
+//   confirming 成团了，对外叫「待确认」：买家在 confirm_at 前联系店长，店长点「确认订单」
+//   accepted   已确认，之后和以前一样：配送中 → 已完成
+//   cancelled  没成团、超时没确认、买家或店长取消
+// 状态推进在 groupSettle（定时）和 shopOrders（店长）里，这里只建单和取消。
 //
-// 平台不经手资金，也不展示收款方式：订单只是买家的下单意向，
-// 商品费和配送费怎么收由店长和买家自己在小程序外约定。
-// 外包的话，那笔配送费算店长替配送队收的，事后按对账结果结给队伍。
+// 配送模型：买家到取货点自取（不送到公寓门口）。取货点和费用是那一场的快照。
+//
+// 平台不经手资金，也不展示收款方式（《店长责任告知书》第六节）：
+// 订单只是买家的下单意向，怎么付钱由店长和买家自己在小程序外约定。
 
-// 用户在明尼苏达，场次截没截单必须按当地时间判断。
-// 这段逻辑和 deliveryManage 里的是同一份——云函数之间没法共享代码，只能各存一份。
+// 场次时间一律是明尼苏达当地时间的 'YYYY-MM-DD HH:MM' 字符串，直接按字符串比大小。
+// 这段和 groupSettle / shopManage / shopBrowse 里的是同一份——
+// 云函数之间没法共享代码，只能各存一份，改的时候几处一起改。
 const TZ = 'America/Chicago'
 
-function nowInTZ() {
+function nowAt() {
   const parts = {}
   new Intl.DateTimeFormat('en-CA', {
     timeZone: TZ,
@@ -36,55 +41,27 @@ function nowInTZ() {
   }).formatToParts(new Date()).forEach(p => {
     if (p.type !== 'literal') parts[p.type] = p.value
   })
-  let hour = Number(parts.hour)
-  if (hour === 24) hour = 0
-  return {
-    date: parts.year + '-' + parts.month + '-' + parts.day,
-    minutes: hour * 60 + Number(parts.minute)
-  }
-}
-
-function toMinutes(hhmm) {
-  const bits = String(hhmm).split(':')
-  return Number(bits[0]) * 60 + Number(bits[1])
+  const hour = parts.hour === '24' ? '00' : parts.hour
+  return parts.year + '-' + parts.month + '-' + parts.day + ' ' + hour + ':' + parts.minute
 }
 
 // '12:00' + 15 → '12:15'，封顶 23:59。和小程序端 utils/date.js 的 addMinutes 是同一份
 function addMinutes(hhmm, minutes) {
-  const total = Math.min(23 * 60 + 59, toMinutes(hhmm) + (Number(minutes) || 0))
+  const bits = String(hhmm).split(':')
+  const total = Math.min(23 * 60 + 59, Number(bits[0]) * 60 + Number(bits[1]) + (Number(minutes) || 0))
   const pad = n => (n < 10 ? '0' + n : '' + n)
   return pad(Math.floor(total / 60)) + ':' + pad(total % 60)
 }
 
+// 爽约：成团后自己取消、或者超时没确认。30 天里满 2 次就暂时不能参团
+const NO_SHOW_LIMIT = 2
+const NO_SHOW_DAYS = 30
 
-// 场次是「某一天的某个时间」，过了那天的截单时刻就不再展开。
-// 这里必须和 shopBrowse 里那份保持一致：买家看到什么场次由那边算，
-// 能不能下单由这边算，两边算法一旦错开就会出现「选得到但下不了」。
-function expandBatches(batches) {
-  const now = nowInTZ()
-  return (batches || []).map(b => {
-    if (!b.date) return null
-    if (b.date < now.date) return null
-    if (b.date === now.date && now.minutes >= toMinutes(b.cutoff)) return null
-    const depart = b.depart_time || b.deliver_time
-    return {
-      key: b.date + '#' + depart,
-      label: '',
-      date: b.date,
-      cutoff: b.cutoff,
-      depart_time: depart
-    }
-  }).filter(Boolean)
-}
-
-// 配送方案一律是店铺自己那份。
-// 以前会在「外包」时去读配送队的方案，那套已经撤了——队伍不再维护自己的
-// 点位和班次，一律送到买家填的地址。
-function resolvePlan(shop) {
-  return {
-    pickup_points: shop.pickup_points || [],
-    batches: shop.batches || []
-  }
+async function countSession(sessionId) {
+  const res = await db.collection('shop_orders')
+    .where({ session_id: sessionId, status: _.neq('cancelled') })
+    .count()
+  return res.total
 }
 
 // 金额一律用数据库里的当前价重算，绝不采信前端传来的价格和总价。
@@ -151,11 +128,32 @@ exports.main = async (event) => {
 
         const shopDoc = await db.collection('shops').doc(event.shopId).get()
         const shop = shopDoc.data
-        if (!shop) {
+        if (!shop || shop.takedown) {
           return { success: false, message: '店铺不存在' }
         }
-        if (shop.status !== 'open') {
-          return { success: false, message: '店铺当前不接单' }
+
+        // 旧版小程序传的是 batch_key，没有场次可挂
+        if (!event.session_id) return { success: false, message: '小程序有更新，请退出后重新打开再下单' }
+        let session = null
+        try {
+          session = (await db.collection('shop_sessions').doc(String(event.session_id)).get()).data
+        } catch (e) {
+          session = null
+        }
+        if (!session || session.shop_id !== shop._id) return { success: false, message: '这一场不存在' }
+        if (session.state !== 'open' || session.cutoff_at <= nowAt()) {
+          return { success: false, message: '这一场已经截单了' }
+        }
+
+        const strikes = await db.collection('shop_orders')
+          .where({
+            buyer: openid,
+            no_show: true,
+            no_show_at: _.gte(new Date(Date.now() - NO_SHOW_DAYS * 24 * 3600 * 1000))
+          })
+          .count()
+        if (strikes.total >= NO_SHOW_LIMIT) {
+          return { success: false, message: '最近 ' + NO_SHOW_LIMIT + ' 次成团后没确认，暂时不能参团' }
         }
 
         const built = await buildOrderItems(shop._id, event.items)
@@ -171,16 +169,11 @@ exports.main = async (event) => {
           return { success: false, message: '这家店要求填写补充说明' }
         }
 
-        // ---- 配送：服务地点决定费率，场次决定什么时候送到 ----
-        // 不送到公寓门口，买家到服务地点自取，所以不需要房间号。
-        //
-        // 纯线上服务（辅导、代写、设计这类）整段跳过：没有地点、没有场次。
-        // 到店自提不走这条——它有地点有时间，只是配送费为 0。
-        const needsDelivery = shop.needs_delivery !== false
+        // ---- 配送：取货点决定费率和几点到，都是这一场的快照 ----
+        const needsDelivery = true
         const exactAddress = shop.exact_address === true
 
         let point = null
-        let batch = null
         let address = ''
         let building = null
         let unlisted = ''      // 名单外手填的地址
@@ -188,67 +181,41 @@ exports.main = async (event) => {
         let phone = ''
         let fee = 0
 
-        if (needsDelivery) {
-          const plan = resolvePlan(shop)
-          if (!plan.batches.length) {
-            return { success: false, message: '这家店还没设置好服务时间，暂时不能下单' }
-          }
+        if (exactAddress) {
+          // 送到买家地址：从楼栋名单里挑楼（见 buildings 云函数），再填房间号。
+          // 名单外的选「其他」手填（building_id: 'other'），订单上标 address_unlisted，
+          // 店长自己判断送不送得到；下单成功后再写一条意见反馈，管理员核实后加进名单。
+          if (!event.building_id) return { success: false, message: '请选择楼栋' }
+          unit = String(event.unit || '').trim().slice(0, 40)
+          if (!unit) return { success: false, message: '请填写房间号' }
 
-          if (exactAddress) {
-            // 送到买家地址：从楼栋名单里挑楼（见 buildings 云函数），再填房间号。
-            // 名单外的选「其他」手填（building_id: 'other'），订单上标 address_unlisted，
-            // 店长自己判断送不送得到；下单成功后再写一条意见反馈，管理员核实后加进名单。
-            // 旧版小程序还在传自由文本 address，让它更新——收下来就等于没限定
-            if (!event.building_id) return { success: false, message: '小程序有更新，请退出后重新打开再下单' }
-            unit = String(event.unit || '').trim().slice(0, 40)
-            if (!unit) return { success: false, message: '请填写房间号' }
-
-            if (event.building_id === 'other') {
-              unlisted = String(event.other_address || '').trim().slice(0, 100)
-              if (unlisted.length < 4) return { success: false, message: '请填写完整的地址' }
-              address = unlisted + ', ' + unit
-            } else {
-              try {
-                building = (await db.collection('delivery_buildings').doc(event.building_id).get()).data
-              } catch (e) {
-                building = null
-              }
-              if (!building || !building.active) return { success: false, message: '这栋楼不在配送范围内，请重新选择' }
-              address = building.name + ', ' + unit
-            }
-            fee = Math.round((Number(shop.flat_delivery_fee) || 0) * 100) / 100
+          if (event.building_id === 'other') {
+            unlisted = String(event.other_address || '').trim().slice(0, 100)
+            if (unlisted.length < 4) return { success: false, message: '请填写完整的地址' }
+            address = unlisted + ', ' + unit
           } else {
-            // 客户自取：到店长设的某个点来拿，费率跟着点位走
-            if (!plan.pickup_points.length) {
-              return { success: false, message: '这家店还没设置好服务地点，暂时不能下单' }
+            try {
+              building = (await db.collection('delivery_buildings').doc(event.building_id).get()).data
+            } catch (e) {
+              building = null
             }
-            const pointName = (event.pickup_point || '').trim()
-            point = plan.pickup_points.find(p => p.name === pointName)
-            if (!point) return { success: false, message: '请选择服务地点' }
-            fee = Math.round((Number(point.fee) || 0) * 100) / 100
+            if (!building || !building.active) return { success: false, message: '这栋楼不在配送范围内，请重新选择' }
+            address = building.name + ', ' + unit
           }
-
-          const available = expandBatches(plan.batches)
-          if (!available.length) {
-            // 店长设的那一场已经过去了，他还没回来开新的
-            return { success: false, message: '这家店现在没有可约的服务时间，等店长开放新的服务时间再来' }
-          }
-
-          batch = available.find(b => b.key === event.batch_key)
-          if (!batch) {
-            // 前端页面开太久，选的那场已经截单了
-            return { success: false, message: '这一场已经截单，请重新选择' }
-          }
+          fee = Math.round((Number(shop.flat_delivery_fee) || 0) * 100) / 100
+        } else {
+          const pointName = (event.pickup_point || '').trim()
+          point = (session.points || []).find(p => p.name === pointName)
+          if (!point) return { success: false, message: '请选择取货点' }
+          fee = Math.round((Number(point.fee) || 0) * 100) / 100
         }
 
         const contactWechat = (event.contact_wechat || '').trim()
         if (!contactWechat) return { success: false, message: '请填写你的微信号' }
 
         // 线下交付的单要手机号：找不到楼、送到了没人应、微信没回，都得能打通电话
-        if (needsDelivery) {
-          phone = normalizePhone(event.phone)
-          if (!phone) return { success: false, message: '请填写正确的手机号' }
-        }
+        phone = normalizePhone(event.phone)
+        if (!phone) return { success: false, message: '请填写正确的手机号' }
 
         // 配送费全归店长。配送队那条线现在是店长和队长私下谈钱，
         // 平台不再记「店长欠队伍多少」——对账模块已经不接入了。
@@ -266,7 +233,7 @@ exports.main = async (event) => {
         const total = Math.round((built.subtotal + feeCharged) * 100) / 100
 
         // 这一单预计几点到：取货点 = 出发时间 + 这个点的分钟数；送上门估不了，就写出发时间
-        const deliverTime = batch ? (point ? addMinutes(batch.depart_time, point.eta_minutes) : batch.depart_time) : ''
+        const deliverTime = point ? addMinutes(session.depart_time, point.eta_minutes) : session.depart_time
 
         const res = await db.collection('shop_orders').add({
           data: {
@@ -290,12 +257,20 @@ exports.main = async (event) => {
             phone: phone,
             pickup_point: point ? point.name : '',
             // 工作台和订单列表直接显示这一行：送上门显示地址，自取显示点位
-            pickup_info: exactAddress ? address : (point ? point.name : '线上服务，无需取货'),
-            batch_key: batch ? batch.key : '',
-            batch_label: batch ? batch.label : '',
-            batch_date: batch ? batch.date : '',
-            depart_time: batch ? batch.depart_time : '',
+            pickup_info: exactAddress ? address : point.name,
+
+            // 挂在哪一场。截单、确认截止抄一份到单上，groupSettle 直接按单查，不用先查场次
+            session_id: session._id,
+            cutoff_at: session.cutoff_at,
+            confirm_at: session.confirm_at,
+            // 下面这几项老代码（工作台、找配送队）还在读，照旧写
+            batch_key: session._id,
+            batch_label: '',
+            batch_date: session.date,
+            depart_time: session.depart_time,
             deliver_time: deliverTime,
+            // 从转发卡片点进来下的单记 'share'，扫海报上的码进来的记 'poster'，看各自拉来了多少单
+            source: ['share', 'poster'].indexOf(event.source) !== -1 ? event.source : '',
 
             delivery_mode: shop.delivery_mode || 'self',
             delivery_team_id: '',
@@ -312,7 +287,7 @@ exports.main = async (event) => {
             note_images: Array.isArray(event.note_images)
               ? event.note_images.filter(x => typeof x === 'string' && x).slice(0, 3)
               : [],
-            status: 'pending',
+            status: 'forming',
             cancel_reason: '',
             created_at: new Date(),
             updated_at: new Date()
@@ -375,15 +350,25 @@ exports.main = async (event) => {
           console.warn('新订单通知发送失败（不影响下单）：', e)
         }
 
+        // 参团成功页要显示「再来几位就开团」，把这一场下单后的单数带回去
+        let count = 0
+        try {
+          count = await countSession(session._id)
+        } catch (e) {
+          console.warn('数单数失败：', e)
+        }
+
         return {
           success: true,
           orderId: res._id,
           total: total,
-          needs_delivery: needsDelivery,
-          batch_label: batch ? batch.label : '',
+          session_id: session._id,
+          count: count,
+          min_orders: session.min_orders || 0,
+          cutoff_at: session.cutoff_at,
+          date: session.date,
           deliver_time: deliverTime,
-          batch_date: batch ? batch.date : '',
-          contact_wechat: shop.contact_wechat
+          pickup_point: point ? point.name : ''
         }
       }
 
@@ -401,39 +386,77 @@ exports.main = async (event) => {
           const shops = await db.collection('shops')
             .where({ _id: _.in(shopIds) }).limit(100).get()
           shops.data.forEach(s => {
-            shopMap[s._id] = { contact_wechat: s.contact_wechat }
+            // logo、广告语给「喊人上车」画转发卡片用
+            shopMap[s._id] = { name: s.name, contact_wechat: s.contact_wechat, logo: s.logo || '', slogan: s.slogan || '', poster_style: s.poster_style || 'magazine' }
+          })
+        }
+
+        // 还在拼团中的单带上所在那一场的进度（几单、门槛），卡片上画进度条
+        const forming = [...new Set(res.data.filter(o => o.status === 'forming').map(o => o.session_id))]
+        const progress = {}
+        if (forming.length) {
+          const sessions = await db.collection('shop_sessions').where({ _id: _.in(forming) }).limit(forming.length).get()
+          const $ = db.command.aggregate
+          const counts = await db.collection('shop_orders').aggregate()
+            .match({ session_id: _.in(forming), status: _.neq('cancelled') })
+            .group({ _id: '$session_id', n: $.sum(1) })
+            .end()
+          const n = {}
+          counts.list.forEach(r => { n[r._id] = r.n })
+          sessions.data.forEach(s => {
+            progress[s._id] = {
+              count: n[s._id] || 0,
+              min_orders: s.min_orders || 0,
+              depart_time: s.depart_time
+            }
           })
         }
 
         return {
           success: true,
+          now: nowAt(),
           orders: res.data.map(o => {
             const s = shopMap[o.shop_id] || {}
             // note / note_images 本来就在订单文档里，Object.assign 直接带过去
-            return Object.assign({}, o, { shop_wechat: s.contact_wechat || '' })
+            return Object.assign({}, o, {
+              // 店铺改过名就显示现在的名字；店删了才用下单时存的那个
+              shop_name: s.name || o.shop_name,
+              shop_wechat: s.contact_wechat || '',
+              shop_logo: s.logo || '',
+              shop_slogan: s.slogan || '',
+              shop_poster_style: s.poster_style || 'magazine',
+              progress: progress[o.session_id] || null
+            })
           })
         }
       }
 
-      // 店长还没接单之前买家可以自己取消；接单之后就得直接找店长谈了，
-      // 因为那时候店长可能已经开始准备了
+      // 买家自己取消：
+      //   拼团中 —— 随便取消
+      //   待确认 —— 能取消，但店长可能已经按成团的单数备料了，记一次爽约
+      //   店长确认之后 —— 得直接找店长谈了
+      // pending 是改版前的老单，照旧能取消
       case 'cancel': {
         const doc = await db.collection('shop_orders').doc(event.orderId).get()
         const order = doc.data
         if (!order || order.buyer !== openid) {
           return { success: false, message: '订单不存在' }
         }
-        if (order.status !== 'pending') {
-          return { success: false, message: '店长已经接单，请直接联系店长' }
+        if (['forming', 'confirming', 'pending'].indexOf(order.status) === -1) {
+          return { success: false, message: '店长已确认，请直接联系店长' }
         }
 
-        await db.collection('shop_orders').doc(event.orderId).update({
-          data: {
-            status: 'cancelled',
-            cancel_reason: '买家取消',
-            updated_at: new Date()
-          }
-        })
+        const strike = order.status === 'confirming'
+        const res = await db.collection('shop_orders')
+          .where({ _id: order._id, status: order.status })
+          .update({
+            data: Object.assign({
+              status: 'cancelled',
+              cancel_reason: '买家取消',
+              updated_at: new Date()
+            }, strike ? { no_show: true, no_show_at: new Date() } : {})
+          })
+        if (!res.stats || res.stats.updated !== 1) return { success: false, message: '订单状态变了，刷新看看' }
         return { success: true }
       }
 

@@ -1,0 +1,23 @@
+<skeleton wx:if="{{loading}}" type="form" />
+<view wx:elif="{{session}}" class="page-container with-submit-bar">
+  <view class="head">
+    <text class="head-date">{{dayText}}</text>
+  </view>
+
+  <view class="kind-switch">
+    <view wx:for="{{styles}}" wx:key="key" class="kind-switch-item {{style === item.key ? 'kind-switch-on' : ''}}"
+          bindtap="pickStyle" data-style="{{item.key}}">{{item.label}}</view>
+  </view>
+
+  <view class="preview" bindtap="previewLong">
+    <image wx:if="{{longPath}}" src="{{longPath}}" mode="widthFix" class="preview-img" />
+    <view wx:else class="preview-empty">排版中…</view>
+  </view>
+
+  <view class="submit-bar actions">
+    <button class="btn-outline action" open-type="share">转发给好友</button>
+    <button class="btn-primary action" bindtap="save" loading="{{drawing}}">保存海报</button>
+  </view>
+</view>
+
+<group-share id="gs" />

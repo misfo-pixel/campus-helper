@@ -54,6 +54,9 @@ Page({
   goToBuildingAdmin: function () {
     wx.navigateTo({ url: '/pages/buildingadmin/buildingadmin' })
   },
+  goToShopCodes: function () {
+    wx.navigateTo({ url: '/pages/shopcodes/shopcodes' })
+  },
   goToTeamAdmin: function () {
     wx.navigateTo({ url: '/pages/teamadmin/teamadmin' })
   },

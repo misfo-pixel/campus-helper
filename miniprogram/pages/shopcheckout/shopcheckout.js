@@ -1,16 +1,14 @@
-// 确认订单。
+// 确认订单（参团）。
 //
 // 这一页只把下单意向记下来：不做支付动作，也不展示任何收款方式。
-// 店长在工作台看到订单后自己通过微信联系买家。
+// 成团后买家在确认截止前联系店长，店长确认订单（见 cloudfunctions/groupSettle）。
 //
-// 买家到服务地点自取，不送到公寓门口。
-// 服务地点和批次由实际送货的一方定（店长自送用店铺的，外包用配送队的），
-// 这里统一通过 shopBrowse 的 plan 拿解析结果，不用关心是哪一方。
-// 店长自己送还是外包给配送队，对买家是透明的——规则完全一样。
+// 场次在店铺页就选好了（随购物车一起存在 storage 里），这里只选取货点。
+// 买家到取货点自取，不送到公寓门口。
 
 const { myProfile } = require('../../utils/user.js')
-const { addMinutes } = require('../../utils/date.js')
 const { EXACT_ADDRESS_ENABLED } = require('../../config.js')
+const { md, weekday, cutoffText } = require('../../utils/group.js')
 const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
@@ -32,15 +30,13 @@ function uploadNoteImage(tempPath) {
     .then(r => r.fileID)
 }
 
-const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-
 Page({
   data: {
     cart: null,
     loading: true,
 
-    // 纯线上服务：整块地点 / 时间都不出现
-    needsDelivery: true,
+    session: null,     // 这一场，带 whenText / cutText / ruleText 显示用
+
     // 送到我填的地址（true），还是我去固定点位自取（false）
     exactAddress: false,
     buildingId: '',
@@ -52,11 +48,6 @@ Page({
     points: [],
     pointLabels: [],
     pointIndex: null,
-
-    batches: [],
-    batchLabels: [],   // 滚轮用的一行字
-    batchParts: [],    // 卡片上分两行显示：{ main: 日期 + 送达, sub: 截单 }
-    batchIndex: 0,
 
     contact_wechat: '',
     note: '',
@@ -106,82 +97,49 @@ Page({
 
     wx.cloud.callFunction({
       name: 'shopBrowse',
-      data: { action: 'plan', shopId: cart.shopId }
+      data: { action: 'plan', shopId: cart.shopId, sessionId: cart.sessionId }
     }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: '读取配送配置失败', icon: 'none' })
+        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
         return
       }
 
-      // 这两项和配送方式无关，三种分支都要，所以先设
-      this.setData({
-        noteRequired: r.note_required === true,
-        noteHint: r.note_hint || ''
-      })
-
-      // 纯线上服务没有地点和场次可选，直接进到「填微信 + 提交」
-      if (r.needs_delivery === false) {
-        this.setData({ needsDelivery: false, loading: false }, () => this.recalc())
-        return
-      }
-
-      const batches = r.availableBatches || []
-
-      // 送到我填的地址：没有点位可选，配送费是店长定的一口价
-      if (r.exact_address === true) {
-        // 送上门暂时关着（见 config.js），店长还没改成取货点之前先不接单
-        if (!EXACT_ADDRESS_ENABLED || !batches.length) {
-          this.setData({ loading: false })
-          wx.showModal({
-            title: '暂时无法下单',
-            content: '这家店暂时没有可约的服务时间，请稍后再试。',
-            showCancel: false,
-            success: () => wx.navigateBack()
-          })
-          return
-        }
-        this.setData({
-          exactAddress: true,
-          flatFee: Number(r.flat_delivery_fee) || 0,
-          batches: batches,
-          batchLabels: batches.map(b => this.batchLabel(b)),
-          batchParts: batches.map(b => this.batchPart(b)),
-          batchIndex: 0,
-          loading: false
-        }, () => this.recalc())
-        return
-      }
-
-      const points = r.pickup_points || []
-      if (!points.length || !batches.length) {
+      const s = r.session
+      // 页面开太久，这一场已经截单了；或者送上门暂时关着（见 config.js）
+      if (!s || (r.exact_address === true && !EXACT_ADDRESS_ENABLED) || (!r.exact_address && !s.points.length)) {
         this.setData({ loading: false })
         wx.showModal({
-          title: '暂时无法下单',
-          content: '这家店暂时没有可约的服务时间，请稍后再试。',
+          title: '这一场已截单',
+          content: '回店铺看看其他场次',
           showCancel: false,
           success: () => wx.navigateBack()
         })
         return
       }
 
-      // 每个点各自几点到 = 出发时间 + 这个点的分钟数。场次只开一场，按第一场算
-      const depart = batches[0].depart_time || batches[0].deliver_time
+      const min = Number(s.min_orders) || 0
       this.setData({
-        points: points,
-        pointLabels: points.map(p => p.name + '  $' + p.fee +
-          (p.eta_minutes ? ' · 约 ' + addMinutes(depart, p.eta_minutes) + ' 到' : '')),
-        batches: batches,
-        batchLabels: batches.map(b => this.batchLabel(b)),
-        batchParts: batches.map(b => this.batchPart(b)),
-        batchIndex: 0,
+        noteRequired: r.note_required === true,
+        noteHint: r.note_hint || '',
+        session: Object.assign({}, s, {
+          whenText: md(s.date) + ' ' + weekday(s.date) + ' ' + s.depart_time + ' 出发',
+          cutText: cutoffText(s, ''),
+          ruleText: min ? '满 ' + min + ' 单成团，成团后联系店长确认' : '截单后联系店长确认'
+        }),
+        exactAddress: r.exact_address === true,
+        flatFee: Number(r.flat_delivery_fee) || 0,
+        points: s.points,
+        pointLabels: s.points.map(p => p.name + ' · 约 ' + p.arrive + ' 到' + (p.fee > 0 ? ' · $' + p.fee : '')),
+        // 只有一个点就替买家选上
+        pointIndex: s.points.length === 1 ? 0 : null,
         loading: false
       }, () => this.recalc())
     }).catch(err => {
-      console.error('读取配送配置失败：', err)
+      console.error('读取场次失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取配送配置失败', icon: 'none' })
+      wx.showToast({ title: '读取失败', icon: 'none' })
     })
 
     // 微信号自动填个人资料里存的那个
@@ -191,35 +149,6 @@ Page({
         this.setData({ contact_wechat: profile.wechat })
       }
     }).catch(err => console.error('读取微信号失败：', err))
-  },
-
-  // main「09-20 周日 18:00 出发」，sub「当天 08:00 截单」/「还有 3 小时截单」
-  batchPart: function (b) {
-    let sub
-    if (b.isToday && b.minutesLeft != null) {
-      sub = b.minutesLeft >= 60
-        ? '还有 ' + Math.floor(b.minutesLeft / 60) + ' 小时截单'
-        : '还有 ' + b.minutesLeft + ' 分钟截单'
-    } else {
-      sub = '当天 ' + b.cutoff + ' 截单'
-    }
-    return { main: this.whenText(b) + ' ' + (b.depart_time || b.deliver_time) + ' 出发', sub: sub }
-  },
-
-  // 滚轮里一项一行：「09-20 周日 18:00 出发（当天 08:00 截单）」
-  batchLabel: function (b) {
-    const p = this.batchPart(b)
-    return p.main + '（' + p.sub + '）'
-  },
-
-  // 场次是店长指定的某一天，可能在好几天后，「今天/明天」两个词不够用，
-  // 得把日期和星期显示出来
-  whenText: function (b) {
-    if (b.isToday) return '今天'
-    if (b.isTomorrow) return '明天'
-    const d = new Date(b.date + 'T12:00:00')
-    const weekday = isNaN(d.getTime()) ? '' : ' ' + WEEKDAYS[d.getDay()]
-    return b.date.slice(5) + weekday
   },
 
   onInput: function (e) {
@@ -240,19 +169,12 @@ Page({
     this.setData({ pointIndex: Number(e.detail.value) }, () => this.recalc())
   },
 
-  onBatchChange: function (e) {
-    this.setData({ batchIndex: Number(e.detail.value) })
-  },
-
   recalc: function () {
     const d = this.data
-    let fee = 0
-    if (d.needsDelivery) {
-      // 送上门是一口价；自取按选中的那个点位收
-      fee = d.exactAddress
-        ? (Number(d.flatFee) || 0)
-        : (d.pointIndex === null ? 0 : (Number(d.points[d.pointIndex].fee) || 0))
-    }
+    // 送上门是一口价；自取按选中的那个点位收
+    const fee = d.exactAddress
+      ? (Number(d.flatFee) || 0)
+      : (d.pointIndex === null ? 0 : (Number(d.points[d.pointIndex].fee) || 0))
     const total = Math.round((d.cart.subtotal + fee) * 100) / 100
     this.setData({ deliveryFee: fee, total: total })
   },
@@ -289,23 +211,21 @@ Page({
       wx.showToast({ title: '请填写你的微信号', icon: 'none' })
       return
     }
-    if (d.needsDelivery) {
-      const digits = d.phone.replace(/\D/g, '')
-      if (digits.length < 10 || digits.length > 15) {
-        wx.showToast({ title: '请填写正确的手机号', icon: 'none' })
-        return
-      }
+    const digits = d.phone.replace(/\D/g, '')
+    if (digits.length < 10 || digits.length > 15) {
+      wx.showToast({ title: '请填写正确的手机号', icon: 'none' })
+      return
     }
-    if (d.needsDelivery && d.exactAddress && !d.buildingId) {
+    if (d.exactAddress && !d.buildingId) {
       wx.showToast({ title: '请选择楼栋', icon: 'none' })
       return
     }
-    if (d.needsDelivery && d.exactAddress && !d.unit.trim()) {
+    if (d.exactAddress && !d.unit.trim()) {
       wx.showToast({ title: '请填写房间号', icon: 'none' })
       return
     }
-    if (d.needsDelivery && !d.exactAddress && d.pointIndex === null) {
-      wx.showToast({ title: '请选择取货地点', icon: 'none' })
+    if (!d.exactAddress && d.pointIndex === null) {
+      wx.showToast({ title: '请选择取货点', icon: 'none' })
       return
     }
     if (d.noteRequired && !d.note.trim()) {
@@ -313,8 +233,10 @@ Page({
       return
     }
 
-    // 正要提交订单，这一刻用户最想知道后续进展，授权成功率最高
-    await ask('orderProgress')
+    // 正要提交订单，这一刻用户最想知道后续进展，授权成功率最高。
+    // 有门槛的团多要一张拼团进度的票：截单前 2 小时还没成团时提醒他去拉人。
+    // 一次弹窗里勾两项，各换一张票（一次最多 3 个模板）
+    await ask(d.session.min_orders ? ['orderProgress', 'groupProgress'] : 'orderProgress')
 
     this.setData({ submitting: true })
     wx.showLoading({ title: '提交中...', mask: true })
@@ -337,7 +259,6 @@ Page({
         }
       }
 
-      const batch = d.batches[d.batchIndex]
       const res = await wx.cloud.callFunction({
         name: 'buyerOrders',
         data: {
@@ -349,7 +270,8 @@ Page({
           other_address: d.buildingId === 'other' ? d.buildingName : '',
           unit: d.unit,
           phone: d.phone,
-          batch_key: batch.key,
+          session_id: d.session._id,
+          source: d.cart.source || '',
           contact_wechat: d.contact_wechat,
           note: d.note,
           note_images: noteImages
@@ -364,33 +286,32 @@ Page({
       }
 
       wx.removeStorageSync(CART_KEY)
-      if (d.needsDelivery) {
-        try {
-          wx.setStorageSync(LAST_DELIVERY_KEY, {
-            phone: d.phone,
-            buildingId: d.buildingId,
-            buildingName: d.buildingName,
-            unit: d.unit
-          })
-        } catch (e) {
-          // 存不上下次再填一遍，不影响这一单
-        }
+      try {
+        wx.setStorageSync(LAST_DELIVERY_KEY, {
+          phone: d.phone,
+          buildingId: d.buildingId,
+          buildingName: d.buildingName,
+          unit: d.unit
+        })
+      } catch (e) {
+        // 存不上下次再填一遍，不影响这一单
       }
 
-      wx.showModal({
-        title: '订单已提交',
-        content: '店长会通过微信与你联系确认。\n\n' +
-                 (r.needs_delivery === false
-                   ? '这是线上服务，没有取货环节。\n\n'
-                   : (d.exactAddress
-                       ? r.batch_date + ' ' + r.deliver_time + ' 出发，送到你填的地址。\n\n'
-                       : '预计 ' + r.batch_date + ' ' + r.deliver_time + ' 送到取货地点，到时过去取。\n\n')) +
-                 '平台只记录下单意向，不参与交易。',
-        showCancel: false,
-        confirmText: '知道了',
-        success: () => {
-          wx.redirectTo({ url: '/pages/myshoporders/myshoporders' })
-        }
+      // 参团成功页：显示进度、喊人上车。参数都是刚下完单那一刻的
+      const q = {
+        shop: d.cart.shopId,
+        name: d.cart.shopName,
+        s: r.session_id,
+        count: r.count,
+        min: r.min_orders,
+        cut: r.cutoff_at,
+        date: r.date,
+        at: r.deliver_time,
+        point: r.pickup_point
+      }
+      wx.redirectTo({
+        url: '/pages/groupjoined/groupjoined?' + Object.keys(q)
+          .map(k => k + '=' + encodeURIComponent(q[k] === undefined ? '' : q[k])).join('&')
       })
     } catch (err) {
       wx.hideLoading()

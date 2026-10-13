@@ -15,12 +15,4 @@
   color: var(--color-primary);
 }
 
-/* 画布必须真实渲染才画得出东西，所以是挪出屏幕，不是隐藏 */
-.poster-canvas {
-  position: fixed;
-  left: -9999rpx;
-  top: 0;
-  width: 600px;
-  height: 900px;
-}
 .btn-busy { opacity: .6; }

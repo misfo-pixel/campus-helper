@@ -41,8 +41,8 @@ exports.main = async (event) => {
         try {
           if (report.targetType === 'shop') {
             // 店铺不能直接删：底下挂着 shop_items 和历史订单，删了全成孤儿数据，
-            // 买家也再查不到自己下过的单。改成强制关店 + takedown 标记，
-            // shopManage 的 setStatus 据此不让店长自己再开回来。
+            // 买家也再查不到自己下过的单。改成 takedown 标记：列表不再显示，
+            // 也开不了团、下不了单（见 shopBrowse / shopManage / buyerOrders）。
             await db.collection(collection).doc(report.targetId).update({
               data: {
                 status: 'closed',
@@ -51,6 +51,14 @@ exports.main = async (event) => {
                 updated_at: new Date()
               }
             })
+            // 还在拼团中的场次就此作废，没成团的单一起取消。已成团的单留给店长处理
+            await db.collection('shop_sessions')
+              .where({ shop_id: report.targetId, state: 'open' })
+              .update({ data: { state: 'cancelled', updated_at: new Date() } })
+              .catch(() => {})
+            await db.collection('shop_orders')
+              .where({ shop_id: report.targetId, status: 'forming' })
+              .update({ data: { status: 'cancelled', cancel_reason: '店铺已下架', updated_at: new Date() } })
           } else if (report.targetType === 'team') {
             // 配送队同理：底下挂着历史请求和送达照片，只下架不删。
             // 下架后不出现在挑队列表、收不到群发；管理员可在「配送管理」里恢复

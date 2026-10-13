@@ -1,0 +1,60 @@
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+}
+
+.block-empty {
+  text-align: center;
+  padding: 40rpx 28rpx;
+}
+
+/* 和配送管理的开队码同一个样子 */
+.list {
+  padding: 0 28rpx;
+}
+
+.code-row {
+  padding: 22rpx 0;
+  margin-top: -1rpx;
+  border-top: 1rpx solid var(--color-border);
+}
+
+.code-main {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
+
+/* 要对着念给人听，等宽 + 拉开字距 */
+.code {
+  font-family: Menlo, "SF Mono", monospace;
+  font-size: 34rpx;
+  font-weight: 700;
+  letter-spacing: 4rpx;
+  color: var(--color-primary);
+}
+
+.code-dead {
+  color: var(--color-text-light);
+  text-decoration: line-through;
+}
+
+.code-note {
+  font-size: 26rpx;
+  color: #555;
+}
+
+.code-sub {
+  display: flex;
+  align-items: center;
+  margin-top: 4rpx;
+}
+
+.code-copy {
+  margin-left: auto;
+  font-size: 24rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}

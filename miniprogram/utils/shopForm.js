@@ -15,29 +15,18 @@ function uploadShopImage(tempPath, saved, dir) {
   return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: tempPath }).then(r => r.fileID)
 }
 
-// 提交前的方案校验，两个页面共用。返回第一条错，null = 通过。
-//
-// exactAddress 为 true 时送到买家自己填的地址，没有固定点位可校验，
-// 只需要一个有效的服务时间。
-function validatePlan(points, batches, exactAddress) {
-  if (!exactAddress) {
-    const kept = (points || []).filter(p => String(p.name || '').trim())
-    if (!kept.length) return '至少要设一个服务地点'
+// 取货点校验，两个页面共用。返回第一条错，null = 通过。
+// 场次不在这里校验了：2026-10-11 起场次在「我的小店」开团时设（pages/shopsession）
+function validatePoints(points) {
+  const kept = (points || []).filter(p => String(p.name || '').trim())
+  if (!kept.length) return '至少设一个取货点'
 
-    const names = kept.map(p => p.name.trim())
-    if (new Set(names).size !== names.length) return '服务地点名字不能重复'
-  }
-
-  // 日期只校验填没填，不校验是不是过去的日子——否则场次一过期，
-  // 店长连改商品、改联系方式都保存不了。
-  const batch = (batches || [])[0]
-  if (!batch || !batch.date) return '请选择服务时间的日期'
-  // 老场次只有 deliver_time，店长没碰服务时间就保存时还是老样子
-  if ((batch.depart_time || batch.deliver_time) <= batch.cutoff) return '出发时间要晚于截单时间'
+  const names = kept.map(p => p.name.trim())
+  if (new Set(names).size !== names.length) return '取货点名字不能重复'
   return null
 }
 
 module.exports = {
   uploadShopImage: uploadShopImage,
-  validatePlan: validatePlan
+  validatePoints: validatePoints
 }

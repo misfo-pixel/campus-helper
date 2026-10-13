@@ -1,0 +1,23 @@
+.gs-card,
+.gs-long,
+.gs-pick {
+  position: fixed;
+  left: -9999px;
+  top: 0;
+}
+
+.gs-card {
+  width: 500px;
+  height: 400px;
+}
+
+/* 长图的实际高度在 groupCover.js 里按内容算，这里给个占位尺寸就行 */
+.gs-long {
+  width: 600px;
+  height: 1000px;
+}
+
+.gs-pick {
+  width: 48px;
+  height: 48px;
+}

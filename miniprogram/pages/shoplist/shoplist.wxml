@@ -2,34 +2,89 @@
   <view class="page-head">
     <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
     <view class="page-head-text">
-      <view class="page-head-title">校外服务</view>
-      <view class="page-head-sub">长期服务，稳定委托</view>
+      <view class="page-head-title">一起拼团</view>
+      <view class="page-head-sub">满单成团，送到学校</view>
     </view>
     <button wx:if="{{ordering}}" class="btn-outline btn-sm" bindtap="goToMyOrders">我的订单</button>
   </view>
 
   <skeleton wx:if="{{loading}}" type="row" thumb="{{130}}" />
-  <view wx:elif="{{shops.length === 0}}" class="empty-state">
-    <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
-    <view class="empty-state-text">还没有小店开张，晚点再来看看</view>
-  </view>
 
-  <view wx:for="{{shops}}" wx:key="_id" class="card shop" bindtap="goToShop" data-id="{{item._id}}">
-    <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="shop-logo" />
-    <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
-
-    <view class="shop-meta">
-      <view class="shop-name-row">
-        <text class="shop-name">{{item.name}}</text>
-        <text class="shop-status shop-status-{{item.status}}">{{item.statusText}}</text>
+  <block wx:else>
+    <!-- 我的拼团 -->
+    <view wx:for="{{mine}}" wx:key="_id" class="mine mine-{{item.status}}">
+      <view class="mine-main" bindtap="{{item.status === 'confirming' ? 'goToMyOrders' : 'goToSession'}}"
+            data-shop="{{item.shop_id}}" data-session="{{item.session._id}}">
+        <view class="mine-title">{{item.status === 'confirming' ? '待确认' : '拼团中'}} · {{item.shop_name}}</view>
+        <view class="mine-sub">{{item.status === 'confirming' ? item.confirmText + ' 前联系店长' : item.p.text}}</view>
       </view>
-      <view wx:if="{{item.description}}" class="text-light shop-desc">{{item.description}}</view>
-      <view wx:if="{{ordering}}" class="text-light shop-info">
-        起送 ${{item.min_order}}{{item.needs_delivery === false ? ' · 线上服务' : ''}}
-      </view>
-      <view wx:if="{{item.business_hours}}" class="text-light shop-info">{{item.business_hours}}</view>
+      <button wx:if="{{item.status === 'forming'}}" class="mine-btn" open-type="share" data-index="{{index}}">喊人上车</button>
+      <view wx:else class="mine-go" bindtap="goToMyOrders">去确认 ›</view>
     </view>
 
-    <view class="shop-arrow">›</view>
-  </view>
+    <!-- 按送达日分组 -->
+    <view wx:for="{{days}}" wx:for-item="day" wx:key="date" class="day">
+      <view class="day-head">
+        <text class="day-num">{{day.dayNum}}</text>
+        <view class="day-meta">
+          <view class="day-week">{{day.week}}</view>
+          <view class="day-month">{{day.monthText}}</view>
+        </view>
+        <text wx:if="{{day.rel}}" class="day-rel">{{day.rel}}送达</text>
+      </view>
+
+      <view wx:for="{{day.sessions}}" wx:key="_id" class="card card-tap session"
+            bindtap="goToSession" data-shop="{{item.shop_id}}" data-session="{{item._id}}">
+        <view class="session-top">
+          <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="session-logo" />
+          <view wx:else class="session-logo session-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
+          <view class="session-meta">
+            <view class="session-name-row">
+              <text class="session-name">{{item.shop_name}}</text>
+              <text wx:if="{{item.p.formed && !item.p.open}}" class="gb-sticker">已成团</text>
+              <text wx:if="{{item.repeatText}}" class="chip session-repeat">{{item.repeatText}}</text>
+            </view>
+            <view class="session-points">{{item.pointsText}}</view>
+          </view>
+        </view>
+
+        <view wx:if="{{!item.p.open}}" class="gb-bar {{item.p.formed ? 'gb-bar-done' : ''}} session-bar">
+          <view class="gb-bar-fill" style="width: {{item.p.pct}}%"></view>
+        </view>
+        <view class="gb-line">
+          <text class="{{item.p.open ? 'gb-text-quiet' : 'gb-text'}}">{{item.p.text}}</text>
+          <text class="{{item.cutHot ? 'gb-cut-hot' : 'gb-cut'}}">{{item.cutText}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{days.length === 0 && shops.length > 0}}" class="text-light none">暂无拼团，订阅店铺开团提醒</view>
+
+    <view wx:if="{{days.length === 0 && shops.length === 0}}" class="empty-state">
+      <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
+      <view class="empty-state-text">暂无拼团</view>
+    </view>
+
+    <!-- 眼下没场次的店 -->
+    <block wx:if="{{shops.length > 0}}">
+      <view class="others-head" bindtap="toggleShops">
+        <text>其他小店 · {{shops.length}}</text>
+        <text class="others-arrow">{{showShops ? '收起' : '展开'}}</text>
+      </view>
+      <block wx:if="{{showShops}}">
+        <view wx:for="{{shops}}" wx:key="_id" class="card card-tap other"
+              bindtap="goToSession" data-shop="{{item._id}}">
+          <image wx:if="{{item.logo}}" src="{{item.logo}}" mode="aspectFill" class="other-logo" />
+          <view wx:else class="other-logo session-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
+          <view class="other-meta">
+            <view class="other-name">{{item.name}}</view>
+            <view wx:if="{{item.description}}" class="text-light other-desc">{{item.description}}</view>
+          </view>
+          <view class="other-arrow">›</view>
+        </view>
+      </block>
+    </block>
+  </block>
 </view>
+
+<group-share id="gs" />

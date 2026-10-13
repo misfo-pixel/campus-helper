@@ -1,9 +1,9 @@
 <view class="plan-editor {{bare ? 'bare' : ''}}">
   <block wx:if="{{part !== 'time'}}">
-  <view wx:if="{{!bare}}" class="subsection-title">服务地点与配送费</view>
+  <view wx:if="{{!bare}}" class="subsection-title">取货点与配送费</view>
   <view wx:for="{{points}}" wx:key="index" class="card row">
     <view class="row-head">
-      <input placeholder="服务地点（如 Coffman 门口）" value="{{item.name}}" maxlength="20"
+      <input placeholder="取货点（如 Coffman 门口）" value="{{item.name}}" maxlength="20"
              bindinput="onPointInput" data-index="{{index}}" data-field="name" class="row-name" />
       <text class="row-del" bindtap="removePoint" data-index="{{index}}">删除</text>
     </view>
@@ -22,7 +22,7 @@
     </picker>
   </view>
 
-  <view class="add" bindtap="addPoint">+ 添加服务地点</view>
+  <view class="add" bindtap="addPoint">+ 添加取货点</view>
   </block>
 
   <block wx:if="{{part !== 'points'}}">

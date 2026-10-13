@@ -1,40 +1,98 @@
-// 店长工作台。订单状态全部由店长自己推进，平台不介入任何一步。
-// 平台也不碰钱——订单里没有支付状态，小程序里也不出现任何收款方式。
-// 订单只是买家的下单意向，店长自己通过微信联系买家后再决定接不接。
-
-// 店长只有两态。closed 是系统态（待审 / 被拒 / 重审中），
-// 店长选不到，但显示上也归到「打烊」——他不需要知道这个区别。
-const SHOP_STATUS_TEXT = { open: '营业中', paused: '打烊', closed: '打烊' }
-const SHOP_STATUS_LIST = [
-  { value: 'open', label: '营业中（接单）' },
-  { value: 'paused', label: '打烊（买家能看商品，但下不了单）' }
-]
+// 我的小店（店长工作台）。
+//
+// 从上到下：开着的场次（进度、订单、修改、照常送）→ 两周的开团日历 → 订单。
+// 2026-10-11 起没有「营业中 / 打烊」：某天能不能下单只看那天有没有场次。
+//
+// 日历上能看到别家的排期（灰点），方便错开：同一天两家都开，抢的是同一批人。
+// 只显示别家买家本来就看得到的东西（店名、出发时间、取货点），不显示单数。
+//
+// 平台不碰钱——订单里没有支付状态，小程序里也不出现任何收款方式。
+// 「确认订单」只表示店长认了这一单，之前要不要先收钱是他和买家的事。
 
 const ORDER_STATUS_TEXT = {
+  forming: '拼团中',
+  confirming: '待确认',
   pending: '待确认',
-  accepted: '准备中',
+  accepted: '已确认',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
 }
 
-const { TEAM_MODULE_ENABLED, ORDERING_ENABLED } = require('../../config.js')
+const SESSION_STATE_TEXT = { formed: '已成团', failed: '未成团', cancelled: '已取消' }
+
+const { ORDERING_ENABLED } = require('../../config.js')
 const { askOrGuide } = require('../../utils/subscribe.js')
 const { today, formatTime } = require('../../utils/date.js')
+const { addDays, md, weekday, minutesBetween, cutoffText, progress, sessionTitle, atText } = require('../../utils/group.js')
+
+const CALENDAR_DAYS = 14
+
+function decorateSession(s, now) {
+  const c = s.counts || { total: 0, forming: 0, confirming: 0, confirmed: 0 }
+  const open = s.state === 'open'
+  const p = progress({ count: c.total, min_orders: s.min_orders }, true)
+  return Object.assign({}, s, {
+    title: sessionTitle(s),
+    open: open,
+    p: p,
+    countText: s.min_orders ? c.total + ' / ' + s.min_orders + ' 单' : c.total + ' 单',
+    cutText: cutoffText({ cutoff_at: s.cutoff_at, minutes_left: minutesBetween(now, s.cutoff_at) }, now),
+    stateText: SESSION_STATE_TEXT[s.state] || '',
+    confirmLine: s.state === 'formed'
+      ? '待确认 ' + c.confirming + ' · 已确认 ' + c.confirmed + ' · ' + atText(s.confirm_at, now) + ' 截止'
+      : '',
+    canForce: open && !p.open && !p.formed && !s.forced,
+    repeatText: s.repeat_weekly ? '每' + weekday(s.date) : ''
+  })
+}
+
+// 手机本地时间，格式和云函数给的 now 一样：'YYYY-MM-DD HH:MM'
+function localNow() {
+  const d = new Date()
+  const pad = n => (n < 10 ? '0' + n : '' + n)
+  return today() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes())
+}
+
+// 两周的日历，按周一开头排成整周。今天本身开不了（截单在前一天），从明天起能点
+function buildCalendar(now, mine, others) {
+  const today = now.slice(0, 10)
+  const last = addDays(today, CALENDAR_DAYS - 1)
+  const wd = new Date(today + 'T12:00:00Z').getUTCDay()
+  const start = addDays(today, -((wd + 6) % 7))
+
+  const mineByDate = {}
+  mine.filter(s => s.state === 'open' || s.state === 'formed').forEach(s => { mineByDate[s.date] = s._id })
+  const othersByDate = {}
+  others.forEach(o => { othersByDate[o.date] = (othersByDate[o.date] || 0) + 1 })
+
+  const cells = []
+  for (let date = start; date <= last || cells.length % 7; date = addDays(date, 1)) {
+    const inRange = date > today && date <= last
+    cells.push({
+      date: date,
+      day: Number(date.slice(8)),
+      today: date === today,
+      off: !inRange && !mineByDate[date],
+      mine: mineByDate[date] || '',
+      dots: othersByDate[date] ? new Array(Math.min(3, othersByDate[date])).fill(1) : []
+    })
+  }
+  return cells
+}
 
 Page({
   data: {
-    teamEnabled: TEAM_MODULE_ENABLED,
-    // 黄页模式下没有订单：今日数据、tab、订单列表整块不渲染，
-    // loadSummary / loadOrders 也不会被调用（见 loadShop）
+    // 黄页模式下没有订单：场次、日历、订单整块不渲染
     ordering: ORDERING_ENABLED,
     loading: true,
     shop: null,
-    shopStatusText: '',
-    slotAlert: false,  // true = 没有可约的服务时间，买家下不了单
-    slotLastDate: '',  // 上一场的日期；空 = 压根还没按日期设过
+    sessions: [],
+    week: ['一', '二', '三', '四', '五', '六', '日'],
+    cells: [],
     summary: { todayCount: 0, pendingCount: 0, revenue: 0 },
-    tab: 'pending',
+    tab: 'forming',
+    filter: null,      // 从场次卡片点「订单」进来：{ id, text }
     orders: []
   },
 
@@ -42,75 +100,61 @@ Page({
     this.loadShop()
   },
 
-  loadShop: function () {
+  onPullDownRefresh: function () {
+    this.loadShop(() => wx.stopPullDownRefresh())
+  },
+
+  loadShop: function (done) {
     wx.cloud.callFunction({ name: 'shopManage', data: { action: 'getMine' } }).then(res => {
       const r = (res && res.result) || {}
       const shop = r.shop
-      const slot = this.checkSlot(shop)
-      this.setData({
-        shop: shop || null,
-        shopStatusText: shop ? (SHOP_STATUS_TEXT[shop.status] || '') : '',
-        slotAlert: slot.alert,
-        slotLastDate: slot.lastDate,
-        loading: false
-      })
-      // 被下架的店没有订单可看，就别白跑两个云函数了
+      this.setData({ shop: shop || null, loading: false })
+      // 被下架的店没有订单可看，就别白跑云函数了
       if (shop && !shop.takedown && ORDERING_ENABLED) {
-        this.loadSummary()
-        this.loadOrders()
+        return Promise.all([this.loadSessions(), this.loadSummary(), this.loadOrders()])
       }
     }).catch(err => {
       console.error('读取店铺失败：', err)
       this.setData({ loading: false })
+    }).then(() => {
+      if (done) done()
     })
   },
 
-  // 场次过了就没人下得了单，可店还好端端挂在列表里，店长自己看不出来。
-  //
-  // 没有日期的场次也要报警：那是场次还没按日期填过的老数据，
-  // 买家侧同样一个可选场次都展不出来，而且它比「过期」更隐蔽。
-  //
-  // 外包给配送队的店用的是队伍那份方案，不归他管，就别吓唬他了。
-  checkSlot: function (shop) {
-    if (!shop || shop.takedown) return { alert: false, lastDate: '' }
-    // 纯线上服务没有场次这回事。其余三种服务方式（自送 / 配送队 / 发委托）
-    // 都要自己设服务时间——配送队那支也一样，截单时刻归店长定，不归队伍。
-    // 以前这里给 outsourced 开了豁免，现在留着会让选了配送队的店永远
-    // 收不到「没设服务时间」的警告，然后开门被拦却不知道为什么。
-    if (shop.needs_delivery === false) return { alert: false, lastDate: '' }
-
-    const slot = (shop.batches || [])[0]
-    if (!slot || !slot.date) return { alert: true, lastDate: '' }
-
-    const todayStr = today()
-    if (slot.date < todayStr) return { alert: true, lastDate: slot.date }
-
-    // 今天的场次过了截单时刻也算没场次：买家侧同样展不出来。
-    // 这条判断要和 shopManage 的 slotBlocker 对齐，否则会出现
-    // 「工作台没报警，但一点营业中就被拒」的割裂。
-    if (slot.date === todayStr && slot.cutoff) {
-      const bits = String(slot.cutoff).split(':')
-      const cutoffMin = Number(bits[0]) * 60 + Number(bits[1])
-      // today() 用的也是设备本地时区，这里跟着用本地时分才对得上
-      const now = new Date()
-      if (now.getHours() * 60 + now.getMinutes() >= cutoffMin) {
-        return { alert: true, lastDate: slot.date }
+  // 日历先按手机日期画出来，云函数回来再换成明尼苏达时间 + 场次。
+  // 读失败时日历照样能点（开团页自己会再校验），并把原因弹出来——
+  // 不然一片空白，看不出是没部署还是出错了
+  loadSessions: function () {
+    if (!this.data.cells.length) this.setData({ cells: buildCalendar(localNow(), [], []) })
+    return wx.cloud.callFunction({ name: 'shopManage', data: { action: 'sessions' } }).then(res => {
+      const r = (res && res.result) || {}
+      if (!r.success) {
+        wx.showToast({ title: r.message || '读取场次失败', icon: 'none' })
+        return
       }
-    }
-    return { alert: false, lastDate: '' }
+      const mine = r.sessions || []
+      this.setData({
+        sessions: mine.map(s => decorateSession(s, r.now)),
+        cells: buildCalendar(r.now, mine, r.others || [])
+      })
+    }).catch(err => {
+      console.error('读取场次失败：', err)
+      wx.showToast({ title: '读取场次失败', icon: 'none' })
+    })
   },
 
   loadSummary: function () {
-    wx.cloud.callFunction({ name: 'shopOrders', data: { action: 'summary' } }).then(res => {
+    return wx.cloud.callFunction({ name: 'shopOrders', data: { action: 'summary' } }).then(res => {
       const r = (res && res.result) || {}
       if (r.success) this.setData({ summary: r.summary })
     }).catch(err => console.error('读取今日数据失败：', err))
   },
 
   loadOrders: function () {
-    wx.cloud.callFunction({
+    const filter = this.data.filter
+    return wx.cloud.callFunction({
       name: 'shopOrders',
-      data: { action: 'list', tab: this.data.tab }
+      data: { action: 'list', tab: this.data.tab, sessionId: filter ? filter.id : '' }
     }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
@@ -120,6 +164,7 @@ Page({
       const orders = (r.orders || []).map(o => Object.assign({}, o, {
         statusText: ORDER_STATUS_TEXT[o.status] || o.status,
         timeText: formatTime(o.created_at),
+        dayText: o.batch_date ? md(o.batch_date) + ' ' + weekday(o.batch_date) : '',
         shortId: (o._id || '').slice(-6).toUpperCase()
       }))
       this.setData({ orders: orders })
@@ -135,55 +180,80 @@ Page({
     this.setData({ tab: tab, orders: [] }, () => this.loadOrders())
   },
 
-  // 营业状态是店长最高频的操作，放在最顶上一点就能切
-  changeShopStatus: function () {
-    wx.showActionSheet({
-      itemList: SHOP_STATUS_LIST.map(s => s.label),
-      success: res => {
-        const next = SHOP_STATUS_LIST[res.tapIndex].value
-        if (next === this.data.shop.status) return
+  // ---- 场次 ----
 
-        wx.cloud.callFunction({
-          name: 'shopManage',
-          data: { action: 'setStatus', status: next }
-        }).then(r => {
-          const result = (r && r.result) || {}
-          if (result.success) {
-            wx.showToast({ title: '已切换为' + SHOP_STATUS_TEXT[next], icon: 'none' })
-            this.loadShop()
-            // 刚挂上营业中 = 开始等单，这一刻要授权最自然。
-            // 被永久拒绝过的话 askOrGuide 会引导去设置。
-            if (next === 'open') {
-              askOrGuide('newOrder')
-              // 开团提醒：通知订阅了这家店的买家。不等结果——服务端自己判断
-              // 是不是新的一场，同一场只发一次，所以这里多调几次也不会重复打扰人。
-              wx.cloud.callFunction({ name: 'shopSubscribe', data: { action: 'announce' } })
-                .catch(err => console.warn('开团提醒触发失败：', err))
-            }
-          } else if (next === 'open') {
-            // 开门被场次拦下了。这时候只弹 toast 等于把人扔在原地，
-            // 直接问他要不要去设置——拦截理由本身已经说清楚该改什么了。
-            wx.showModal({
-              title: '还不能开门',
-              content: result.message || '切换失败',
-              confirmText: '去设置',
-              success: r => {
-                if (r.confirm) wx.navigateTo({ url: '/pages/shopedit/shopedit' })
-              }
-            })
-          } else {
-            wx.showToast({ title: result.message || '切换失败', icon: 'none' })
-          }
-        }).catch(err => {
-          console.error('切换营业状态失败：', err)
-          wx.showToast({ title: '切换失败', icon: 'none' })
-        })
-      },
-      fail: () => { /* 用户取消 */ }
+  // 日历上点一天：自己开过的去修改，空的去开团
+  pickDay: function (e) {
+    const cell = this.data.cells[Number(e.currentTarget.dataset.index)]
+    if (!cell) return
+    if (cell.mine) {
+      wx.navigateTo({ url: '/pages/shopsession/shopsession?id=' + cell.mine })
+      return
+    }
+    if (cell.today) {
+      wx.showToast({ title: '截单在前一天，最早开明天的团', icon: 'none' })
+      return
+    }
+    if (cell.off) return
+    wx.navigateTo({ url: '/pages/shopsession/shopsession?date=' + cell.date })
+  },
+
+  // 转发卡片和海报：挑 AI 背景、生成海报、转发
+  goToPoster: function (e) {
+    wx.navigateTo({ url: '/pages/shopposter/shopposter?id=' + e.currentTarget.dataset.id })
+  },
+
+  editSession: function (e) {
+    wx.navigateTo({ url: '/pages/shopsession/shopsession?id=' + e.currentTarget.dataset.id })
+  },
+
+  // 场次卡片上的「订单」：下面的订单列表只看这一场
+  showSessionOrders: function (e) {
+    const s = this.data.sessions.find(x => x._id === e.currentTarget.dataset.id)
+    if (!s) return
+    const tab = s.state === 'open' ? 'forming' : (s.state === 'formed' ? 'pending' : 'done')
+    this.setData({
+      filter: { id: s._id, text: md(s.date) + ' ' + weekday(s.date) },
+      tab: tab,
+      orders: []
+    }, () => {
+      this.loadOrders()
+      wx.pageScrollTo({ selector: '#orders', duration: 200 })
     })
   },
 
-  acceptOrder: function (e) {
+  clearFilter: function () {
+    this.setData({ filter: null, orders: [] }, () => this.loadOrders())
+  },
+
+  // 照常送：差几单没到门槛也送，截单时按成团算
+  forceSession: function (e) {
+    const id = e.currentTarget.dataset.id
+    wx.showModal({
+      title: '照常送',
+      content: '截单时不够门槛也按成团算。',
+      confirmText: '照常送',
+      success: res => {
+        if (!res.confirm) return
+        wx.cloud.callFunction({ name: 'shopManage', data: { action: 'forceSession', sessionId: id } }).then(r => {
+          const result = (r && r.result) || {}
+          if (!result.success) {
+            wx.showToast({ title: result.message || '操作失败', icon: 'none' })
+            return
+          }
+          wx.showToast({ title: '已设为照常送', icon: 'none' })
+          this.loadSessions()
+        }).catch(err => {
+          console.error('照常送失败：', err)
+          wx.showToast({ title: '操作失败', icon: 'none' })
+        })
+      }
+    })
+  },
+
+  // ---- 订单 ----
+
+  confirmOrder: function (e) {
     this.updateStatus(e.currentTarget.dataset.id, 'accepted')
   },
 
@@ -195,10 +265,10 @@ Page({
     this.updateStatus(e.currentTarget.dataset.id, 'completed')
   },
 
-  rejectOrder: function (e) {
+  cancelOrder: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '拒单',
+      title: '取消订单',
       editable: true,
       placeholderText: '告诉买家原因（选填）',
       success: res => {
@@ -219,6 +289,7 @@ Page({
         wx.showToast({ title: '已更新', icon: 'success' })
         this.loadOrders()
         this.loadSummary()
+        this.loadSessions()
       } else {
         wx.showToast({ title: r.message || '操作失败', icon: 'none' })
       }
@@ -229,7 +300,7 @@ Page({
     })
   },
 
-  // 找不到楼、到了没人应的时候用
+  // 找不到人、到了没人应的时候用
   callBuyer: function (e) {
     const phone = e.currentTarget.dataset.phone
     if (!phone) return
@@ -248,12 +319,12 @@ Page({
   goToMenu: function () {
     wx.navigateTo({ url: '/pages/shopmenu/shopmenu' })
   },
+
   // 订阅消息一次授权只能收一条，所以这是个要反复点的按钮，不是开关。
   // 微信没给「长期订阅」的口子（那个只对政务医疗等类目开放）。
   //
-  // 成功给个 toast 就够，失败什么都不说——再点一次就会再弹，
-  // 弹个「需要的话再点一次」的框纯属废话。只有被永久拒绝时
-  // askOrGuide 会自己引导去设置，那是唯一点了也没反应的情况。
+  // 成功给个 toast 就够，失败什么都不说——再点一次就会再弹。
+  // 只有被永久拒绝时 askOrGuide 会自己引导去设置，那是唯一点了也没反应的情况。
   enableOrderAlert: function () {
     askOrGuide('newOrder').then(ok => {
       if (ok) wx.showToast({ title: '已开启', icon: 'success' })
@@ -267,9 +338,6 @@ Page({
 
   goToSettings: function () {
     wx.navigateTo({ url: '/pages/shopedit/shopedit' })
-  },
-  goToDeliveryAsk: function () {
-    wx.navigateTo({ url: '/pages/deliveryask/deliveryask' })
   },
   goToApply: function () {
     wx.navigateTo({ url: '/pages/shopcreate/shopcreate' })

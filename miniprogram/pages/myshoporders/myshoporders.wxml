@@ -1,8 +1,6 @@
 <view class="page-container">
   <skeleton wx:if="{{loading}}" type="text" />
-  <view wx:elif="{{orders.length === 0}}" class="text-light empty">还没有订单</view>
-
-  <view wx:if="{{hasPending}}" class="notice-top">平台只记录下单意向，不参与交易、不提供担保，请直接与店长沟通。</view>
+  <view wx:elif="{{orders.length === 0}}" class="text-light empty">暂无订单</view>
 
   <view wx:for="{{orders}}" wx:key="_id" class="card order">
     <view class="order-head">
@@ -23,7 +21,17 @@
       <text wx:if="{{item.delivery_fee_charged > 0}}" class="text-light order-fee">（含配送费 ${{item.delivery_fee_charged}}）</text>
     </view>
 
-    <view wx:if="{{item.statusHint}}" class="order-hint">{{item.statusHint}}</view>
+    <!-- 拼团中：进度 + 喊人上车 -->
+    <block wx:if="{{item.status === 'forming' && item.p}}">
+      <view wx:if="{{!item.p.open}}" class="gb-bar {{item.p.formed ? 'gb-bar-done' : ''}} order-bar">
+        <view class="gb-bar-fill" style="width: {{item.p.pct}}%"></view>
+      </view>
+      <view class="gb-line">
+        <text class="{{item.p.open ? 'gb-text-quiet' : 'gb-text'}}">{{item.hint}}</text>
+        <button class="order-share" open-type="share" data-index="{{index}}">喊人上车</button>
+      </view>
+    </block>
+    <view wx:elif="{{item.hint}}" class="order-hint {{item.status === 'confirming' ? 'order-hint-hot' : ''}}">{{item.hint}}</view>
 
     <!-- 下单时自己填的补充说明。留在这里是为了「我当时写了啥」随时翻得到 -->
     <view wx:if="{{item.note}}" class="note-box">
@@ -43,8 +51,10 @@
       <text wx:if="{{item.shop_wechat}}" class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">复制微信号</text>
     </view>
 
-    <view wx:if="{{item.status === 'pending'}}" class="order-actions">
-      <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">取消订单</button>
+    <view wx:if="{{item.status === 'forming' || item.status === 'confirming' || item.status === 'pending'}}" class="order-actions">
+      <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}" data-status="{{item.status}}">取消订单</button>
     </view>
   </view>
 </view>
+
+<group-share id="gs" />

@@ -18,71 +18,25 @@
   <!-- ========== 第 1 步：这家店是什么 ========== -->
   <block wx:if="{{step === 1}}">
     <view class="wizard-title">你的小店叫什么？</view>
-    <view class="wizard-sub">这些会显示在小店列表上，之后都能改。</view>
+    <view class="wizard-sub">开店码找明尼助手要，店名和介绍之后都能改。</view>
 
     <ban-bar />
+
+    <input placeholder="开店码" value="{{create_code}}" bindinput="onCodeInput" maxlength="8" class="card form-card code-input" />
 
     <input placeholder="小店名称（必填）" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
     <textarea placeholder="一句话介绍（选填，做什么、有什么特色）" value="{{description}}" bindinput="onInput" data-field="description" maxlength="300" class="card form-card" style="width: auto; height: 140rpx;"></textarea>
   </block>
 
-  <!-- ========== 第 2 步：要不要配送 ========== -->
+  <!-- ========== 第 2 步：买家去哪取货 ========== -->
   <block wx:if="{{ordering && step === 2}}">
-    <view class="wizard-title">需要线下交付吗？</view>
-    <view class="wizard-sub">选错了也没关系，开店后在小店设置里能改。</view>
+    <view class="wizard-title">买家去哪取货？</view>
+    <view class="wizard-sub">设几个取货点，开团时再选这一场去哪几个。</view>
 
-    <view class="pick {{needsDelivery === true ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="1">
-      <view class="pick-emoji"><image src="/images/ui/box.svg" class="ico-md"></image></view>
-      <view class="pick-body">
-        <view class="pick-name">要</view>
-        <view class="pick-desc">买家要拿到实物，或者你要上门服务。到店自取也算。</view>
-      </view>
-    </view>
-
-    <view class="pick {{needsDelivery === false ? 'pick-on' : ''}}" bindtap="pickDelivery" data-need="0">
-      <view class="pick-emoji"><image src="/images/ui/laptop.svg" class="ico-md"></image></view>
-      <view class="pick-body">
-        <view class="pick-name">不要</view>
-        <view class="pick-desc">纯线上，比如辅导、代写、设计。没有取货这一步。</view>
-      </view>
-    </view>
-
-    <block wx:if="{{needsDelivery === true}}">
-      <!-- 服务时间放在最前：找不找得到配送队、送达前什么时候通知，
-           都按送达时间算，得先有它 -->
-      <plan-editor part="time"
-                   init-batches="{{planBatches}}"
-                   bind:change="onPlanChange" />
-
-      <!-- 两种送法二选一，和小店设置同一个分段按钮。
-           向导是第一次见这两个词，所以底下多一句当前这种是什么意思 -->
-      <block wx:if="{{exactAddressEnabled}}">
-      <view class="subsection-title">送到哪里</view>
-      <view class="kind-switch address-switch">
-        <view class="kind-switch-item {{exactAddress ? 'kind-switch-on' : ''}}"
-              bindtap="pickExactAddress" data-exact="1">送到买家地址</view>
-        <view class="kind-switch-item {{exactAddress ? '' : 'kind-switch-on'}}"
-              bindtap="pickExactAddress" data-exact="0">送到模糊地址</view>
-      </view>
-      <view class="field-hint">
-        {{exactAddress ? '买家下单时填自己的地址，送上门。' : '你设几个取货点，买家挑一个过来取。'}}
-      </view>
-      </block>
-
-      <block wx:if="{{exactAddress}}">
-        <input placeholder="配送费（美元/单）" type="digit"
-               value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
-               class="card form-card" />
-        <view class="field-hint">买家下单时付这个；找配送队送时，也按这个价付给配送队。</view>
-      </block>
-
-      <!-- 服务地点只有买家自取才用得上 -->
-      <plan-editor wx:if="{{!exactAddress}}" part="points"
-                   init-points="{{planPoints}}"
-                   depart-time="{{planBatches[0].depart_time || planBatches[0].deliver_time}}"
-                   bind:change="onPlanChange" />
-    </block>
+    <plan-editor part="points"
+                 init-points="{{planPoints}}"
+                 bind:change="onPlanChange" />
   </block>
 
   <!-- ========== 第 3 步：怎么找到你 ========== -->
@@ -103,7 +57,6 @@
       </view>
     </view>
 
-    <input placeholder="营业时间（如 周一至周五 11:00-20:00）" value="{{business_hours}}" bindinput="onInput" data-field="business_hours" class="card form-card" />
     <input wx:if="{{ordering}}" placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
 
     <view class="card license-row" bindtap="chooseLicense">

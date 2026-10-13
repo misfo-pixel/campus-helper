@@ -1,0 +1,24 @@
+<skeleton wx:if="{{loading}}" type="text" />
+<view wx:else class="page-container">
+  <view class="head">
+    <view>
+      <view class="page-head-title">开店码</view>
+      <view class="page-head-sub">一码开一家店，7 天内有效</view>
+    </view>
+    <button class="btn-primary btn-sm" bindtap="makeCode" loading="{{busy}}">+ 生成</button>
+  </view>
+
+  <view wx:if="{{codes.length === 0}}" class="card text-light block-empty">暂无开店码</view>
+  <view wx:else class="card list">
+    <view wx:for="{{codes}}" wx:key="_id" class="code-row">
+      <view class="code-main">
+        <text class="code {{item.live ? '' : 'code-dead'}}">{{item.code}}</text>
+        <text wx:if="{{item.note}}" class="code-note">{{item.note}}</text>
+      </view>
+      <view class="code-sub">
+        <text class="text-light">{{item.stateText}}</text>
+        <text wx:if="{{item.live}}" class="code-copy" bindtap="copyCode" data-code="{{item.code}}">复制</text>
+      </view>
+    </view>
+  </view>
+</view>

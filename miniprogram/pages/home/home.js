@@ -12,7 +12,7 @@ const TILES = [
   { key: 'task', title: '任务委托', sub: '代取、代购、跑腿', color: 'maroon', url: '/pages/taskmarket/taskmarket' },
   { key: 'group', title: '兴趣群组', sub: '找搭子、组乐队', color: '', url: '/pages/groupmarket/groupmarket',
     enabled: GROUP_MODULE_ENABLED, sticker: '新', stickerUntil: '2026-11-10' },
-  { key: 'shop', title: '校外服务', sub: '长期服务，稳定委托', color: 'cream', url: '/pages/shoplist/shoplist',
+  { key: 'shop', title: '一起拼团', sub: '满单成团，送到学校', color: 'cream', url: '/pages/shoplist/shoplist',
     enabled: SHOP_MODULE_ENABLED },
   { key: 'feedback', title: '意见反馈', sub: '问题和建议都欢迎', color: '', url: '/pages/feedback/feedback' }
 ]

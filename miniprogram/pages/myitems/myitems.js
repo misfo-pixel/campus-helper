@@ -3,8 +3,9 @@ const { stashFrom } = require('../../utils/preview.js')
 const { retryStuckReviews } = require('../../utils/publish.js')
 const { shouldReload } = require('../../utils/refresh.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
-const { buildPoster, toLocalPath } = require('../../utils/poster.js')
-const { withCover } = require('../../utils/share.js')
+const { toLocalPath } = require('../../utils/poster.js')
+const { showPoster } = require('../../utils/groupCover.js')
+const { withCover, storeTitle } = require('../../utils/share.js')
 
 const CFG = KINDS.item
 const PAGE_SIZE = 20
@@ -93,6 +94,7 @@ Page({
       // 转发出去的是公开主页，那边列的是在售+求购两面，所以不按当前页签数。
       // 列表是分页的，数已加载的会少，单独 count 一次。失败只影响转发文案。
       if (skip === 0) {
+        this.loadHot(profile.uid)
         wx.cloud.database().collection('secondhand_items')
           .where({ _openid: profile.openid, status: 'on_sale' })
           .count()
@@ -139,50 +141,59 @@ Page({
     })
   },
 
-  // 海报是给自己拿去传播的：一张图，发群发朋友圈都行，
-  // 不像转发卡片只能在微信内部流转，也不像朋友圈分享那样受限。
+  // 海报是给自己拿去传播的：一张长图，在售的闲置全部列出来，发群、发朋友圈、发小红书都行。
+  // 不用 AI（卖闲置的人多，会把额度用光），配色从头像和商品照片里取，每个人的都不一样
   makePoster: function () {
     if (this.data.posterBusy) return
-
-    // 海报是给陌生人看的，只能放还在售的，已售/下架的不该出现
-    const onSale = (this.data.items || []).filter(it => it.status === 'on_sale')
-    if (onSale.length === 0) {
-      wx.showToast({ title: '还没有在售的闲置', icon: 'none' })
+    const uid = this.data.uid
+    if (!uid) {
+      wx.showToast({ title: '还没加载完，稍等再点', icon: 'none' })
       return
     }
 
     this.setData({ posterBusy: true })
     wx.showLoading({ title: '生成中…', mask: true })
+    const gs = this.selectComponent('#gs')
 
-    // 小程序码要小程序发布过才拿得到，失败就画文字降级，不影响出图
-    wx.cloud.callFunction({ name: 'getMiniCode', data: { uid: this.data.uid } })
-      .then(res => {
-        const r = (res && res.result) || {}
-        return r.success ? r.fileID : ''
-      })
-      .catch(() => '')
-      .then(qrFileID => buildPoster({
-        selector: '#posterCanvas',
-        nickname: this.data.nickname,
-        avatar: this.data.avatarUrl,
-        items: onSale.map(it => ({
-          image: (it.images && it.images[0]) || '',
-          price: '$' + it.price
-        })),
-        qrFileID: qrFileID
-      }))
-      .then(tempPath => {
+    Promise.all([
+      wx.cloud.callFunction({ name: 'getUserStore', data: { uid: uid, poster: true } })
+        .then(res => (((res && res.result) || {}).buckets || {}).item || []),
+      // 小程序码要小程序发布过才拿得到，失败就画「搜明尼助手」，不影响出图
+      wx.cloud.callFunction({ name: 'getMiniCode', data: { uid: uid } })
+        .then(res => ((res && res.result) || {}).fileID || '')
+        .catch(() => '')
+    ]).then(([items, qr]) => {
+      // 求购的不上海报：海报是摆摊，不是找东西
+      const onSale = items.filter(it => !isDemand(it.kind))
+      if (!onSale.length) {
         wx.hideLoading()
         this.setData({ posterBusy: false })
-        // 预览里长按就能保存或转发，也不用申请相册写入权限，少一个授权弹窗
-        wx.previewImage({ urls: [tempPath], current: tempPath })
-      })
-      .catch(err => {
-        console.error('生成海报失败：', err)
+        wx.showToast({ title: '还没有在售的闲置', icon: 'none' })
+        return
+      }
+      const pic = it => it.thumb || (it.images && it.images[0]) || ''
+      return gs.themeFromPhotos([this.data.avatarUrl].concat(onSale.slice(0, 4).map(pic))).then(theme => gs.long({
+        theme: theme,
+        title: (this.data.nickname || '明大同学') + '的闲置',
+        subtitle: '在售 ' + onSale.length + ' 件，看中直接聊',
+        logo: this.data.avatarUrl,
+        tag: onSale.length + ' 件',
+        when: null,
+        info: ['扫码看详情、加卖家微信'],
+        sections: [{ title: '', items: onSale.map(it => ({ image: pic(it), name: it.title, price: it.price })) }],
+        qrFileID: qr,
+        footer: '二手市场 · 明尼助手'
+      })).then(path => {
         wx.hideLoading()
         this.setData({ posterBusy: false })
-        wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+        showPoster(path)
       })
+    }).catch(err => {
+      console.error('生成海报失败：', err)
+      wx.hideLoading()
+      this.setData({ posterBusy: false })
+      wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+    })
   },
 
   goToDetail: function (e) {
@@ -237,6 +248,18 @@ Page({
   },
 
   // 第一件在售商品的首图，和它下到本地的 Promise。换了一件才重新下载
+  // 转发用最可能卖掉的那件：标题写它的信息，封面用它的图（挑法见 getUserStore 的 hot_item）
+  loadHot: function (uid) {
+    if (!uid) return
+    wx.cloud.callFunction({ name: 'getUserStore', data: { uid: uid } }).then(res => {
+      const r = (res && res.result) || {}
+      const items = ((r.buckets || {}).item || []).filter(it => !isDemand(it.kind))
+      this.hot = items.find(it => it._id === r.hot_item) || null
+      this.hotCount = items.length
+      if (this.hot) this.coverOf([Object.assign({ status: 'on_sale' }, this.hot)])
+    }).catch(err => console.warn('挑转发封面失败：', err))
+  },
+
   coverOf: function (items) {
     const first = (items || []).filter(it => it.status === 'on_sale')[0]
     const fileID = (first && first.images && first.images[0]) || ''
@@ -254,7 +277,14 @@ Page({
     if (!this.data.uid) {
       return { title: '明尼助手 · 二手市场', path: '/pages/market/market' }
     }
-    // 同 userstore：拿第一件在售商品的图当封面，别让微信去截界面
+    // 有最可能卖掉的那件：标题就是它的信息，封面是它的图。没有就退回第一件在售的
+    if (this.hot) {
+      const fileID = this.coverOf([Object.assign({ status: 'on_sale' }, this.hot)])
+      return withCover({
+        title: storeTitle(this.hot, this.hotCount),
+        path: '/pages/userstore/userstore?uid=' + this.data.uid + '&tab=item'
+      }, fileID, this.cover)
+    }
     const fileID = this.coverOf(this.data.items)
     const n = this.data.onSaleCount
     return withCover({

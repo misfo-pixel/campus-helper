@@ -1,0 +1,30 @@
+<view class="page-container joined">
+  <view class="icon-box tint-cream joined-icon"><image src="/images/modules/shop.svg"></image></view>
+  <view class="joined-shop">已参团 · {{name}}</view>
+  <view class="joined-headline">{{headline}}</view>
+
+  <block wx:if="{{p && !p.open}}">
+    <view class="gb-bar {{p.formed ? 'gb-bar-done' : ''}} joined-bar">
+      <view class="gb-bar-fill" style="width: {{p.pct}}%"></view>
+    </view>
+    <view class="joined-count">{{countText}} · {{cutText}}</view>
+  </block>
+  <view wx:else class="joined-count">{{cutText}}</view>
+
+  <view class="card joined-card">
+    <view class="joined-row">
+      <text class="text-light">取货</text>
+      <text>{{pickText}}</text>
+    </view>
+    <view class="joined-row">
+      <text class="text-light">之后</text>
+      <text>{{p.open ? '截单后联系店长确认' : '成团后联系店长确认'}}</text>
+    </view>
+  </view>
+
+  <button class="btn-primary" open-type="share">约上饭搭子</button>
+  <button class="btn-outline joined-second" bindtap="makePoster" loading="{{posterBusy}}">生成海报</button>
+  <view class="joined-link" bindtap="goToOrders">查看订单</view>
+</view>
+
+<group-share id="gs" />

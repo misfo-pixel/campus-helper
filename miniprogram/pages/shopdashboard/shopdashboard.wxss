@@ -91,28 +91,6 @@
   margin-top: 4rpx;
 }
 
-.status-pill {
-  padding: 10rpx 24rpx;
-  border-radius: 32rpx;
-  font-size: 26rpx;
-  flex-shrink: 0;
-}
-
-.status-open {
-  background: #e8f6ec;
-  color: #1a7f37;
-}
-
-.status-paused {
-  background: #f2f2f2;
-  color: #888;
-}
-
-.status-closed {
-  background: #f2f2f2;
-  color: #888;
-}
-
 /* 今日数据 */
 .summary {
   display: flex;
@@ -141,12 +119,12 @@
 /* tab */
 .tabs {
   display: flex;
-  gap: 16rpx;
-  margin: 32rpx 0 24rpx;
+  gap: 12rpx;
+  margin: 40rpx 0 24rpx;
 }
 
 .tab {
-  padding: 12rpx 32rpx;
+  padding: 12rpx 24rpx;
   border-radius: 32rpx;
   background: var(--color-card);
   border: 1rpx solid var(--color-border);
@@ -296,3 +274,189 @@
   color: #8a6100;
   font-size: 22rpx;
 }
+
+.block-empty {
+  text-align: center;
+  padding: 40rpx 28rpx;
+}
+
+/* ---------- 场次 ---------- */
+.session {
+  padding: 24rpx 28rpx;
+}
+
+/* 截单后的场次（已成团在确认期 / 没成团 / 取消了）退一档 */
+.session-closed {
+  background: #faf7f4;
+  box-shadow: none;
+  border: 1rpx solid var(--color-border);
+}
+
+.session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.session-title {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.session-repeat {
+  margin: 0;
+}
+
+.session-state {
+  font-size: 24rpx;
+  color: var(--color-text-light);
+}
+
+.session-bar {
+  margin-top: 20rpx;
+}
+
+.session-confirm {
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  color: #7a5200;
+}
+
+.session-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 20rpx;
+}
+
+.session-btn {
+  flex: 1;
+  padding: 12rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  border-radius: 999rpx;
+  border: 1rpx solid var(--color-border);
+  color: #555;
+}
+
+.session-btn:active {
+  background: var(--color-bg);
+}
+
+.session-btn-hot {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+/* ---------- 开团日历 ---------- */
+.calendar {
+  padding: 24rpx 20rpx;
+}
+
+.cal-row,
+.cal-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cal-week {
+  width: 14.285%;
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--color-text-light);
+  margin-bottom: 8rpx;
+}
+
+.cal-cell {
+  width: 14.285%;
+  padding: 6rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cal-day {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  border-radius: 18rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cell:active .cal-day {
+  background: var(--color-bg);
+}
+
+.cal-today {
+  border: 2rpx solid var(--color-accent);
+  line-height: 60rpx;
+}
+
+.cal-off {
+  color: #ccc;
+  font-weight: 400;
+}
+
+.cal-mine {
+  color: #fff;
+  background: var(--color-primary);
+}
+
+.cal-dots {
+  display: flex;
+  gap: 4rpx;
+  height: 12rpx;
+  margin-top: 4rpx;
+}
+
+.cal-dot {
+  display: inline-block;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #b3a59a;
+}
+
+.cal-legend {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid var(--color-border);
+  font-size: 22rpx;
+  color: var(--color-text-light);
+}
+
+.cal-legend-mine {
+  display: inline-block;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 6rpx;
+  background: var(--color-primary);
+}
+
+.cal-legend-dot {
+  margin-left: 20rpx;
+}
+
+/* ---------- 订单 ---------- */
+.filter {
+  display: inline-block;
+  margin-bottom: 20rpx;
+  padding: 8rpx 20rpx;
+  font-size: 24rpx;
+  color: var(--color-primary);
+  background: #f6e3e6;
+  border-radius: 999rpx;
+}
+
+.filter-x {
+  margin-left: 8rpx;
+  font-weight: 700;
+}
+

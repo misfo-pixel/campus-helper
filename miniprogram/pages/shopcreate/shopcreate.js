@@ -8,8 +8,8 @@
 // 点「上一步」不会丢。
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
-const { ORDERING_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
-const { uploadShopImage, validatePlan } = require('../../utils/shopForm.js')
+const { ORDERING_ENABLED } = require('../../config.js')
+const { uploadShopImage, validatePoints } = require('../../utils/shopForm.js')
 
 const LAST_STEP = 3
 
@@ -22,23 +22,18 @@ Page({
     step: 1,
     saving: false,
 
-    // 第 1 步：这家店是什么
+    // 第 1 步：开店码 + 这家店是什么。开店码由管理员在「我的 → 开店码」生成
+    create_code: '',
     name: '',
     description: '',
 
-    // 第 2 步：要不要线下交付、送到哪
-    needsDelivery: null,      // null = 还没选，两张卡片都不高亮
-    exactAddress: false,      // 送到买家地址 / 送到几个取货点
-    exactAddressEnabled: EXACT_ADDRESS_ENABLED,
-    flat_delivery_fee: '',
+    // 第 2 步：取货点。场次不在这里设，开店后在「我的小店」的日历里开团
     planPoints: [],
-    planBatches: [],
 
     // 第 3 步：怎么找到你
     contact_wechat: '',
     logo: '',
     tempLogo: '',
-    business_hours: '',
     min_order: '',
     licenseImage: '',
     tempLicense: '',
@@ -49,28 +44,18 @@ Page({
     this.setData({ [e.currentTarget.dataset.field]: e.detail.value })
   },
 
-  // 两个 plan-editor 实例各抛一半（服务时间 / 服务地点），按 key 合并。
+  // 开店码是大写字母加数字，照着念的时候常打成小写，这里替他转好
+  onCodeInput: function (e) {
+    this.setData({ create_code: e.detail.value.toUpperCase().replace(/\s/g, '') })
+  },
+
   onPlanChange: function (e) {
     const d = e.detail || {}
-    const patch = {}
-    if (d.points) patch.planPoints = d.points
-    if (d.batches) patch.planBatches = d.batches
-    if (!Object.keys(patch).length) return
-    this.setData(patch)
+    if (d.points) this.setData({ planPoints: d.points })
   },
 
   onAgreeChange: function (e) {
     this.setData({ agreed: e.detail.value.length > 0 })
-  },
-
-  // 两张大卡片二选一，比一个 switch 更说得清「这是个岔路口」
-  pickDelivery: function (e) {
-    this.setData({ needsDelivery: e.currentTarget.dataset.need === '1' })
-  },
-
-  // 送到买家地址 / 送到模糊地址，分段按钮二选一
-  pickExactAddress: function (e) {
-    this.setData({ exactAddress: e.currentTarget.dataset.exact === '1' })
   },
 
   chooseLogo: function () {
@@ -104,6 +89,10 @@ Page({
     const d = this.data
 
     if (d.step === 1) {
+      if (d.create_code.length !== 8) {
+        wx.showToast({ title: '请填写 8 位开店码', icon: 'none' })
+        return
+      }
       if (!d.name.trim()) {
         wx.showToast({ title: '给小店起个名字', icon: 'none' })
         return
@@ -111,16 +100,10 @@ Page({
     }
 
     if (d.step === 2) {
-      if (d.needsDelivery === null) {
-        wx.showToast({ title: '先选要不要配送', icon: 'none' })
+      const bad = validatePoints(d.planPoints)
+      if (bad) {
+        wx.showToast({ title: bad, icon: 'none' })
         return
-      }
-      if (d.needsDelivery) {
-        const bad = validatePlan(d.planPoints, d.planBatches, d.exactAddress)
-        if (bad) {
-          wx.showToast({ title: bad, icon: 'none' })
-          return
-        }
       }
     }
 
@@ -150,7 +133,7 @@ Page({
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.business_hours, d.contact_wechat]
+        texts: [d.name, d.description, d.contact_wechat]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -168,18 +151,14 @@ Page({
         data: {
           action: 'apply',
           agreed: true,
+          create_code: d.create_code,
           name: d.name,
           logo: logo,
           description: d.description,
           min_order: d.min_order,
-          business_hours: d.business_hours,
           contact_wechat: d.contact_wechat,
-          needs_delivery: d.needsDelivery === true,
-          exact_address: d.exactAddress,
-          flat_delivery_fee: d.flat_delivery_fee,
           license_image: licenseImage,
-          pickup_points: d.planPoints,
-          batches: d.planBatches
+          pickup_points: d.planPoints
         }
       })
 
@@ -192,7 +171,7 @@ Page({
 
       wx.showModal({
         title: '小店开好了',
-        content: '接下来去上架商品，然后把状态切成「营业中」就能接单。',
+        content: '先上架商品，再回「我的小店」开团。',
         showCancel: false,
         confirmText: '去上架',
         success: () => wx.redirectTo({ url: '/pages/shopmenu/shopmenu' })

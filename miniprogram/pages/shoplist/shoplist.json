@@ -1,5 +1,7 @@
 {
-  "navigationBarTitleText": "校外服务",
+  "navigationBarTitleText": "一起拼团",
   "enablePullDownRefresh": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "group-share": "/components/groupShare/index"
+  }
 }

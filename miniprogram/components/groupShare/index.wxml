@@ -1,0 +1,4 @@
+<!-- 画转发卡片、长图海报、取色用的画布。必须真实渲染才画得出东西，所以挪出屏幕，不是隐藏 -->
+<canvas type="2d" id="gsCard" class="gs-card"></canvas>
+<canvas type="2d" id="gsLong" class="gs-long"></canvas>
+<canvas type="2d" id="gsPick" class="gs-pick"></canvas>

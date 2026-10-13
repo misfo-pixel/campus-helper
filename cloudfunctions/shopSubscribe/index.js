@@ -3,7 +3,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 校外服务的「开团提醒」：买家订阅一家店，店长每开一场就发一条微信通知。
+// 一起拼团的「开团提醒」：买家订阅一家店，店长每开一场就发一条微信通知。
 //
 // 先说清楚微信的限制，整套设计都是被它逼出来的：
 //   订阅消息是【一次性】的——买家点一次「允许」只换来一张票，发一条就没了。
@@ -16,18 +16,16 @@ const _ = db.command
 // 数据在 shop_subscriptions：{ shop_id, user(openid), tickets, created_at, updated_at }。
 // 集合权限要设成「所有用户不可读写」——里面是 openid，只有云函数能碰。
 //
-// 什么算「开团」：店在营业中，并且出现了一场买家约得上的新场次。
-// 用 shops.last_announced 记住上一次通知的是哪一场，同一场只通知一次——
-// 店长打烊再开门、改个商品再保存，都不会重复打扰人。
-// 纯线上服务没有场次也没有截单时间，不算开团，不发（店铺页也不给它显示订阅条）。
-// 模板是「产品截团通知」，截团时间是必填的 time 字段，硬凑一个时间只会误导人。
+// 什么算「开团」：shop_sessions 里新开了一场（店长在「我的小店」开的，
+// 或者 groupSettle 按每周重复开的）。场次上的 announced 记住发没发过，同一场只通知一次。
+// 模板是「产品截团通知」，截团时间正好装这一场的截单时刻。
 
-// 场次截没截单要按明尼苏达当地时间判断。这段和 shopManage / shopBrowse /
-// buyerOrders / deliveryManage 里的是同一份——云函数之间没法共享代码，
-// 只能各存一份，改的时候几处一起改。
+// 场次时间一律是明尼苏达当地时间的 'YYYY-MM-DD HH:MM' 字符串，直接按字符串比大小。
+// 这段和 groupSettle / shopManage / shopBrowse / buyerOrders 里的是同一份——
+// 云函数之间没法共享代码，只能各存一份，改的时候几处一起改。
 const TZ = 'America/Chicago'
 
-function nowInTZ() {
+function nowAt() {
   const parts = {}
   new Intl.DateTimeFormat('en-CA', {
     timeZone: TZ,
@@ -36,37 +34,8 @@ function nowInTZ() {
   }).formatToParts(new Date()).forEach(p => {
     if (p.type !== 'literal') parts[p.type] = p.value
   })
-  let hour = Number(parts.hour)
-  if (hour === 24) hour = 0
-  return {
-    date: parts.year + '-' + parts.month + '-' + parts.day,
-    minutes: hour * 60 + Number(parts.minute)
-  }
-}
-
-function toMinutes(hhmm) {
-  const bits = String(hhmm).split(':')
-  return Number(bits[0]) * 60 + Number(bits[1])
-}
-
-// 这家店当前「开的是哪一团」。返回 null = 眼下没有能通知的场次。
-function currentSession(shop) {
-  if (shop.needs_delivery === false) return null
-
-  const now = nowInTZ()
-  const b = (shop.batches || [])[0]
-  if (!b || !b.date) return null
-  if (b.date < now.date) return null
-  if (b.date === now.date && now.minutes >= toMinutes(b.cutoff)) return null
-
-  // 老场次只有 deliver_time，当出发时间用——key 和改名前一样，不会因此重发一遍
-  const depart = b.depart_time || b.deliver_time
-  return {
-    key: b.date + '#' + b.cutoff + '#' + depart,
-    // time 类型字段要「2026-09-25 16:00」这种格式。明尼苏达当地时间，不换算
-    cutoff: b.date + ' ' + b.cutoff,
-    tip: '服务时间 ' + b.date.slice(5) + ' ' + depart + ' 出发'
-  }
+  const hour = parts.hour === '24' ? '00' : parts.hour
+  return parts.year + '-' + parts.month + '-' + parts.day + ' ' + hour + ':' + parts.minute
 }
 
 // shop_subscriptions 要在控制台手动建，漏建时第一次订阅就报 -502005。
@@ -169,7 +138,7 @@ exports.main = async (event) => {
       case 'subscribe': {
         if (!openid) return { success: false, message: '请先登录' }
         const shop = await getShop(event.shopId)
-        if (!shop || shop.status === 'closed') return { success: false, message: '店铺不存在或已打烊' }
+        if (!shop || shop.takedown) return { success: false, message: '店铺不存在' }
 
         await ensureCollection()
         const existing = await mySubscription(shop._id, openid)
@@ -201,33 +170,43 @@ exports.main = async (event) => {
         return { success: true, tickets: 0 }
       }
 
-      // 店长开门营业、或保存了新场次之后，小程序端顺手调一次（不等结果）。
-      // 幂等：没有新场次就什么都不做，所以多调几次也不会重复打扰人。
-      // 只认调用者自己的店，别人没法替某家店「开团」去骚扰订阅者。
-      case 'announce': {
-        if (!openid) return { success: false, message: '请先登录' }
-        const res = await db.collection('shops').where({ owner: openid }).limit(1).get()
-        const shop = res.data[0]
-        if (!shop) return { success: false, message: '你还没有店铺' }
-        if (shop.status !== 'open' || shop.takedown) return { success: true, announced: false }
-
-        const session = currentSession(shop)
-        if (!session || shop.last_announced === session.key) {
-          return { success: true, announced: false }
+      // 新开了一场之后调一次（不等结果）。两个来源：
+      //   小程序端：店长开团成功后，只认自己店的场次，别人没法替某家店「开团」去骚扰订阅者
+      //   groupSettle：每周重复开的新场次。云函数之间调用不带 OPENID，据此放行
+      // 幂等：场次上的 announced 只改得动一次，多调几次也不会重复打扰人。
+      case 'announceSession': {
+        let s = null
+        try {
+          s = (await db.collection('shop_sessions').doc(String(event.sessionId || '')).get()).data
+        } catch (e) {
+          s = null
         }
+        if (!s) return { success: false, message: '场次不存在' }
+        if (openid && s.owner !== openid) return { success: false, message: '没有权限' }
+        if (s.state !== 'open' || s.cutoff_at <= nowAt()) return { success: true, announced: false }
 
-        // 先占位再发：两次 announce 前后脚进来（开门 + 保存设置），
-        // 只有把 last_announced 改成功的那一次去发，另一次 updated 为 0 直接退出。
-        const claim = await db.collection('shops')
-          .where({ _id: shop._id, last_announced: _.neq(session.key) })
-          .update({ data: { last_announced: session.key } })
+        const shop = await getShop(s.shop_id)
+        if (!shop || shop.takedown) return { success: true, announced: false }
+
+        // 先占位再发：只有把 announced 改成功的那一次去发
+        const claim = await db.collection('shop_sessions')
+          .where({ _id: s._id, announced: _.neq(true) })
+          .update({ data: { announced: true } })
         if (!claim.stats || claim.stats.updated === 0) return { success: true, announced: false }
 
         await ensureCollection()
-        const result = await fanOut(shop, session)
-        console.info('开团提醒：', shop._id, session.key, result)
+        const result = await fanOut(shop, {
+          // time 类型字段要「2026-09-25 16:00」这种格式，正好是 cutoff_at
+          cutoff: s.cutoff_at,
+          tip: Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' ' + s.depart_time + ' 出发'
+        })
+        console.info('开团提醒：', shop._id, s._id, result)
         return { success: true, announced: true, sent: result.sent }
       }
+
+      // 旧版小程序保存设置、开门营业后还会调这个。场次已经不存在店铺上了，什么都不做
+      case 'announce':
+        return { success: true, announced: false }
 
       default:
         return { success: false, message: '未知操作：' + action }

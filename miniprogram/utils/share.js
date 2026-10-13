@@ -118,8 +118,15 @@ function withCover(msg, fileID, cover) {
   })
 }
 
+// 转发整个闲置主页：标题就是最可能卖掉的那件的信息（和详情页同一个格式），
+// 后面带一句还有几件。「最可能卖掉」由 getUserStore 的 hot_item 挑：留言问的人最多的
+function storeTitle(doc, count) {
+  return shareTitle('item', doc) + (count > 1 ? ' · 还有 ' + (count - 1) + ' 件' : '')
+}
+
 module.exports = {
-  clip: clip,                  // 店铺页的转发标题在 shopdetail 自己拼，借这里的按字符裁剪
+  clip: clip,
+  storeTitle: storeTitle,                  // 店铺页的转发标题在 shopdetail 自己拼，借这里的按字符裁剪
   prefetchCover: prefetchCover,
   detailShare: detailShare,
   withCover: withCover,

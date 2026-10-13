@@ -1,5 +1,5 @@
 <skeleton wx:if="{{loading}}" type="shop" />
-<view wx:if="{{shop}}">
+<view wx:if="{{shop}}" class="shop-page" style="{{themeStyle}}">
   <!-- 店头 -->
   <view class="shop-head">
     <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
@@ -12,23 +12,47 @@
         <text wx:if="{{shop.license_image}}" class="license-badge" catchtap="previewLicense">证</text>
       </view>
       <view wx:if="{{shop.description}}" class="shop-desc">{{shop.description}}</view>
-      <view wx:if="{{ordering}}" class="shop-info">{{shop.min_order > 0 ? "起送 $" + shop.min_order + " · " : ""}}{{shop.needs_delivery === false ? '线上服务，无需取货' : (shop.exact_address && exactAddressEnabled ? '送到你填的地址 · 配送费 $' + shop.flat_delivery_fee : '配送费按取货地点计算')}}</view>
-      <view wx:elif="{{shop.contact_wechat}}" class="shop-info">微信：{{shop.contact_wechat}}</view>
-      <view wx:if="{{shop.business_hours}}" class="shop-info">{{shop.business_hours}}</view>
+      <view wx:if="{{ordering && shop.min_order > 0}}" class="shop-info">起送 ${{shop.min_order}}</view>
+      <view wx:elif="{{!ordering && shop.contact_wechat}}" class="shop-info">微信：{{shop.contact_wechat}}</view>
     </view>
   </view>
 
-  <view wx:if="{{shop.status === 'paused'}}" class="paused-bar">
-    该店已打烊，可以先看看商品
+  <!-- 场次：一家店开着好几场时顶上切换 -->
+  <view wx:if="{{ordering && sessions.length}}" class="sessions">
+    <scroll-view wx:if="{{sessions.length > 1}}" scroll-x class="session-tabs" enhanced show-scrollbar="{{false}}">
+      <view wx:for="{{sessions}}" wx:key="_id" class="session-tab {{index === sessionIndex ? 'session-tab-on' : ''}}"
+            bindtap="pickSession" data-index="{{index}}">{{item.dayText}}</view>
+    </scroll-view>
+
+    <view class="session-panel">
+      <view class="session-head">
+        <text class="session-when">{{session.dayText}} · {{session.depart_time}} 出发</text>
+        <text wx:if="{{session.p.formed && !session.p.open}}" class="gb-sticker">已成团</text>
+      </view>
+      <view wx:if="{{!session.p.open}}" class="gb-bar {{session.p.formed ? 'gb-bar-done' : ''}} session-bar">
+        <view class="gb-bar-fill" style="width: {{session.p.pct}}%"></view>
+      </view>
+      <view class="gb-line">
+        <text class="{{session.p.open ? 'gb-text-quiet' : 'gb-text'}}">{{session.p.text}}</text>
+        <text class="{{session.cutHot ? 'gb-cut-hot' : 'gb-cut'}}">{{session.cutText}}</text>
+      </view>
+      <view class="session-points">
+        <view wx:for="{{session.points}}" wx:key="name" class="session-point">
+          <text class="session-point-name">{{item.name}}</text>
+          <text class="text-light">约 {{item.arrive}} 到{{item.fee > 0 ? ' · 配送费 $' + item.fee : ''}}</text>
+        </view>
+      </view>
+      <view class="session-poster" bindtap="makePoster">生成海报 ›</view>
+    </view>
   </view>
 
-  <!-- 开团提醒。打烊的店更需要这个：现在买不了，开了再叫我。
-       纯线上服务没有场次，不存在「开团」，不显示 -->
+  <view wx:elif="{{ordering}}" class="no-session">暂无拼团</view>
+
+  <!-- 开团提醒。没场次时更需要这个：现在买不了，开了再叫我 -->
   <view wx:if="{{subEnabled && !subMine && shop.needs_delivery !== false}}" class="sub-bar">
     <view class="sub-text">
       <view class="sub-title">开团提醒</view>
-      <!-- 没订阅时不加说明，「开团提醒 + 订阅」已经说清楚了；订阅后这行是状态，得留着 -->
-      <view wx:if="{{subTickets > 0}}" class="sub-hint">已订阅，还会提醒你 {{subTickets}} 次</view>
+      <view wx:if="{{subTickets > 0}}" class="sub-hint">还会提醒你 {{subTickets}} 次</view>
     </view>
     <view wx:if="{{subTickets > 0}}" class="sub-cancel" bindtap="unsubscribe">取消</view>
     <view class="sub-btn {{subTickets > 0 ? 'sub-btn-more' : ''}}" bindtap="subscribe">{{subTickets > 0 ? '再加一次' : '订阅'}}</view>
@@ -65,7 +89,7 @@
 
     <!-- 从转发卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
-    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">看看其他小店 ›</view>
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">更多拼团 ›</view>
 
     <report-bar target-type="shop" target-id="{{shop._id}}" />
 
@@ -80,10 +104,10 @@
   <view wx:if="{{ordering && cartCount > 0}}" class="cart-bar">
     <view class="cart-info">
       <view class="cart-total">${{cartSubtotal}}</view>
-      <view class="cart-sub">{{cartCount}} 件 · 配送费下一步计算</view>
+      <view class="cart-sub">{{cartCount}} 件{{session ? ' · ' + session.dayText + '送达' : ''}}</view>
     </view>
     <view class="cart-btn {{canOrder ? '' : 'cart-btn-off'}}" bindtap="checkout">
-      {{reachMin ? '下一步' : '差 $' + shop.min_order + ' 起送'}}
+      {{reachMin ? '去拼团' : '差 $' + shop.min_order + ' 起送'}}
     </view>
   </view>
 
@@ -95,3 +119,5 @@
     <view class="cart-btn" bindtap="copyWechat">复制微信号</view>
   </view>
 </view>
+
+<group-share id="gs" />

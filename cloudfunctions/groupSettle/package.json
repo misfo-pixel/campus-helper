@@ -1,0 +1,9 @@
+{
+  "name": "groupSettle",
+  "version": "1.0.0",
+  "description": "一起拼团定时结算：截单判定成团、确认截止、每周重复开下一场",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

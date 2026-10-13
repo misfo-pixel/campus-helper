@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "参团成功",
+  "usingComponents": {
+    "group-share": "/components/groupShare/index"
+  }
+}

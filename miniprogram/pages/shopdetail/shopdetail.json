@@ -2,6 +2,7 @@
   "navigationBarTitleText": "小店详情",
   "usingComponents": {
     "disclaimer-bar": "/components/disclaimerBar/index",
-    "report-bar": "/components/reportBar/index"
+    "report-bar": "/components/reportBar/index",
+    "group-share": "/components/groupShare/index"
   }
 }

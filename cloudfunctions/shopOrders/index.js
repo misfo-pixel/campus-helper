@@ -5,31 +5,35 @@ const _ = db.command
 
 // 店长侧的订单：拉列表 + 推进状态。
 //
-// 状态机全部由店长自己推进，平台不介入任何一步——这就是「不需要管理员」的实现方式。
+// 成团（forming → confirming）由 groupSettle 定时推进，之后全部由店长自己推进，
+// 平台不介入——这就是「不需要管理员」的实现方式。
 // 平台也不碰钱：订单里没有任何支付状态，小程序里也不展示收款方式。
-// 订单只是买家的下单意向，店长自己联系买家之后再决定接不接。
+// 「确认订单」只表示店长认了这一单；之前要不要先收钱，是他和买家在小程序外的事。
 
 // 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
 // 免得前端出 bug 时把订单改成乱七八糟的状态。
 // 推给买家的状态词。模板里「当前状态」是 phrase 类型，5 个汉字封顶。
 const STATUS_TEXT = {
-  accepted: '已接单',
+  accepted: '已确认',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
 }
 
 const TRANSITIONS = {
-  pending: ['accepted', 'cancelled'],     // 待确认 → 接单 / 拒单
+  forming: ['cancelled'],                 // 拼团中 → 拒单（成团由 groupSettle 推进）
+  confirming: ['accepted', 'cancelled'],  // 待确认 → 确认 / 取消
+  pending: ['accepted', 'cancelled'],     // 改版前的老单：待确认 → 接单 / 拒单
   accepted: ['delivering', 'cancelled'],  // 准备中 → 开始配送 / 取消
   delivering: ['completed'],              // 配送中 → 已送达
   completed: [],
   cancelled: []
 }
 
-// 工作台三个 tab 各自对应哪些状态
+// 工作台四个 tab 各自对应哪些状态。老的 pending 单归到「待确认」
 const TAB_STATUS = {
-  pending: ['pending'],
+  forming: ['forming'],
+  pending: ['confirming', 'pending'],
   active: ['accepted', 'delivering'],
   done: ['completed', 'cancelled']
 }
@@ -51,8 +55,11 @@ exports.main = async (event) => {
 
       case 'list': {
         const statuses = TAB_STATUS[event.tab] || TAB_STATUS.pending
+        const where = { shop_id: shop._id, status: _.in(statuses) }
+        // 从场次卡片点「订单」进来的，只看这一场
+        if (event.sessionId) where.session_id = String(event.sessionId)
         const res = await db.collection('shop_orders')
-          .where({ shop_id: shop._id, status: _.in(statuses) })
+          .where(where)
           .orderBy('created_at', 'desc')
           .limit(50)
           .get()
@@ -79,7 +86,7 @@ exports.main = async (event) => {
           success: true,
           summary: {
             todayCount: today.length,
-            pendingCount: today.filter(o => o.status === 'pending').length,
+            pendingCount: today.filter(o => o.status === 'confirming' || o.status === 'pending').length,
             revenue: Math.round(revenue * 100) / 100
           }
         }
@@ -101,13 +108,19 @@ exports.main = async (event) => {
           return { success: false, message: '这个订单已经不能改成该状态了' }
         }
 
-        await db.collection('shop_orders').doc(orderId).update({
-          data: {
-            status: next,
-            cancel_reason: next === 'cancelled' ? (event.reason || '') : '',
-            updated_at: new Date()
-          }
-        })
+        // 带着旧状态做条件更新：截单那一刻 groupSettle 可能正在把这一单改成待确认
+        const moved = await db.collection('shop_orders')
+          .where({ _id: orderId, status: order.status })
+          .update({
+            data: {
+              status: next,
+              cancel_reason: next === 'cancelled' ? (event.reason || '店长取消') : '',
+              updated_at: new Date()
+            }
+          })
+        if (!moved.stats || moved.stats.updated !== 1) {
+          return { success: false, message: '订单状态变了，刷新看看' }
+        }
 
         // 告诉买家状态变了。买家在下单那一刻授权过，这条多半发得出去。
         try {

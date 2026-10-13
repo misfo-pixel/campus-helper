@@ -183,3 +183,18 @@
   font-size: 24rpx;
   color: #b8860b;
 }
+
+/* 微信号、手机号收进一张卡，和场次那张卡同一个样子 */
+.info-input-row {
+  height: 100rpx;
+  min-height: 100rpx;
+  font-size: 30rpx;
+}
+
+/* 提交按钮上面一行：这一单什么时候算数 */
+.rule {
+  margin: 40rpx 0 20rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-light);
+}

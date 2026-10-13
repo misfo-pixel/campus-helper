@@ -1,4 +1,6 @@
-// 生成「扫码直达某个用户主页」的小程序码，给海报用。
+// 生成小程序码，给海报用。两种：
+//   { uid }        扫码直达某个用户主页（个人小店海报）
+//   { sessionId }  扫码直达某一场拼团（拼团海报）。店铺页靠场次 ID 反查是哪家店
 //
 // ⚠️ wxacode.getUnlimited 要求小程序**已经发布过正式版本**。开发阶段调用会报
 // 41030（page 不存在），这是正常的——前端做了降级，拿不到码就画一行文字提示。
@@ -8,20 +10,22 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const PAGE = 'pages/userstore/userstore'
+const SHOP_PAGE = 'pages/shopdetail/shopdetail'
 
 exports.main = async (event) => {
-  const uid = event.uid
+  const isSession = !!event.sessionId
+  const uid = isSession ? String(event.sessionId) : event.uid
   if (!uid) return { success: false, message: '缺少 uid' }
 
-  // scene 最长 32 个字符，users 文档的 _id 正好 32 位，卡在边界上
+  // scene 最长 32 个字符，users / shop_sessions 文档的 _id 正好 32 位，卡在边界上
   if (uid.length > 32) return { success: false, message: 'scene 超长' }
 
-  const cloudPath = 'minicode/' + uid + '.png'
+  const cloudPath = 'minicode/' + (isSession ? 's-' : '') + uid + '.png'
 
   try {
     const res = await cloud.openapi.wxacode.getUnlimited({
       scene: uid,
-      page: PAGE,
+      page: isSession ? SHOP_PAGE : PAGE,
       width: 280,
       checkPath: true,
       envVersion: 'release'

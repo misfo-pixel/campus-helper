@@ -5,7 +5,7 @@
 const { isDemand, rentText } = require('../../utils/kinds.js')
 const { thumbOf } = require('../../utils/thumb.js')
 const { toLocalPath } = require('../../utils/poster.js')
-const { withCover } = require('../../utils/share.js')
+const { withCover, storeTitle } = require('../../utils/share.js')
 const { stashPreview } = require('../../utils/preview.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
 
@@ -123,7 +123,7 @@ Page({
         const r = (res && res.result) || {}
         // 查无此人（注销了、链接是坏的）：就算有缓存也不能再展示
         if (!r.success) return this.setData({ loading: false, notFound: true })
-        writeCache(CACHE_KEY + uid, { seller: r.seller, buckets: r.buckets }, CACHE_KEEP)
+        writeCache(CACHE_KEY + uid, { seller: r.seller, buckets: r.buckets, hot_item: r.hot_item }, CACHE_KEEP)
         this.render(r)
       })
       .catch(err => {
@@ -154,6 +154,7 @@ Page({
       ;(b[k] || []).forEach(d => { this.raw[d._id] = d })
       this.buckets[k] = (b[k] || []).map(d => normalize(k, d))
     })
+    this.hotId = r.hot_item || ''
     this.setData({ seller: r.seller || {}, loading: false })
     this.applyTab(this.data.tab)
     wx.setNavigationBarTitle({ title: ((r.seller || {}).nickname || '同学') + '的主页' })
@@ -171,7 +172,13 @@ Page({
     }))
 
     this.setData({ tab: tab, shown: shown, tabs: tabs, total: all.length })
-    this.coverOf(shown[0])
+    this.coverOf(this.hotOf(tab) || shown[0])
+  },
+
+  // 停在「全部」或「二手」时，转发用最可能卖掉的那件闲置（getUserStore 的 hot_item）
+  hotOf: function (tab) {
+    if (!this.hotId || (tab !== 'all' && tab !== 'item')) return null
+    return ((this.buckets || {}).item || []).find(d => d._id === this.hotId) || null
   },
 
   // 转发封面提前下到本地（同 share.js 的 prefetchCover）：
@@ -207,12 +214,16 @@ Page({
     const b = this.buckets || emptyBuckets()
     const counts = countPhrase(b, tab === 'all' ? TYPES : [tab])
     // 还没加载完或者这一类是空的，就退回不带数字的说法
-    const title = counts
-      ? name + ' 发布了 ' + counts + '，来看看吧'
-      : name + ' 在明尼助手' + (tab === 'all' ? '发布的内容' : ('的' + LABELS[tab]))
+    const hot = this.hotOf(tab)
+    // 有最可能卖掉的那件，标题就是它的信息：「【出】宜家书桌 九成新 $30 · 还有 6 件」
+    const title = hot && (this.raw || {})[hot._id]
+      ? storeTitle(this.raw[hot._id], b.item.length)
+      : counts
+        ? name + ' 发布了 ' + counts + '，来看看吧'
+        : name + ' 在明尼助手' + (tab === 'all' ? '发布的内容' : ('的' + LABELS[tab]))
     // 不指定 imageUrl 的话，微信会自动截页面顶部——截到的是头像和页签，
-    // 一张灰白的界面图。拿第一件商品的实拍图当封面，群里刷到直观得多。
-    const fileID = this.coverOf((this.data.shown || [])[0])
+    // 一张灰白的界面图。拿最可能卖掉的那件（没有就第一件）的实拍图当封面
+    const fileID = this.coverOf(hot || (this.data.shown || [])[0])
     return withCover({
       title: title,
       path: '/pages/userstore/userstore?uid=' + this.data.uid +

@@ -6,7 +6,7 @@
     <view class="empty-apply">
       <view class="empty-emoji"><image src="/images/modules/shop.svg" class="ico-lg"></image></view>
       <view class="empty-title">你还没有小店</view>
-      <view class="text-light empty-desc">{{ordering ? '开店后就能上架商品、接收订单。' : '开店后就能上架商品，买家看到后会直接加你微信。'}}</view>
+      <view class="text-light empty-desc">凭开店码开店，之后就能开团接单。</view>
       <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">开一家小店</button>
     </view>
   </block>
@@ -15,64 +15,86 @@
     <!-- 被举报下架。平台不做事前审核，但举报核实后会强制关店 -->
     <view wx:if="{{shop.takedown}}" class="audit-box audit-rejected">
       <view class="audit-title">店铺已被下架</view>
-      <view class="audit-desc">你的店铺因违规被下架，无法继续营业。如有异议，请通过「意见反馈」联系我们。</view>
+      <view class="audit-desc">如有异议，请通过「意见反馈」联系我们。</view>
     </view>
 
-    <!-- 没有可约场次：店还在列表里，但买家一下单就被拦，店长自己看不出来 -->
-    <view wx:if="{{ordering && slotAlert}}" class="audit-box audit-rejected">
-      <view class="audit-title">{{slotLastDate ? '服务时间已过期' : '还没设置服务时间'}}</view>
-      <view class="audit-desc">
-        {{slotLastDate ? '上一场是 ' + slotLastDate + '，' : ''}}买家现在下不了单，选个新日期就能继续接单。
-      </view>
-      <view class="audit-action" bindtap="goToSettings">去设置新的服务时间 ›</view>
-    </view>
-
-    <!-- 店头 + 营业状态开关 -->
     <view class="shop-head card">
       <image wx:if="{{shop.logo}}" src="{{shop.logo}}" mode="aspectFill" class="shop-logo" />
       <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
       <view class="shop-meta">
         <view class="shop-name">{{shop.name}}</view>
-        <view class="text-light shop-cat">{{shop.category}}</view>
+        <view class="text-light shop-cat">今日 {{summary.todayCount}} 单 · ${{summary.revenue}}</view>
       </view>
-      <view wx:if="{{!shop.takedown}}"
-            class="status-pill status-{{shop.status}}"
-            bindtap="changeShopStatus">{{shopStatusText}} ▾</view>
     </view>
 
     <block wx:if="{{!shop.takedown && ordering}}">
-      <!-- 今日数据 -->
-      <view class="summary card">
-        <view class="summary-cell">
-          <view class="summary-num">{{summary.todayCount}}</view>
-          <view class="text-light summary-label">今日订单</view>
+      <!-- ========== 场次 ========== -->
+      <view class="section-title section-title-bar">场次</view>
+
+      <view wx:if="{{sessions.length === 0}}" class="card text-light block-empty">在下面的日历里点一天开团</view>
+
+      <view wx:for="{{sessions}}" wx:key="_id" class="card session {{item.open ? '' : 'session-closed'}}">
+        <view class="session-head">
+          <text class="session-title">{{item.title}}</text>
+          <text wx:if="{{item.stateText}}" class="{{item.state === 'formed' ? 'gb-sticker' : 'session-state'}}">{{item.stateText}}</text>
+          <text wx:elif="{{item.repeatText}}" class="chip session-repeat">{{item.repeatText}}</text>
         </view>
-        <view class="summary-cell">
-          <view class="summary-num summary-hot">{{summary.pendingCount}}</view>
-          <view class="text-light summary-label">待处理</view>
-        </view>
-        <view class="summary-cell">
-          <view class="summary-num">${{summary.revenue}}</view>
-          <view class="text-light summary-label">今日流水</view>
+
+        <block wx:if="{{item.open}}">
+          <view wx:if="{{!item.p.open}}" class="gb-bar {{item.p.formed ? 'gb-bar-done' : ''}} session-bar">
+            <view class="gb-bar-fill" style="width: {{item.p.pct}}%"></view>
+          </view>
+          <view class="gb-line">
+            <text class="gb-text">{{item.countText}}{{item.forced ? ' · 照常送' : ''}}</text>
+            <text class="gb-cut">{{item.cutText}}</text>
+          </view>
+        </block>
+        <view wx:elif="{{item.confirmLine}}" class="session-confirm">{{item.confirmLine}}</view>
+
+        <view class="session-actions">
+          <view class="session-btn" bindtap="showSessionOrders" data-id="{{item._id}}">订单</view>
+          <view class="session-btn" bindtap="editSession" data-id="{{item._id}}">{{item.open ? '修改' : '设置'}}</view>
+          <view wx:if="{{item.open}}" class="session-btn" bindtap="goToPoster" data-id="{{item._id}}">海报</view>
+          <view wx:if="{{item.canForce}}" class="session-btn session-btn-hot" bindtap="forceSession" data-id="{{item._id}}">照常送</view>
         </view>
       </view>
 
-      <!-- 订单 tab -->
-      <view class="tabs">
-        <view class="tab {{tab === 'pending' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="pending">待处理</view>
+      <!-- ========== 开团日历 ========== -->
+      <view class="section-title section-title-bar">开团</view>
+      <view class="card calendar">
+        <view class="cal-row">
+          <text wx:for="{{week}}" wx:key="*this" class="cal-week">{{item}}</text>
+        </view>
+        <view class="cal-grid">
+          <view wx:for="{{cells}}" wx:key="date" class="cal-cell" bindtap="pickDay" data-index="{{index}}">
+            <view class="cal-day {{item.mine ? 'cal-mine' : ''}} {{item.today ? 'cal-today' : ''}} {{item.off ? 'cal-off' : ''}}">{{item.day}}</view>
+            <view class="cal-dots">
+              <view wx:for="{{item.dots}}" wx:for-item="d" wx:for-index="i" wx:key="i" class="cal-dot"></view>
+            </view>
+          </view>
+        </view>
+        <view class="cal-legend">
+          <text class="cal-legend-mine"></text><text>我的团</text>
+          <text class="cal-dot cal-legend-dot"></text><text>别家开团</text>
+        </view>
+      </view>
+
+      <!-- ========== 订单 ========== -->
+      <view id="orders" class="tabs">
+        <view class="tab {{tab === 'forming' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="forming">拼团中</view>
+        <view class="tab {{tab === 'pending' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="pending">待确认</view>
         <view class="tab {{tab === 'active' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="active">进行中</view>
         <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">已完成</view>
       </view>
 
-      <view wx:if="{{orders.length === 0}}" class="text-light empty-orders">
-        {{tab === 'pending' ? '没有待处理的订单' : (tab === 'active' ? '没有进行中的订单' : '还没有已完成的订单')}}
-      </view>
+      <view wx:if="{{filter}}" class="filter" bindtap="clearFilter">只看 {{filter.text}} 这一场 <text class="filter-x">×</text></view>
 
-      <!-- 订单卡片 -->
+      <view wx:if="{{orders.length === 0}}" class="text-light empty-orders">暂无订单</view>
+
       <view wx:for="{{orders}}" wx:key="_id" class="card order">
         <view class="order-head">
           <view class="order-id">#{{item.shortId}}</view>
-          <view class="text-light order-time">{{item.timeText}}</view>
+          <view class="text-light order-time">{{item.dayText}} · {{item.timeText}} 下单</view>
           <view class="order-total">${{item.total}}</view>
         </view>
 
@@ -110,9 +132,12 @@
 
         <!-- 按钮跟着状态走，一次最多两个 -->
         <view class="order-actions">
-          <block wx:if="{{item.status === 'pending'}}">
-            <button class="btn-sm" bindtap="rejectOrder" data-id="{{item._id}}">拒单</button>
-            <button class="btn-primary btn-sm" bindtap="acceptOrder" data-id="{{item._id}}">接单</button>
+          <block wx:if="{{item.status === 'forming'}}">
+            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">拒单</button>
+          </block>
+          <block wx:elif="{{item.status === 'confirming' || item.status === 'pending'}}">
+            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">取消</button>
+            <button class="btn-primary btn-sm" bindtap="confirmOrder" data-id="{{item._id}}">确认订单</button>
           </block>
           <block wx:elif="{{item.status === 'accepted'}}">
             <button class="btn-primary btn-sm" bindtap="startDelivery" data-id="{{item._id}}">开始配送</button>
@@ -139,10 +164,6 @@
       <view wx:if="{{ordering}}" class="entry card" bindtap="enableOrderAlert">
         <view class="entry-icon"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
         <view class="entry-label">新单提醒</view>
-      </view>
-      <view wx:if="{{teamEnabled && shop.needs_delivery !== false}}" class="entry card" bindtap="goToDeliveryAsk">
-        <view class="entry-icon"><image src="/images/ui/delivery.svg" class="ico-md"></image></view>
-        <view class="entry-label">找配送队</view>
       </view>
     </view>
   </block>

@@ -194,3 +194,12 @@
   box-shadow: none;
 }
 
+
+/* 开店码要对着念、对着抄：等宽、拉开字距，和管理员那边显示的一个样子 */
+.code-input {
+  font-family: Menlo, "SF Mono", monospace;
+  font-size: 34rpx;
+  font-weight: 700;
+  letter-spacing: 6rpx;
+  color: var(--color-primary);
+}

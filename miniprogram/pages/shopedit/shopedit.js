@@ -6,7 +6,7 @@
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { ORDERING_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
-const { uploadShopImage, validatePlan } = require('../../utils/shopForm.js')
+const { uploadShopImage, validatePoints } = require('../../utils/shopForm.js')
 
 Page({
   data: {
@@ -22,16 +22,15 @@ Page({
     tempLogo: '',      // 本次新选的本地文件，提交时才上传
     description: '',
     min_order: '',
-    business_hours: '',
     contact_wechat: '',
+    slogan: '',        // 广告语：海报大标题、店长自己转发时的卡片标题
 
     // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
     noteRequired: false,
     note_hint: '',
 
-    // 有没有线下交付。关掉的是纯线上服务，云函数会把地点和场次清空
-    //（见 shopManage 的 pickShopFields）。到店自提不关这个开关——
-    // 自提照样要地点和时间，只是配送费填 0。
+    // 有没有线下交付。2026-10-11 起没有这个开关了，新店一律要；
+    // 老的纯线上服务店不显示取货点那张卡，云函数那边也保留原值
     needsDelivery: true,
 
     exactAddress: false,      // 送到买家地址 / 送到几个取货点
@@ -43,9 +42,8 @@ Page({
     licenseImage: '',
     tempLicense: '',
 
-    // 自送时才用：这家店自己的服务地点和批次
-    planPoints: [],
-    planBatches: []
+    // 这家店的取货点。场次不在这里设，在「我的小店」的日历里开团
+    planPoints: []
   },
 
   onLoad: function () {
@@ -78,8 +76,8 @@ Page({
         logo: shop.logo || '',
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
-        business_hours: shop.business_hours || '',
         contact_wechat: shop.contact_wechat || '',
+        slogan: shop.slogan || '',
         noteRequired: shop.note_required === true,
         note_hint: shop.note_hint || '',
         // 老店铺没这个字段，按「有线下交付」算，跟云函数那边的默认一致
@@ -88,8 +86,7 @@ Page({
         exactAddress: EXACT_ADDRESS_ENABLED && shop.exact_address === true,
         flat_delivery_fee: shop.flat_delivery_fee ? String(shop.flat_delivery_fee) : '',
         licenseImage: shop.license_image || '',
-        planPoints: shop.pickup_points || [],
-        planBatches: shop.batches || []
+        planPoints: shop.pickup_points || []
       })
     }).catch(err => {
       console.error('读取小店失败：', err)
@@ -98,23 +95,13 @@ Page({
     })
   },
 
-  // 服务时间和服务地点现在是两个 plan-editor 实例（排在「送到哪里」
-  // 分段按钮的两侧），各只抛自己那一半，所以这里按 key 合并，不能整个覆盖。
   onPlanChange: function (e) {
     const d = e.detail || {}
-    const patch = {}
-    if (d.points) patch.planPoints = d.points
-    if (d.batches) patch.planBatches = d.batches
-    if (!Object.keys(patch).length) return
-    this.setData(patch)
+    if (d.points) this.setData({ planPoints: d.points })
   },
 
   onNoteRequiredChange: function (e) {
     this.setData({ noteRequired: e.detail.value })
-  },
-
-  onNeedsDeliveryChange: function (e) {
-    this.setData({ needsDelivery: e.detail.value })
   },
 
   // 送到买家地址 / 送到模糊地址，分段按钮二选一
@@ -159,13 +146,13 @@ Page({
       wx.showToast({ title: '请填写联系微信', icon: 'none' })
       return
     }
-    if (d.needsDelivery) {
-      const bad = validatePlan(d.planPoints, d.planBatches, d.exactAddress)
+    if (d.needsDelivery && !d.exactAddress) {
+      // 云函数那边也拦一道，这里先拦是为了不让店长白等一个来回
+      const bad = validatePoints(d.planPoints)
       if (bad) {
         wx.showToast({ title: bad, icon: 'none' })
         return
       }
-      // 云函数那边也拦一道，这里先拦是为了不让店长白等一个来回
     }
 
     this.setData({ saving: true })
@@ -174,7 +161,7 @@ Page({
     try {
       // 小店资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.business_hours, d.contact_wechat, d.note_hint]
+        texts: [d.name, d.slogan, d.description, d.contact_wechat, d.note_hint]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -195,16 +182,14 @@ Page({
           logo: logo,
           description: d.description,
           min_order: d.min_order,
-          business_hours: d.business_hours,
           contact_wechat: d.contact_wechat,
+          slogan: d.slogan,
           note_required: d.noteRequired,
           note_hint: d.noteRequired ? d.note_hint : '',
-          needs_delivery: d.needsDelivery,
           exact_address: d.exactAddress,
           flat_delivery_fee: d.flat_delivery_fee,
           license_image: licenseImage,
-          pickup_points: d.planPoints,
-          batches: d.planBatches
+          pickup_points: d.planPoints
         }
       })
 
@@ -214,13 +199,6 @@ Page({
         wx.showToast({ title: r.message || '保存失败', icon: 'none' })
         return
       }
-
-      // 营业中改了服务时间 = 开了新的一场。打烊中保存的话服务端直接跳过，
-      // 等店长在工作台挂上营业中时再发。
-      // 开团提醒：通知订阅了这家店的买家。不等结果——服务端自己判断
-      // 是不是新的一场，同一场只发一次，所以这里多调几次也不会重复打扰人。
-      wx.cloud.callFunction({ name: 'shopSubscribe', data: { action: 'announce' } })
-        .catch(err => console.warn('开团提醒触发失败：', err))
 
       wx.showToast({ title: '已保存', icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1000)
@@ -238,7 +216,7 @@ Page({
     if (this.data.deleting) return
     wx.showModal({
       title: '删除小店',
-      content: '店铺、商品和买家的开团订阅会一起删掉，不能恢复。已有的订单记录会保留。',
+      content: '店铺、商品、场次和开团订阅会一起删掉，不能恢复。订单记录会保留。',
       confirmText: '删除',
       confirmColor: '#C8102E',
       success: res => {

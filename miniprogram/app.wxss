@@ -630,3 +630,44 @@
   .owner-actions { display: flex; margin: 24rpx -10rpx 0; }
   .owner-actions button { flex: 1; width: auto !important; margin: 0 10rpx !important; }
   .owner-actions .btn-outline { height: 80rpx; border-radius: 999rpx; border-width: 1rpx; }
+
+  /* ==================== 一起拼团 ==================== */
+
+  /* 进度条：栗色往前走，成团后换金色。列表、店铺页、参团成功、我的订单、工作台共用 */
+  .gb-bar {
+    height: 14rpx;
+    border-radius: 999rpx;
+    background: #f1e9e2;
+    overflow: hidden;
+  }
+  .gb-bar-fill {
+    height: 100%;
+    border-radius: 999rpx;
+    background: var(--color-primary);
+  }
+  .gb-bar-done .gb-bar-fill { background: var(--color-accent); }
+
+  /* 进度条下面那一行：左边一句话，右边截单时间 */
+  .gb-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 12rpx;
+    font-size: 24rpx;
+  }
+  .gb-text { font-size: 26rpx; font-weight: 700; color: var(--color-primary); }
+  .gb-text-quiet { font-size: 26rpx; color: var(--color-text-light); }
+  .gb-cut { color: var(--color-text-light); }
+  .gb-cut-hot { color: #C8102E; font-weight: 700; }
+
+  /* 「已成团」小贴纸：金底栗字，歪一点，和首页「新」标同一个意思 */
+  .gb-sticker {
+    display: inline-block;
+    padding: 2rpx 14rpx;
+    font-size: 20rpx;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: var(--color-accent);
+    border-radius: 8rpx;
+    transform: rotate(-4deg);
+  }

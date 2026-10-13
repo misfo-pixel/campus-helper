@@ -97,6 +97,19 @@ const TEMPLATES = {
     }
   },
 
+  // 拼团进度通知 —— 截单前 2 小时还没成团，发给这一场已经下单的买家，喊他们去拉人
+  //（groupSettle 发）。买家在下单时和订单进度通知一起授权，各一张票。
+  // 模板编号 18344，类目 信息查询。2026-10-12 申请
+  groupProgress: {
+    id: 'Nd_6RKnL8eAcYFPxLzcRhgNUflBL3_11ULgt-WruZEs',
+    fields: {
+      name: 'thing1',         // 活动名称 → 「川菜馆B 10/14 拼团」
+      min: 'number9',         // 成团人数 → 门槛单数
+      gap: 'thing4',          // 剩余人数 → 「还差 2 位」，是 thing 不是 number
+      cutoff: 'time3'         // 剩余时间 → 截单时刻。字段名叫剩余时间，类型是 time，只能填时刻
+    }
+  },
+
   // 商品过期提醒 —— 发给发帖人
   expiring: {
     id: 'uWw8UB3-4awM9grpz7ovyxFSXeprAukc2JnLCzB2DEo',

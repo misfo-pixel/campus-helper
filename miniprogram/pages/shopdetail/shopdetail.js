@@ -1,46 +1,49 @@
 // 店铺详情 + 点单。
 //
-// 选好的商品只在这一页存活，点「下一步」时写进 storage 交给下单页。
+// 选好的商品只在这一页存活，点「去拼团」时写进 storage 交给下单页。
 // 前端算的金额只用来显示，真正的总价由 buyerOrders 云函数按数据库当前价重算。
+//
+// 一家店可能同时开着几场（不同日子），顶上切换；买的东西不分场次，下单时跟着选中的那一场走。
+// 从转发卡片进来的带着 s（场次）和 from=share，默认选中那一场，下单时记一笔来源。
+// 扫海报上的小程序码进来的只带 scene（场次 ID，放不下店铺 ID），来源记 poster。
+//
+// 页面、转发卡片、长图海报都按这家店的配色来（从 logo 取色，风格是店长挑的，见 utils/theme.js）。
+// 转发卡片是现画的：卖得最多的那道菜 + 广告语 + 进度。选中场次一变就重画一张备着，
+// 点转发时直接用，不用等。
 
-const { withCover, clip } = require('../../utils/share.js')
+const { withCover } = require('../../utils/share.js')
 const { toLocalPath } = require('../../utils/poster.js')
-const { ORDERING_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
+const { ORDERING_ENABLED } = require('../../config.js')
 const { TEMPLATES, askOrGuide } = require('../../utils/subscribe.js')
+const { md, weekday, cutoffText, progress, shareTitle, ownerTitle, cardData, longData } = require('../../utils/group.js')
+const { cssVars } = require('../../utils/theme.js')
+const { showPoster } = require('../../utils/groupCover.js')
 
 const CART_KEY = 'shopCart'
-const NAME_MAX = 12   // 转发标题里留给店名的字数，后面还要写得下截单时间
 
-// 转发标题里的「什么时候截单」。
-//
-// 卡片一转出去标题就定死了，在群里能躺到第二天还有人点，所以不写「今天」
-// 「还有 40 分钟截单」这种会过期的说法——那套是结算页当场看的，这里不能用。
-// 场次带着具体日期，写出来哪天翻到都成立。
-function cutoffPhrase(batches) {
-  const b = (batches || [])[0]
-  if (!b || !b.cutoff) return ''
-
-  const day = b.date ? b.date.slice(5) + ' ' : ''
-  // 群友问完「几点截单」，下一个问题就是「几点能拿」。各取货点到的时间不一样，
-  // 标题里写不下，就写出发时间，具体几点到在下单页选点时看
-  const depart = b.depart_time || b.deliver_time
-  return depart
-    ? day + b.cutoff + ' 截单，' + depart + ' 出发'
-    : day + b.cutoff + ' 截单'
+function decorate(s, now) {
+  return Object.assign({}, s, {
+    p: progress(s, false),
+    dayText: md(s.date) + ' ' + weekday(s.date),
+    cutText: cutoffText(s, now),
+    cutHot: s.minutes_left != null && s.minutes_left < 180
+  })
 }
 
 Page({
   data: {
     ordering: ORDERING_ENABLED,   // 黄页模式下整套购物车/下单都不出现
-    exactAddressEnabled: EXACT_ADDRESS_ENABLED,
     loading: true,
     shop: null,
     items: [],
     groups: [],
+    sessions: [],
+    sessionIndex: 0,
+    session: null,     // 选中的那一场
     cart: {},          // { itemId: count }
     cartCount: 0,
     cartSubtotal: 0,
-    canOrder: false,   // 店在营业 + 到起送价
+    canOrder: false,   // 有场次 + 到起送价
     reachMin: false,
     isRootPage: false, // 从转发卡片冷启动进来时页面栈只有这一页，没有上一页可返回
 
@@ -48,48 +51,63 @@ Page({
     subEnabled: !!TEMPLATES.shopOpen,
     subTickets: 0,     // 还攒着几张票 = 还能收到几次开团提醒
     subMine: false,    // 自己的店不给自己订阅
-    subBusy: false
+    subBusy: false,
+    posterBusy: false,
+    themeStyle: ''     // 这家店的配色，CSS 变量写在页面根节点上
   },
 
   onLoad: function (options) {
     this.setData({ isRootPage: getCurrentPages().length === 1 })
 
-    if (!options.id) {
+    if (!options.id && !options.scene) {
       wx.showToast({ title: '缺少店铺信息', icon: 'none' })
       return
     }
-    this.shopId = options.id
+    this.shopId = options.id || ''
+    this.wantSession = options.s || ''
+    this.source = options.from === 'share' ? 'share' : ''
+    // 扫海报上的码：scene 就是场次 ID
+    if (options.scene) {
+      this.wantSession = decodeURIComponent(options.scene)
+      this.source = 'poster'
+    }
     this.load()
   },
 
   load: function () {
     wx.cloud.callFunction({
       name: 'shopBrowse',
-      data: { action: 'detail', shopId: this.shopId }
+      data: { action: 'detail', shopId: this.shopId, sessionId: this.wantSession }
     }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
         wx.showModal({
           title: '打不开这家店',
-          content: r.message || '店铺可能已经打烊了',
+          content: r.message || '店铺不存在',
           showCancel: false,
           success: () => wx.navigateBack()
         })
         return
       }
-      // 配送方案这一页用不上，但转发标题要写截单时间，顺手留下（省一次往返）
-      this.batches = ((r.plan || {}).availableBatches) || []
       const sub = r.subscription || {}
+      const sessions = (r.sessions || []).map(x => decorate(x, r.now))
+      const want = sessions.findIndex(x => x._id === this.wantSession)
+      const index = want >= 0 ? want : 0
       this.setData({
         shop: r.shop,
         items: r.items || [],
+        sessions: sessions,
+        sessionIndex: index,
+        session: sessions[index] || null,
         loading: false,
         subTickets: sub.tickets || 0,
         subMine: sub.isMine === true
       }, () => {
+        this.shopId = r.shop._id
         this.rebuild()
         this.prefetchCover()
+        this.applyTheme()
       })
     }).catch(err => {
       console.error('读取店铺失败：', err)
@@ -139,8 +157,65 @@ Page({
       cartCount: count,
       cartSubtotal: subtotal,
       reachMin: reachMin,
-      canOrder: shop.status === 'open' && count > 0 && reachMin
+      canOrder: !!this.data.session && count > 0 && reachMin
     })
+  },
+
+  pickSession: function (e) {
+    const i = Number(e.currentTarget.dataset.index)
+    this.setData({ sessionIndex: i, session: this.data.sessions[i] }, () => {
+      this.rebuild()
+      this.prepareCard()
+    })
+  },
+
+  // 选中那一场的转发卡片主图，画好备着。画失败就用商品图兜底（prefetchCover）
+  // 这家店的配色。取完色才画卡片，不然卡片会先用兜底配色画一张
+  applyTheme: function () {
+    const gs = this.selectComponent('#gs')
+    if (!gs) return
+    gs.themeFor(this.data.shop).then(theme => {
+      this.theme = theme
+      this.setData({ themeStyle: cssVars(theme) })
+      this.prepareCard()
+    }).catch(err => console.warn('取店铺配色失败：', err))
+  },
+
+  prepareCard: function () {
+    const s = this.data.session
+    this.cardPath = ''
+    if (!s) return
+    const gs = this.selectComponent('#gs')
+    if (!gs) return
+    const id = s._id
+    gs.card(cardData(this.data.shop, s, this.data.items, this.theme))
+      .then(p => {
+        if (this.data.session && this.data.session._id === id) this.cardPath = p
+      })
+      .catch(err => console.warn('转发卡片没画出来，用商品图：', err))
+  },
+
+  // 长图海报：菜全部列出来，存图、发朋友圈、发小红书。
+  // 小程序码要小程序发布过才拿得到，拿不到就画「搜明尼助手」
+  makePoster: function () {
+    const s = this.data.session
+    if (!s || this.data.posterBusy) return
+    this.setData({ posterBusy: true })
+    wx.showLoading({ title: '生成中…', mask: true })
+    wx.cloud.callFunction({ name: 'getMiniCode', data: { sessionId: s._id } })
+      .then(res => ((res && res.result) || {}).fileID || '')
+      .catch(() => '')
+      .then(qr => this.selectComponent('#gs').long(longData(this.data.shop, s, this.data.items, this.theme, qr)))
+      .then(path => {
+        wx.hideLoading()
+        showPoster(path)
+      })
+      .catch(err => {
+        console.error('生成海报失败：', err)
+        wx.hideLoading()
+        wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+      })
+      .then(() => this.setData({ posterBusy: false }))
   },
 
   addItem: function (e) {
@@ -148,8 +223,8 @@ Page({
     const item = this.data.items.find(i => i._id === id)
     if (!item || !item.available) return
 
-    if (this.data.shop.status !== 'open') {
-      wx.showToast({ title: '店铺已打烊', icon: 'none' })
+    if (!this.data.session) {
+      wx.showToast({ title: '暂无拼团，可以订阅开团提醒', icon: 'none' })
       return
     }
 
@@ -235,8 +310,8 @@ Page({
   },
 
   checkout: function () {
-    if (this.data.shop.status !== 'open') {
-      wx.showToast({ title: '店铺已打烊', icon: 'none' })
+    if (!this.data.session) {
+      wx.showToast({ title: '暂无拼团', icon: 'none' })
       return
     }
     if (this.data.cartCount === 0) {
@@ -259,6 +334,8 @@ Page({
     wx.setStorageSync(CART_KEY, {
       shopId: this.data.shop._id,
       shopName: this.data.shop.name,
+      sessionId: this.data.session._id,
+      source: this.source,
       items: chosen,
       subtotal: this.data.cartSubtotal,
       shop_wechat: this.data.shop.contact_wechat
@@ -280,20 +357,18 @@ Page({
     this.cover = toLocalPath(this.coverID)
   },
 
-  // 店长把自家店发到群里拉客，买家也会顺手转给室友——标题第一位是店名，
-  // 第二位就是截单时间：群里的人要先确定「今天还赶得上吗」才会点进来。
+  // 店长把自家店发到群里拉客，买家也会顺手转给室友。标题按选中那一场的进度写
+  //（「还差 3 位！」「只差 1 位！」），落地直接定位到这一场
   onShareAppMessage: function () {
     const shop = this.data.shop
-    // 商品还没加载出来就点了转发，只能先转发店长列表
-    if (!shop) return { title: '明尼助手 · 校外小店', path: '/pages/shoplist/shoplist' }
+    // 商品还没加载出来就点了转发，只能先转发列表
+    if (!shop) return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
 
-    const tail = shop.status === 'paused'
-      ? '已打烊，可以先看看商品'
-      : cutoffPhrase(this.batches) || '下单后到服务地点自取'
-
-    return withCover({
-      title: clip(shop.name, NAME_MAX) + ' · ' + tail,
-      path: '/pages/shopdetail/shopdetail?id=' + shop._id
-    }, this.coverID, this.cover)
+    const s = this.data.session
+    // 店长转自己的店是在打广告，标题用他写的广告语；别人转用进度
+    const title = !s ? shop.name + ' · 订阅开团提醒' : (this.data.subMine ? ownerTitle(shop, s) : shareTitle(shop.name, s, false))
+    const path = '/pages/shopdetail/shopdetail?id=' + shop._id + (s ? '&s=' + s._id : '') + '&from=share'
+    if (this.cardPath) return { title: title, path: path, imageUrl: this.cardPath }
+    return withCover({ title: title, path: path }, this.coverID, this.cover)
   }
 })

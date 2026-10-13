@@ -66,12 +66,78 @@
   margin-top: 6rpx;
 }
 
-.paused-bar {
-  background: #fff4e0;
-  color: #b8860b;
+/* 场次：店头下面一整条，白底，和店头连成一块 */
+.sessions {
+  padding: 0 32rpx 28rpx;
+  background: var(--color-card);
+}
+
+.session-tabs {
+  white-space: nowrap;
+  margin-bottom: 20rpx;
+}
+
+.session-tab {
+  display: inline-block;
+  margin-right: 16rpx;
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
   font-size: 26rpx;
-  text-align: center;
-  padding: 20rpx;
+  color: var(--color-text-light);
+  background: var(--color-bg);
+}
+
+.session-tab-on {
+  color: #fff;
+  font-weight: 700;
+  background: var(--color-primary);
+}
+
+/* 选中那一场：奶油底的一块，进度条和取货点都在里面 */
+.session-panel {
+  padding: 24rpx;
+  border-radius: var(--radius);
+  background: #fbf0dc;
+}
+
+.session-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-when {
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.session-bar {
+  margin-top: 20rpx;
+  background: #fff;
+}
+
+.session-points {
+  margin-top: 18rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx dashed #e6d3b3;
+}
+
+.session-point {
+  display: flex;
+  justify-content: space-between;
+  font-size: 26rpx;
+  line-height: 1.8;
+}
+
+.session-point-name {
+  font-weight: 700;
+}
+
+.no-session {
+  padding: 0 32rpx 28rpx;
+  font-size: 26rpx;
+  color: var(--color-text-light);
+  background: var(--color-card);
 }
 
 /* 开团提醒 */
@@ -300,4 +366,59 @@
 .wechat-id {
   font-size: 32rpx;
   word-break: break-all;
+}
+
+.session-poster {
+  margin-top: 14rpx;
+  text-align: right;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* ---------- 店铺配色 ----------
+   --shop-* 从这家店的 logo 取色（utils/theme.js 的 cssVars），没有时退回小程序自己的颜色 */
+.shop-page .session-tab-on {
+  color: var(--shop-on-accent, #fff);
+  background: var(--shop-accent, var(--color-primary));
+}
+
+.shop-page .session-panel {
+  background: var(--shop-soft, #fbf0dc);
+}
+
+.shop-page .session-points {
+  border-top-color: var(--shop-line, #e6d3b3);
+}
+
+.shop-page .gb-bar-fill {
+  background: var(--shop-accent, var(--color-primary));
+}
+
+.shop-page .gb-text,
+.shop-page .session-poster,
+.shop-page .product-price {
+  color: var(--shop-accent, var(--color-primary));
+}
+
+.shop-page .stepper-btn {
+  border-color: var(--shop-accent, var(--color-primary));
+  color: var(--shop-accent, var(--color-primary));
+}
+
+.shop-page .stepper-add,
+.shop-page .cart-btn,
+.shop-page .sub-btn {
+  color: var(--shop-on-accent, #fff);
+  background: var(--shop-accent, var(--color-primary));
+}
+
+.shop-page .sub-btn-more {
+  color: var(--shop-accent, var(--color-primary));
+  background: var(--shop-soft, #f7ecef);
+}
+
+.shop-page .cart-btn-off {
+  background: #666;
+  color: #ccc;
 }

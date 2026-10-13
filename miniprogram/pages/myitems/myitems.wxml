@@ -38,6 +38,5 @@
         class="kind-pill-item {{kind === k.key ? 'kind-pill-on' : ''}}">{{k.label}}</view>
 </view>
 
-<!-- 画海报用的画布。不能用 hidden 或 display:none——那样画布不会真正渲染，
-     导出的会是空白图。所以挪到屏幕外面去。 -->
-<canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
+<!-- 画海报、取色用的画布（在组件里，挪在屏幕外） -->
+<group-share id="gs" />

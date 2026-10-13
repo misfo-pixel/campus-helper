@@ -16,8 +16,8 @@
       <text class="line-name">小计</text>
       <text class="line-price">${{cart.subtotal}}</text>
     </view>
-    <view wx:if="{{needsDelivery}}" class="line">
-      <text class="line-name">配送费{{!exactAddress && pointIndex === null ? '（选取货地点后计算）' : ''}}</text>
+    <view class="line">
+      <text class="line-name">配送费</text>
       <text class="line-price">${{deliveryFee}}</text>
     </view>
     <view class="line line-total">
@@ -26,60 +26,46 @@
     </view>
   </view>
 
-  <!-- 微信号紧跟合计：这是每一单都要填的，地址 / 时间只有线下交付才有 -->
-  <input placeholder="你的微信号（必填，店长联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card" style="padding: 24rpx;" />
-
-  <block wx:if="{{needsDelivery}}">
-    <!-- 线下交付要手机号：找不到楼、到了没人应、微信没回，都得能打通 -->
-    <input placeholder="手机号（必填，找不到你时打这个）" type="number" value="{{phone}}"
-           bindinput="onInput" data-field="phone" maxlength="15" class="card" style="padding: 24rpx;" />
-
-    <!-- 送上门：选名单里的楼（明大 Minneapolis 校区 + 周边约 1 mile 的公寓），再填房间号。
-         名单外的走「其他」手填，店长那边会标出来 -->
-    <view wx:if="{{exactAddress}}" class="card info-card">
-      <view class="info-row info-row-split" bindtap="pickBuilding">
-        <text class="info-label">楼栋</text>
-        <text class="info-value {{buildingId ? '' : 'placeholder'}}">{{buildingId === 'other' ? '其他：' + buildingName : (buildingName || '请选择')}}</text>
+  <!-- 哪一场、去哪取：左边写这一行是什么，右边是内容 -->
+  <view class="card info-card">
+    <view class="info-row info-row-split">
+      <text class="info-label">场次</text>
+      <view class="info-value">
+        <view>{{session.whenText}}</view>
+        <view class="info-sub">{{session.cutText}}</view>
+      </view>
+    </view>
+    <picker wx:if="{{!exactAddress}}" mode="selector" range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPointChange">
+      <view class="info-row">
+        <text class="info-label">取货点</text>
+        <text class="info-value {{pointIndex === null ? 'placeholder' : ''}}">{{pointIndex === null ? '请选择' : pointLabels[pointIndex]}}</text>
         <text class="picker-arrow">›</text>
       </view>
-      <view wx:if="{{buildingId === 'other'}}" class="info-warn">名单外的地址，店长确认能送到才会接单</view>
-      <view class="info-row">
-        <text class="info-label">房间号</text>
-        <input class="info-input" placeholder="如 Apt 412 / Room 305" value="{{unit}}"
-               bindinput="onInput" data-field="unit" maxlength="40" />
-      </view>
-    </view>
+    </picker>
+  </view>
 
-    <!-- 取货地点 / 服务时间收进同一张卡，左边写这一行是什么，右边是内容。
-         服务时间只有一个的时候就是一行字：给一个只有一项的滚轮让人去点，只会让人以为还有别的可选 -->
-    <view class="card info-card">
-      <picker wx:if="{{!exactAddress}}" mode="selector" range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPointChange">
-        <view class="info-row info-row-split">
-          <text class="info-label">取货地点</text>
-          <text class="info-value {{pointIndex === null ? 'placeholder' : ''}}">{{pointIndex === null ? '请选择' : pointLabels[pointIndex]}}</text>
-          <text class="picker-arrow">›</text>
-        </view>
-      </picker>
+  <view class="card info-card">
+    <input placeholder="你的微信号" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="info-input-row info-row-split" />
+    <!-- 找不到人、微信没回的时候，店长打这个 -->
+    <input placeholder="手机号" type="number" value="{{phone}}"
+           bindinput="onInput" data-field="phone" maxlength="15" class="info-input-row" />
+  </view>
 
-      <picker wx:if="{{batchParts.length > 1}}" mode="selector" range="{{batchLabels}}" value="{{batchIndex}}" bindchange="onBatchChange">
-        <view class="info-row">
-          <text class="info-label">服务时间</text>
-          <view class="info-value">
-            <view>{{batchParts[batchIndex].main}}</view>
-            <view class="info-sub">{{batchParts[batchIndex].sub}}</view>
-          </view>
-          <text class="picker-arrow">›</text>
-        </view>
-      </picker>
-      <view wx:else class="info-row">
-        <text class="info-label">服务时间</text>
-        <view class="info-value">
-          <view>{{batchParts[batchIndex].main}}</view>
-          <view class="info-sub">{{batchParts[batchIndex].sub}}</view>
-        </view>
-      </view>
+  <!-- 送上门：选名单里的楼（明大 Minneapolis 校区 + 周边约 1 mile 的公寓），再填房间号。
+       名单外的走「其他」手填，店长那边会标出来 -->
+  <view wx:if="{{exactAddress}}" class="card info-card">
+    <view class="info-row info-row-split" bindtap="pickBuilding">
+      <text class="info-label">楼栋</text>
+      <text class="info-value {{buildingId ? '' : 'placeholder'}}">{{buildingId === 'other' ? '其他：' + buildingName : (buildingName || '请选择')}}</text>
+      <text class="picker-arrow">›</text>
     </view>
-  </block>
+    <view wx:if="{{buildingId === 'other'}}" class="info-warn">名单外的地址，店长确认能送到才会接单</view>
+    <view class="info-row">
+      <text class="info-label">房间号</text>
+      <input class="info-input" placeholder="如 Apt 412 / Room 305" value="{{unit}}"
+             bindinput="onInput" data-field="unit" maxlength="40" />
+    </view>
+  </view>
 
   <!-- 单独一个分节标题：不然紧跟在服务时间下面，店长的提示语会被读成时间的注释。
        框里仍是店长自己写的提示 -->
@@ -98,9 +84,9 @@
     <view wx:if="{{noteImages.length < 3}}" class="note-img-add" bindtap="chooseNoteImages">＋</view>
   </view>
 
-  <disclaimer-bar type="buyer" />
+  <view class="rule">{{session.ruleText}}</view>
 
-  <button class="btn-primary" bindtap="submit" loading="{{submitting}}" style="margin-top: 24rpx;">
-    提交订单
-  </button>
+  <button class="btn-primary" bindtap="submit" loading="{{submitting}}">立即参团</button>
+
+  <disclaimer-bar type="buyer" />
 </view>

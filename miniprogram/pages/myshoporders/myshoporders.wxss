@@ -24,9 +24,15 @@
   border-radius: 20rpx;
 }
 
+.order-status-forming {
+  background: #f6e3e6;
+  color: var(--color-primary);
+}
+
+.order-status-confirming,
 .order-status-pending {
-  background: #fff4e0;
-  color: #b8860b;
+  background: #fff4d1;
+  color: #7a5200;
 }
 
 .order-status-accepted,
@@ -148,13 +154,27 @@
   margin-top: 20rpx;
 }
 
-/* 待付款时列表顶部的一条免责提示。原来挂在每张订单卡里，
-   有几笔待付款就重复几遍，提上来只说一次 */
-.notice-top {
+.order-bar {
+  margin-top: 20rpx;
+}
+
+/* 待确认那一句要显眼：过了时间这一单就自动取消了 */
+.order-hint-hot {
+  color: #7a5200;
+  font-weight: 700;
+}
+
+.order-share {
+  width: auto !important;
+  height: 52rpx;
+  line-height: 52rpx;
+  margin: 0 !important;
+  padding: 0 24rpx;
+  border-radius: 999rpx;
   font-size: 24rpx;
-  color: var(--color-text-light);
-  line-height: 1.6;
-  margin-bottom: 20rpx;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-primary);
 }
 
 

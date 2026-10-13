@@ -1,31 +1,25 @@
-// 我的服务订单（买家侧）。
-// 订单展示店长微信；店长自己开了收款展示位的话，待确认的单里还会显示
-// 订单里还会回显买家自己下单时填的补充说明和配图。
+// 我的订单（买家侧）。
+// 订单展示店长微信，还会回显买家自己下单时填的补充说明和配图。
+// 拼团中的单画进度条、能直接转发喊人；待确认的单写清楚几点前联系店长。
+// 不出现任何付款指引（《店长责任告知书》第六节）。
 
 const { formatTime } = require('../../utils/date.js')
+const { md, weekday, progress, shareTitle, atText, cardData } = require('../../utils/group.js')
 
 const STATUS_TEXT = {
-  pending: '待店长确认',
-  accepted: '准备中',
+  forming: '拼团中',
+  confirming: '待确认',
+  pending: '待确认',
+  accepted: '已确认',
   delivering: '配送中',
   completed: '已完成',
   cancelled: '已取消'
 }
 
-// 每个状态给一句说明。待确认的单只说「等店长联系」，不出现任何付款指引。
-const STATUS_HINT = {
-  pending: '已提交，等店长确认。店长会通过微信与你联系',
-  accepted: '店长已接单，正在准备',
-  delivering: '店长正在配送',
-  completed: '订单已完成',
-  cancelled: '订单已取消'
-}
-
 Page({
   data: {
     loading: true,
-    orders: [],
-    hasPending: false
+    orders: []
   },
 
   onShow: function () {
@@ -45,17 +39,23 @@ Page({
         if (done) done()
         return
       }
-      const orders = (r.orders || []).map(o => Object.assign({}, o, {
-        statusText: STATUS_TEXT[o.status] || o.status,
-        statusHint: STATUS_HINT[o.status] || '',
-        timeText: formatTime(o.created_at),
-        shortId: (o._id || '').slice(-6).toUpperCase()
-      }))
-      this.setData({
-        orders: orders,
-        hasPending: orders.some(o => o.status === 'pending'),
-        loading: false
+      const orders = (r.orders || []).map(o => {
+        const p = o.progress ? progress(o.progress, true) : null
+        let hint = ''
+        if (o.status === 'forming') hint = p ? p.text : ''
+        else if (o.status === 'confirming') hint = '已成团，' + atText(o.confirm_at, r.now) + ' 前联系店长确认'
+        else if (o.status === 'accepted' || o.status === 'delivering') {
+          hint = md(o.batch_date) + ' ' + weekday(o.batch_date) + ' ' + o.deliver_time + ' · ' + (o.pickup_point || o.pickup_info)
+        }
+        return Object.assign({}, o, {
+          statusText: STATUS_TEXT[o.status] || o.status,
+          hint: hint,
+          p: p,
+          timeText: formatTime(o.created_at),
+          shortId: (o._id || '').slice(-6).toUpperCase()
+        })
       })
+      this.setData({ orders: orders, loading: false })
       if (done) done()
     }).catch(err => {
       console.error('读取订单失败：', err)
@@ -63,6 +63,29 @@ Page({
       wx.showToast({ title: '读取失败', icon: 'none' })
       if (done) done()
     })
+  },
+
+  // 拼团中的单上「喊人上车」
+  onShareAppMessage: function (res) {
+    const i = res && res.target && res.target.dataset ? res.target.dataset.index : undefined
+    const o = i !== undefined ? this.data.orders[i] : null
+    if (o && o.progress) {
+      const s = Object.assign({ date: o.batch_date, points: [] }, o.progress)
+      const share = {
+        title: shareTitle(o.shop_name, s, true),
+        path: '/pages/shopdetail/shopdetail?id=' + o.shop_id + '&s=' + o.session_id + '&from=share'
+      }
+      // 卡片主图现画：微信最多等 3 秒，画不完就用上面这份（默认截图）
+      // 微信最多等 3 秒：从 logo 取色（取过的有缓存）再画，来不及就用上面这份
+      const gs = this.selectComponent('#gs')
+      const shop = { name: o.shop_name, slogan: o.shop_slogan, logo: o.shop_logo, poster_style: o.shop_poster_style }
+      share.promise = gs.themeFor(shop)
+        .then(theme => gs.card(cardData(shop, s, [], theme)))
+        .then(p => Object.assign({}, share, { imageUrl: p }))
+        .catch(() => share)
+      return share
+    }
+    return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
   },
 
   previewNoteImages: function (e) {
@@ -79,11 +102,12 @@ Page({
     })
   },
 
+  // 成团后再取消，店长可能已经按单数备料了，记一次爽约（见 buyerOrders 的 cancel）
   cancelOrder: function (e) {
-    const id = e.currentTarget.dataset.id
+    const { id, status } = e.currentTarget.dataset
     wx.showModal({
       title: '取消订单',
-      content: '确定取消这笔订单吗？如果你已经付过款，取消后需要自己联系店长退款。',
+      content: status === 'confirming' ? '已经成团了，取消会记一次爽约。' : '确定取消吗？',
       success: res => {
         if (!res.confirm) return
         wx.showLoading({ title: '处理中', mask: true })
