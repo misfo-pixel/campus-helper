@@ -16,5 +16,22 @@
   <view class="section-title">微信号</view>
   <input placeholder="填你的微信号（发布时自动填入）" value="{{wechat}}" bindinput="onInput" data-field="wechat" class="card" style="padding: 24rpx;" />
 
+  <view class="section-title">邮箱</view>
+  <view wx:if="{{emailVerified && !changingEmail}}" class="card email-row">
+    <text class="email-text">{{email}}</text>
+    <text wx:if="{{isStudent}}" class="badge">学生</text>
+    <text class="email-action" bindtap="changeEmail">更换</text>
+  </view>
+  <block wx:else>
+    <view class="card email-row">
+      <input placeholder="name@school.edu" value="{{emailInput}}" bindinput="onInput" data-field="emailInput" class="email-input" />
+      <text class="email-action {{countdown ? 'email-action-off' : ''}}" bindtap="sendCode">{{countdown ? countdown + 's' : '发送验证码'}}</text>
+    </view>
+    <view wx:if="{{codeSent}}" class="card email-row">
+      <input type="number" maxlength="6" placeholder="6 位验证码" value="{{code}}" bindinput="onInput" data-field="code" class="email-input" />
+      <text class="email-action" bindtap="verifyCode">验证</text>
+    </view>
+  </block>
+
   <button class="btn-primary" bindtap="save" style="margin-top: 40rpx;">保存</button>
 </view>

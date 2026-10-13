@@ -38,7 +38,10 @@ exports.main = async (event, context) => {
         isNew: true,
         nickname: nickname,
         avatarUrl: avatarUrl,
-        wechat: ''
+        wechat: '',
+        email: '',
+        emailVerified: false,
+        isStudent: false
       }
     } else {
       // 老用户：返回 roles。兼容老数据（如果只有 role 没有 roles）
@@ -48,6 +51,13 @@ exports.main = async (event, context) => {
         // 老数据兼容：把旧的单个 role 转成数组
         roles = user.role ? [user.role] : ['student']
       }
+      // 邮箱不在 users 上（users 前端可读），单独存在 user_emails，见 emailVerify
+      let email = ''
+      if (user.email_verified) {
+        try {
+          email = (await db.collection('user_emails').doc(openid).get()).data.email || ''
+        } catch (e) { /* 读不到就当没验证 */ }
+      }
       return {
         success: true,
         openid: openid,
@@ -56,7 +66,10 @@ exports.main = async (event, context) => {
         isNew: false,
         nickname: user.nickname || '',
         avatarUrl: user.avatarUrl || '',
-        wechat: user.wechat || ''
+        wechat: user.wechat || '',
+        email: email,
+        emailVerified: !!email,
+        isStudent: !!email && user.is_student === true
       }
     }
   } catch (err) {

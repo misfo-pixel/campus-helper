@@ -4,7 +4,7 @@
     <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="profile-avatar" />
     <image wx:else src="/images/loon.png" mode="aspectFill" class="profile-avatar" />
     <view style="flex: 1; min-width: 0;">
-      <view style="font-size: 36rpx; font-weight: bold;">{{nickname || '点击设置昵称'}}</view>
+      <view style="font-size: 36rpx; font-weight: bold;">{{nickname || '点击设置昵称'}}<text wx:if="{{isStudent}}" class="badge student-badge">学生</text></view>
       <view class="text-light">{{isAdmin ? '管理员' : '普通用户'}}</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>

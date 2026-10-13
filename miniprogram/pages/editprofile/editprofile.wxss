@@ -28,3 +28,19 @@
   font-size: 40rpx;
   margin-left: 16rpx;
 }
+
+/* 邮箱：输入框和「发送验证码」挤在一行 */
+.email-row {
+  display: flex;
+  align-items: center;
+  padding: 24rpx;
+  gap: 16rpx;
+}
+.email-text { flex: 1; min-width: 0; word-break: break-all; }
+.email-input { flex: 1; min-width: 0; }
+.email-action {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  color: var(--color-primary);
+}
+.email-action-off { color: var(--color-text-light); }

@@ -1,6 +1,6 @@
 const { markStale } = require('../../utils/refresh.js')
 // pages/publish.js
-const { myProfile } = require('../../utils/user.js')
+const { myProfile, checkEmailVerified } = require('../../utils/user.js')
 const { createUploader, requestReview } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
@@ -118,6 +118,7 @@ Page({
     // 真机上就会报 can only be invoked by user TAP gesture，静默拿不到票。
     // 所以放在第一个 await 之前，不等它返回，发布照常往下走。
     // expiring：到期前一天 autoExpire 提醒；inquiry：有人留言时通知楼主
+    if (!checkEmailVerified()) return
     ask(['expiring', 'inquiry'])
 
     wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图

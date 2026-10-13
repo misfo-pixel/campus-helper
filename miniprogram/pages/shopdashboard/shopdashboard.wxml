@@ -118,8 +118,10 @@
         </view>
 
         <view class="order-contact">
-          <text class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
-          <text wx:if="{{item.contact_wechat}}" class="order-copy" bindtap="copyWechat" data-wechat="{{item.contact_wechat}}">复制</text>
+          <!-- 2026-10-13 起下单填邮箱，之前的老单只有微信号 -->
+          <text wx:if="{{item.contact_email}}" class="text-light">邮箱：{{item.contact_email}}</text>
+          <text wx:else class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
+          <text wx:if="{{item.contact_email || item.contact_wechat}}" class="order-copy" bindtap="copyContact" data-text="{{item.contact_email || item.contact_wechat}}">复制</text>
         </view>
         <view wx:if="{{item.phone}}" class="order-contact">
           <text class="text-light">手机：{{item.phone}}</text>

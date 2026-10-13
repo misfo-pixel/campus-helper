@@ -210,10 +210,19 @@ exports.main = async (event) => {
           fee = Math.round((Number(point.fee) || 0) * 100) / 100
         }
 
-        const contactWechat = (event.contact_wechat || '').trim()
-        if (!contactWechat) return { success: false, message: '请填写你的微信号' }
+        // 2026-10-13 起下单要先验证邮箱，订单上的联系邮箱取验证过的那个（user_emails，见 emailVerify），
+        // 前端传什么都不信。还没更新的旧版前端只会传 contact_wechat，过渡期照收，
+        // 不然它们下不了单；等旧版本没人用了再把这个分支删掉
+        const contactWechat = String(event.contact_wechat || '').trim()
+        let contactEmail = ''
+        if (!contactWechat) {
+          try {
+            contactEmail = (await db.collection('user_emails').doc(openid).get()).data.email || ''
+          } catch (e) { /* 没验证过，下面拦 */ }
+          if (!contactEmail) return { success: false, message: '请先在资料页验证邮箱' }
+        }
 
-        // 线下交付的单要手机号：找不到楼、送到了没人应、微信没回，都得能打通电话
+        // 线下交付的单要手机号：找不到楼、送到了没人应、邮件没回，都得能打通电话
         phone = normalizePhone(event.phone)
         if (!phone) return { success: false, message: '请填写正确的手机号' }
 
@@ -281,6 +290,7 @@ exports.main = async (event) => {
             settled: false,
 
             total: total,
+            contact_email: contactEmail,
             contact_wechat: contactWechat,
             note: (event.note || '').trim().slice(0, 200),
             // 买家自己传的配图（尺寸、款式、参考图）。前端限 3 张，这里再兜一次
@@ -312,7 +322,7 @@ exports.main = async (event) => {
                   _openid: openid,   // 归属给买家，管理员回复时通知的是他
                   type: '楼栋补录',
                   content: content,
-                  contact: contactWechat,
+                  contact: contactEmail || contactWechat,
                   unlisted_key: key,
                   createTime: db.serverDate()
                 }

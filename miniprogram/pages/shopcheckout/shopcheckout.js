@@ -6,11 +6,11 @@
 // 场次在店铺页就选好了（随购物车一起存在 storage 里），这里只选取货点。
 // 买家到取货点自取，不送到公寓门口。
 
-const { myProfile } = require('../../utils/user.js')
 const { EXACT_ADDRESS_ENABLED } = require('../../config.js')
 const { md, weekday, cutoffText } = require('../../utils/group.js')
 const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { readCachedProfile, checkEmailVerified } = require('../../utils/user.js')
 
 const CART_KEY = 'shopCart'
 
@@ -49,7 +49,7 @@ Page({
     pointLabels: [],
     pointIndex: null,
 
-    contact_wechat: '',
+    email: '',   // 资料页验证过的邮箱，下单就用它，不再手填
     note: '',
     // 补充说明和配图每家店都有；店长开了「下单时要买家补充说明」只是变成必填。
     // noteHint 是他自己写的提示语，没写就用一句通用的。
@@ -61,6 +61,16 @@ Page({
     deliveryFee: 0,
     total: 0,
     submitting: false
+  },
+
+  // 从资料页验证完邮箱返回时刷新
+  onShow: function () {
+    const profile = readCachedProfile() || {}
+    this.setData({ email: profile.emailVerified ? (profile.email || '已验证') : '' })
+  },
+
+  goVerifyEmail: function () {
+    wx.navigateTo({ url: '/pages/editprofile/editprofile?verify=1' })
   },
 
   onLoad: function () {
@@ -141,14 +151,6 @@ Page({
       this.setData({ loading: false })
       wx.showToast({ title: '读取失败', icon: 'none' })
     })
-
-    // 微信号自动填个人资料里存的那个
-    // 读缓存，不再多打一次 login（见 utils/user.js）
-    myProfile().then(profile => {
-      if (profile.wechat && !this.data.contact_wechat) {
-        this.setData({ contact_wechat: profile.wechat })
-      }
-    }).catch(err => console.error('读取微信号失败：', err))
   },
 
   onInput: function (e) {
@@ -207,10 +209,7 @@ Page({
     if (d.submitting) return
 
     // 按页面上从上到下的顺序查，提示的总是最先看到的那个空项
-    if (!d.contact_wechat.trim()) {
-      wx.showToast({ title: '请填写你的微信号', icon: 'none' })
-      return
-    }
+    if (!checkEmailVerified()) return
     const digits = d.phone.replace(/\D/g, '')
     if (digits.length < 10 || digits.length > 15) {
       wx.showToast({ title: '请填写正确的手机号', icon: 'none' })
@@ -244,7 +243,7 @@ Page({
     try {
       // 备注会被店长和配送员看到，属于 UGC
       if (!(await ensureContentOk({
-        texts: [d.note, d.contact_wechat, d.unit, d.buildingId === 'other' ? d.buildingName : ''],
+        texts: [d.note, d.unit, d.buildingId === 'other' ? d.buildingName : ''],
         scene: 2
       }))) return
 
@@ -272,7 +271,6 @@ Page({
           phone: d.phone,
           session_id: d.session._id,
           source: d.cart.source || '',
-          contact_wechat: d.contact_wechat,
           note: d.note,
           note_images: noteImages
         }

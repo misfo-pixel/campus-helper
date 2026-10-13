@@ -86,6 +86,7 @@ Page({
         roles: roles,
         nickname: profile.nickname,
         avatarUrl: profile.avatarUrl,
+        isStudent: !!profile.isStudent,
         isAdmin: isAdmin,
         isSuperAdmin: isSuper,
         // 角色给不了的，先用上次查到的结果顶上，下面再在后台核一遍

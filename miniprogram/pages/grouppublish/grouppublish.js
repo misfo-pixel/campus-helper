@@ -1,5 +1,5 @@
 const { markStale } = require('../../utils/refresh.js')
-const { myProfile } = require('../../utils/user.js')
+const { myProfile, checkEmailVerified } = require('../../utils/user.js')
 const { createUploader, requestReview } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS } = require('../../utils/kinds.js')
@@ -84,6 +84,7 @@ Page({
     const buddy = d.kind === 'buddy'
 
     // 订阅授权必须在第一个 await 之前弹，理由见 taskpublish。inquiry：有人留言时通知群主
+    if (!checkEmailVerified()) return
     ask('inquiry')
 
     wx.showLoading({ title: '发布中...', mask: true })

@@ -177,6 +177,12 @@
     border-radius: 20rpx;
     padding: 4rpx 14rpx;
   }
+  /* 验证过学校邮箱（.edu）的用户，跟在名字后面 */
+  .student-badge {
+    margin-left: 12rpx;
+    vertical-align: middle;
+    font-weight: normal;
+  }
   .tag {
     display: inline-block;
     font-size: 22rpx;

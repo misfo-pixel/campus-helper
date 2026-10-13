@@ -307,11 +307,11 @@ Page({
     wx.makePhoneCall({ phoneNumber: phone.replace(/[^\d+]/g, ''), fail: () => {} })
   },
 
-  copyWechat: function (e) {
-    const wechat = e.currentTarget.dataset.wechat
-    if (!wechat) return
+  copyContact: function (e) {
+    const text = e.currentTarget.dataset.text
+    if (!text) return
     wx.setClipboardData({
-      data: wechat,
+      data: text,
       success: () => wx.showToast({ title: '已复制', icon: 'success' })
     })
   },

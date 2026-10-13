@@ -45,8 +45,12 @@
   </view>
 
   <view class="card info-card">
-    <input placeholder="你的微信号" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="info-input-row info-row-split" />
-    <!-- 找不到人、微信没回的时候，店长打这个 -->
+    <view class="info-row info-row-split" bindtap="{{email ? '' : 'goVerifyEmail'}}">
+      <text class="info-label">邮箱</text>
+      <text class="info-value {{email ? '' : 'placeholder'}}">{{email || '去验证'}}</text>
+      <text wx:if="{{!email}}" class="picker-arrow">›</text>
+    </view>
+    <!-- 找不到人、邮件没回的时候，店长打这个 -->
     <input placeholder="手机号" type="number" value="{{phone}}"
            bindinput="onInput" data-field="phone" maxlength="15" class="info-input-row" />
   </view>

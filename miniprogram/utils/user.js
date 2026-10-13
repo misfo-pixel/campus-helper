@@ -11,9 +11,9 @@ const PLACEHOLDER_NICKNAME = '匿名用户'
 // 缓存里的 roles 可能是过期的（比如管理员权限刚被撤掉），界面上会短暂多显示
 // 一个入口。这只是显示问题，不是安全问题：真正的权限校验在云函数里，
 // 前端拿着过期的 roles 也调不动。
-// key 里带版本号：profile 的结构变了（这次加了 uid）就换一个 key，
+// key 里带版本号：profile 的结构变了（v3 加了邮箱验证）就换一个 key，
 // 老缓存自然读不到，会走一次网络重建。比写迁移逻辑简单得多。
-const PROFILE_CACHE_KEY = 'cachedProfile.v2'
+const PROFILE_CACHE_KEY = 'cachedProfile.v3'
 
 function readCachedProfile() {
   try {
@@ -62,7 +62,10 @@ function fetchMyProfile() {
       isNew: !!r.isNew,
       nickname: cleanNickname(r.nickname),
       avatarUrl: r.avatarUrl || '',
-      wechat: r.wechat || ''
+      wechat: r.wechat || '',
+      email: r.email || '',
+      emailVerified: !!r.emailVerified,
+      isStudent: !!r.isStudent
     }
 
     // 老版本 login 云函数不返回资料字段，回落到直接查库
@@ -74,6 +77,9 @@ function fetchMyProfile() {
       profile.nickname = cleanNickname(doc.nickname)
       profile.avatarUrl = doc.avatarUrl || ''
       profile.wechat = doc.wechat || ''
+      // 邮箱读不到（只有云函数能读 user_emails），先只回状态
+      profile.emailVerified = doc.email_verified === true
+      profile.isStudent = doc.is_student === true
       // 老云函数连 uid 都不返，这里一并补上：uid 就是 users 文档的 _id。
       // 漏了它，分享/预览公开主页会一直拿不到 uid。
       profile.uid = profile.uid || doc._id || ''
@@ -115,6 +121,25 @@ function fetchPublicProfile(openid) {
   })
 }
 
+// 下单、发布前要验证过邮箱。同步判断：调用方多半紧接着要弹订阅授权，
+// 那个必须在第一个 await 之前（见 utils/subscribe.js），这里不能等网络。
+// 返回 true 表示已验证；没验证就弹窗引导去资料页，返回 false。
+// 真正的闸门在云函数（buyerOrders 按 user_emails 取邮箱），这里只是提前告诉用户。
+function checkEmailVerified() {
+  const app = getApp()
+  const profile = readCachedProfile() || (app && app.globalData && app.globalData.profile) || {}
+  if (profile.emailVerified) return true
+  wx.showModal({
+    title: '先验证邮箱',
+    content: '下单和发布前需要验证学校邮箱（.edu）',
+    confirmText: '去验证',
+    success: res => {
+      if (res.confirm) wx.navigateTo({ url: '/pages/editprofile/editprofile?verify=1' })
+    }
+  })
+  return false
+}
+
 const GUIDE_FLAG = 'profileGuideShown'
 
 // 头像或昵称还没填过就引导一次，提示过就不再打扰。
@@ -142,5 +167,6 @@ module.exports = {
   readCachedProfile: readCachedProfile,
   writeCachedProfile: writeCachedProfile,
   fetchPublicProfile: fetchPublicProfile,
+  checkEmailVerified: checkEmailVerified,
   guideProfileSetupOnce: guideProfileSetupOnce
 }
