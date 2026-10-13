@@ -1,4 +1,4 @@
-const { myProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
+const { myProfile, fetchMyProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 
 Page({
@@ -8,6 +8,7 @@ Page({
     avatarUrl: '',   // 显示用：可能是云文件 ID，也可能是刚选完的本地临时路径
     tempAvatar: '',  // 本次新选的本地文件，点保存时才上传
     saving: false,
+    deletingAccount: false,
 
     email: '',
     emailVerified: false,
@@ -207,5 +208,47 @@ Page({
     const ext = match ? match[1] : 'png'
     const cloudPath = 'avatars/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + ext
     return wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: temp }).then(r => r.fileID)
+  },
+
+  deleteAccount: function () {
+    if (this.data.deletingAccount) return
+    wx.showModal({
+      title: '注销账号',
+      content: '资料、邮箱、发布的内容和留言会删掉，不能恢复。订单记录按法律要求保留三年。',
+      confirmText: '注销',
+      confirmColor: '#C8102E',
+      success: res => {
+        if (!res.confirm) return
+        this.setData({ deletingAccount: true })
+        wx.cloud.callFunction({ name: 'deleteAccount' }).then(r => {
+          const result = (r && r.result) || {}
+          if (!result.success) {
+            wx.showModal({ title: '暂时不能注销', content: result.message || '注销失败，请重试', showCancel: false })
+            return
+          }
+          // 本机缓存的资料、购物车、上次填的取货点都是这个账号的，一起清掉。
+          // 再登录一次就是全新的账号，页面照常等 profileReady
+          try { wx.clearStorageSync() } catch (e) {}
+          const app = getApp()
+          const fresh = fetchMyProfile().then(profile => {
+            app.globalData.openid = profile.openid
+            app.globalData.roles = profile.roles
+            app.globalData.profile = profile
+            return profile
+          }).catch(() => null)
+          app.globalData.profile = null
+          app.globalData.roles = []
+          app.globalData.profileReady = fresh
+          app.globalData.profileFresh = fresh
+          wx.showToast({ title: '已注销', icon: 'success' })
+          setTimeout(() => wx.reLaunch({ url: '/pages/home/home' }), 1000)
+        }).catch(err => {
+          console.error('注销失败：', err)
+          wx.showToast({ title: '注销失败，请重试', icon: 'none' })
+        }).then(() => {
+          this.setData({ deletingAccount: false })
+        })
+      }
+    })
   }
 })

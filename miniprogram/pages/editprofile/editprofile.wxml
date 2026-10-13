@@ -34,4 +34,6 @@
   </block>
 
   <button class="btn-primary" bindtap="save" style="margin-top: 40rpx;">保存</button>
+
+  <view class="delete-account" bindtap="deleteAccount">{{deletingAccount ? '注销中...' : '注销账号'}}</view>
 </view>

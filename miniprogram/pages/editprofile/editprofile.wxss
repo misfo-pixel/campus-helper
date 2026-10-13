@@ -44,3 +44,12 @@
   color: var(--color-primary);
 }
 .email-action-off { color: var(--color-text-light); }
+
+/* 和小店设置的「删除小店」一样：放最底下、做成文字，别和「保存」抢 */
+.delete-account {
+  margin: 56rpx auto 24rpx;
+  padding: 16rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #C8102E;
+}
