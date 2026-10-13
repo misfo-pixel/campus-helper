@@ -117,7 +117,7 @@ const REVIEW_TYPES = {
   item: {
     collection: 'secondhand_items',
     live: 'on_sale',
-    texts: d => [d.title, d.description, d.seller_wechat]
+    texts: d => [d.title, d.description, d.seller_wechat, d.pickup_spot]
   },
   sublet: {
     collection: 'sublet_items',

@@ -29,6 +29,7 @@
       <view class="goods-body">
         <view class="goods-title">{{item.title}}</view>
         <view class="price goods-price">${{item.price}}</view>
+        <view wx:if="{{item.pickup_spot}}" class="goods-spot">{{item.pickup_spot}}</view>
       </view>
     </view>
   </view>
@@ -41,6 +42,7 @@
         <view class="price text-card-price">预算 ${{item.price}}</view>
       </view>
       <view wx:if="{{item.description}}" class="text-card-desc">{{item.description}}</view>
+      <view wx:if="{{item.pickup_spot}}" class="text-card-meta">{{item.pickup_spot}}</view>
     </view>
   </view>
 

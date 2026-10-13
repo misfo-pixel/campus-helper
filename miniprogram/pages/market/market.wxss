@@ -1,1 +1,11 @@
 /* pages/market/market.wxss */
+
+/* 取货地点：价格下面一行小灰字，一眼看出离自己近不近 */
+.goods-spot {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  color: var(--color-text-light);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

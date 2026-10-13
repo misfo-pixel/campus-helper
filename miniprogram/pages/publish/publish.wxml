@@ -39,6 +39,7 @@
   <view class="section-title">详细信息（选填）</view>
   <view class="form-group">
     <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <input placeholder="{{demand ? '方便交易的地点（如 Dinkytown 附近）' : '取货地点（如 Dinkytown 附近）'}}" value="{{pickup_spot}}" maxlength="30" bindinput="onInput" data-field="pickup_spot" class="form-input" />
     <!-- 不填就一直挂着，直到自己标已售 -->
     <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">
       <view class="form-row">

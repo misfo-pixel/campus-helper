@@ -34,6 +34,11 @@
       <view class="detail-text">{{item.description}}</view>
     </view>
 
+    <!-- 取货地点：买家先看离自己近不近，再决定要不要加微信 -->
+    <view wx:if="{{item.pickup_spot}}" class="kv-list">
+      <view class="kv-row"><text class="kv-label">{{item.kind === 'want' ? '交易地点' : '取货地点'}}</text><text class="kv-value">{{item.pickup_spot}}</text></view>
+    </view>
+
     <!-- 发布者自己看时这一行是入口：到期提醒叫人来这儿改日期，过期的改到以后就重新上架 -->
     <view wx:if="{{canEditExpire}}" class="kv-list">
       <!-- picker 的日期清不掉，「不自动下架」单独放在 picker 外面，点它不会弹出日期选择 -->

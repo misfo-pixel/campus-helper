@@ -102,8 +102,8 @@ Page({
 
     // 两种布局用的字段不一样：求购没有图，但要显示描述。只取用得上的。
     const field = this.data.demand
-      ? { title: true, price: true, description: true }
-      : { title: true, price: true, images: true, thumb: true }
+      ? { title: true, price: true, description: true, pickup_spot: true }
+      : { title: true, price: true, images: true, thumb: true, pickup_spot: true }
 
     // 同一时刻顺带打一次 ping 作对照。
     // 为什么要「同时」：两个数要在相同的网络条件下测才有可比性。

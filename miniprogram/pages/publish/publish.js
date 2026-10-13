@@ -7,6 +7,10 @@ const { KINDS, isDemand } = require('../../utils/kinds.js')
 
 const CFG = KINDS.item
 
+// 上次填的取货地点，下次发布直接带上。只存本机——住的地方一般不常变，
+// 跟微信号一样填一次就够，但它不是个人资料，不往云端存
+const SPOT_KEY = 'lastPickupSpot'
+
 Page({
   data: {
     kind: CFG.default,   // sell = 我要卖，want = 我要收
@@ -17,6 +21,7 @@ Page({
     price: '',
     description: '',
     seller_wechat: '',
+    pickup_spot: '',     // 取货地点（如 Dinkytown 附近），选填
     expire_date: ''
   },
 
@@ -26,6 +31,10 @@ Page({
     if (options && CFG.tabs.some(t => t.key === options.kind)) {
       this.setData({ kind: options.kind, demand: isDemand(options.kind) })
     }
+    try {
+      const spot = wx.getStorageSync(SPOT_KEY)
+      if (spot) this.setData({ pickup_spot: spot })
+    } catch (e) {}
     // 选图即上传：选完就在后台传，点发布时多半已经传完（见 utils/publish.js）
     this.uploader = createUploader('secondhand')
     // 读缓存，不再多打一次 login（见 utils/user.js）
@@ -83,7 +92,7 @@ Page({
   },
 
   // 继续发下一件：清掉这件商品本身的内容。
-  // 卖/收、微信号、下架日期（多半就是离美日期）大概率跟上一件一样，留着不用重填
+  // 卖/收、微信号、取货地点、下架日期（多半就是离美日期）大概率跟上一件一样，留着不用重填
   resetForm: function () {
     this.setData({ images: [], title: '', price: '', description: '' })
     wx.pageScrollTo({ scrollTop: 0, duration: 0 })
@@ -92,6 +101,7 @@ Page({
   // 发布
   submitPublish: async function () {
     const { title, price, description, seller_wechat, expire_date, images } = this.data
+    const pickupSpot = this.data.pickup_spot.trim().slice(0, 30)
 
     // 校验
     if (!title || !price || !seller_wechat) {
@@ -126,6 +136,7 @@ Page({
           images: up.images,       // 存的是所有图片地址的数组
           thumb: up.thumb,         // 列表页只下载这张小图
           seller_wechat: seller_wechat,
+          pickup_spot: pickupSpot,
           expire_date: expire_date,
           kind: this.data.kind,     // sell / want，决定它出现在市场页的哪一面
           status: 'reviewing',
@@ -133,6 +144,9 @@ Page({
         }
       })
       this.uploader.commit()   // 图已经归这条帖子了，离开页面时别当成没用的删掉
+      try {
+        wx.setStorageSync(SPOT_KEY, pickupSpot)
+      } catch (e) {}
 
       // 3. 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
       requestReview('item', added._id, title)
