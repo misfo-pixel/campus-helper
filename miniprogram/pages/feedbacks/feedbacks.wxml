@@ -1,32 +1,33 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="tabs">
-    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">待回复</view>
-    <view class="tab {{status === 'replied' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="replied">已回复</view>
+    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">{{i18n.t('待回复', lang)}}</view>
+    <view class="tab {{status === 'replied' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="replied">{{i18n.t('已回复', lang)}}</view>
   </view>
 
   <skeleton wx:if="{{loading}}" type="text" />
-  <view wx:elif="{{items.length === 0}}" class="text-light empty">没有记录</view>
+  <view wx:elif="{{items.length === 0}}" class="text-light empty">{{i18n.t('没有记录', lang)}}</view>
 
   <view wx:for="{{items}}" wx:key="_id" class="card fb">
     <view class="fb-head">
-      <text class="fb-type">{{item.type || '其他'}}</text>
+      <text class="fb-type">{{item.type || i18n.t('其他', lang)}}</text>
       <text class="fb-time">{{item.timeText}}</text>
     </view>
 
     <view class="fb-content">{{item.content}}</view>
 
     <view wx:if="{{item.contact}}" class="fb-contact">
-      <text class="text-light">联系方式：{{item.contact}}</text>
-      <text class="fb-copy" bindtap="copyContact" data-text="{{item.contact}}">复制</text>
+      <text class="text-light">{{i18n.f('联系方式：{0}', lang, item.contact)}}</text>
+      <text class="fb-copy" bindtap="copyContact" data-text="{{item.contact}}">{{i18n.t('复制', lang)}}</text>
     </view>
 
     <view wx:if="{{item.reply}}" class="fb-reply">
-      <view class="fb-reply-label">已回复 · {{item.replyTimeText}}</view>
+      <view class="fb-reply-label">{{i18n.f('已回复 · {0}', lang, item.replyTimeText)}}</view>
       <view>{{item.reply}}</view>
     </view>
 
     <view wx:if="{{!item.replied}}" class="fb-actions">
-      <button class="btn-primary btn-sm" bindtap="reply" data-id="{{item._id}}">回复</button>
+      <button class="btn-primary btn-sm" bindtap="reply" data-id="{{item._id}}">{{i18n.t('回复', lang)}}</button>
     </view>
   </view>
 </view>

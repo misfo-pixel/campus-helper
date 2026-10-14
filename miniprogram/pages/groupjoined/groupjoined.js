@@ -6,6 +6,7 @@
 
 const { md, weekday, progress, shareTitle, cardData, longData } = require('../../utils/group.js')
 const { showPoster } = require('../../utils/groupCover.js')
+const { t, f } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -31,9 +32,9 @@ Page({
     this.setData({
       name: this.info.name,
       p: p,
-      headline: p.open ? '下单成功' : (p.formed ? '已成团' : '再来 ' + p.gap + ' 位就开团'),
-      countText: p.open ? '' : this.info.count + ' / ' + this.info.min_orders + ' 单',
-      cutText: cut ? md(cut) + ' ' + weekday(cut.slice(0, 10)) + ' ' + cut.slice(11, 16) + ' 截单' : '',
+      headline: p.open ? t('下单成功') : (p.formed ? t('已成团') : f('再来 {0} 位就开团', p.gap)),
+      countText: p.open ? '' : f('{0} / {1} 单', this.info.count, this.info.min_orders),
+      cutText: cut ? f('{0} {1} {2} 截单', md(cut), weekday(cut.slice(0, 10)), cut.slice(11, 16)) : '',
       pickText: md(this.info.date) + ' ' + weekday(this.info.date) + ' ' + d('at') + (d('point') ? ' · ' + d('point') : '')
     })
     this.loadCover()
@@ -56,11 +57,11 @@ Page({
 
   makePoster: function () {
     if (!this.cover || this.data.posterBusy) {
-      if (!this.cover) wx.showToast({ title: '还在准备，稍等再点', icon: 'none' })
+      if (!this.cover) wx.showToast({ title: t('还在准备，稍等再点'), icon: 'none' })
       return
     }
     this.setData({ posterBusy: true })
-    wx.showLoading({ title: '生成中…', mask: true })
+    wx.showLoading({ title: t('生成中…'), mask: true })
     wx.cloud.callFunction({ name: 'getMiniCode', data: { sessionId: this.info.session } })
       .then(res => ((res && res.result) || {}).fileID || '')
       .catch(() => '')
@@ -75,7 +76,7 @@ Page({
       .catch(err => {
         console.error('生成海报失败：', err)
         wx.hideLoading()
-        wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+        wx.showToast({ title: t('生成失败，请重试'), icon: 'none' })
       })
       .then(() => this.setData({ posterBusy: false }))
   },

@@ -1,38 +1,39 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
   <ban-bar />
 
   <!-- 必填的只有名称和价格，其余一律归到「详细信息（选填）」，
        跟小店设置那张表同一套分节口径 -->
-  <view class="section-title">基本信息（必填）</view>
-  <input placeholder="商品名称" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
-  <input placeholder="价格（美元）" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
+  <view class="section-title">{{i18n.t('基本信息（必填）', lang)}}</view>
+  <input placeholder="{{i18n.t('商品名称', lang)}}" value="{{name}}" bindinput="onInput" data-field="name" class="card" style="padding: 24rpx;" />
+  <input placeholder="{{i18n.t('价格（美元）', lang)}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="card" style="padding: 24rpx;" />
 
-  <view class="section-title">详细信息（选填）</view>
+  <view class="section-title">{{i18n.t('详细信息（选填）', lang)}}</view>
 
   <view class="img-row" bindtap="chooseImage">
     <image wx:if="{{image}}" src="{{image}}" mode="aspectFill" class="product-img" />
     <view wx:else class="product-img product-img-placeholder">+</view>
-    <view class="text-light img-hint">点击{{image ? '更换' : '上传'}}商品图片</view>
+    <view class="text-light img-hint">{{i18n.f('点击{0}商品图片', lang, image ? i18n.t('更换', lang) : i18n.t('上传', lang))}}</view>
   </view>
 
   <!-- 不设 maxlength：拼音输入时还没上屏的字母也算字数，卡 4 个字连「xiaoshi」都打不进去。
        长度在提交时再查 -->
-  <input placeholder="单位（如 件 / 份 / 次 / 小时）" value="{{unit}}" bindinput="onInput" data-field="unit" class="card" style="padding: 24rpx;" />
-  <input wx:if="{{useCategory}}" placeholder="分类（如 热销 / 新品 / 其他）" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
-  <textarea placeholder="商品描述（规格、数量等）" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+  <input placeholder="{{i18n.t('单位（如 件 / 份 / 次 / 小时）', lang)}}" value="{{unit}}" bindinput="onInput" data-field="unit" class="card" style="padding: 24rpx;" />
+  <input wx:if="{{useCategory}}" placeholder="{{i18n.t('分类（如 热销 / 新品 / 其他）', lang)}}" value="{{category}}" bindinput="onInput" data-field="category" class="card" style="padding: 24rpx;" />
+  <textarea placeholder="{{i18n.t('商品描述（规格、数量等）', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
   <!-- 和上面几项一样只靠框内提示，不另起小标题。
        「涉及安全须如实标注」是《店长责任告知书》里的义务，这里只提一句 -->
-  <textarea placeholder="成分与规格说明（如材质、尺寸；涉及安全的成分须如实标注）" value="{{specs}}" bindinput="onInput" data-field="specs" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
+  <textarea placeholder="{{i18n.t('成分与规格说明（如材质、尺寸；涉及安全的成分须如实标注）', lang)}}" value="{{specs}}" bindinput="onInput" data-field="specs" class="card" style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
   <view class="card avail-row">
     <view>
-      <view>当前上架</view>
-      <view class="text-light avail-hint">今日是否售罄</view>
+      <view>{{i18n.t('当前上架', lang)}}</view>
+      <view class="text-light avail-hint">{{i18n.t('今日是否售罄', lang)}}</view>
     </view>
     <switch checked="{{available}}" color="#7A0019" bindchange="onAvailableChange" />
   </view>
 
-  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">保存</button>
+  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">{{i18n.t('保存', lang)}}</button>
 </view>

@@ -1,3 +1,4 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
 
@@ -5,17 +6,17 @@
   <block wx:if="{{!shop}}">
     <view class="empty-apply">
       <view class="empty-emoji"><image src="/images/modules/shop.svg" class="ico-lg"></image></view>
-      <view class="empty-title">你还没有小店</view>
-      <view class="text-light empty-desc">凭开店码开店，之后就能开团接单。</view>
-      <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">开一家小店</button>
+      <view class="empty-title">{{i18n.t('你还没有小店', lang)}}</view>
+      <view class="text-light empty-desc">{{i18n.t('凭开店码开店，之后就能开团接单。', lang)}}</view>
+      <button class="btn-primary" bindtap="goToApply" style="margin-top: 40rpx;">{{i18n.t('开一家小店', lang)}}</button>
     </view>
   </block>
 
   <block wx:else>
     <!-- 被举报下架。平台不做事前审核，但举报核实后会强制关店 -->
     <view wx:if="{{shop.takedown}}" class="audit-box audit-rejected">
-      <view class="audit-title">店铺已被下架</view>
-      <view class="audit-desc">如有异议，请通过「意见反馈」联系我们。</view>
+      <view class="audit-title">{{i18n.t('店铺已被下架', lang)}}</view>
+      <view class="audit-desc">{{i18n.t('如有异议，请通过「意见反馈」联系我们。', lang)}}</view>
     </view>
 
     <view class="shop-head card">
@@ -23,15 +24,15 @@
       <view wx:else class="shop-logo shop-logo-fallback"><image src="/images/modules/shop.svg" class="ico-fill"></image></view>
       <view class="shop-meta">
         <view class="shop-name">{{shop.name}}</view>
-        <view class="text-light shop-cat">今日 {{summary.todayCount}} 单 · ${{summary.revenue}}</view>
+        <view class="text-light shop-cat">{{i18n.f('今日 {0} 单 · ${1}', lang, summary.todayCount, summary.revenue)}}</view>
       </view>
     </view>
 
     <block wx:if="{{!shop.takedown && ordering}}">
       <!-- ========== 场次 ========== -->
-      <view class="section-title section-title-bar">场次</view>
+      <view class="section-title section-title-bar">{{i18n.t('场次', lang)}}</view>
 
-      <view wx:if="{{sessions.length === 0}}" class="card text-light block-empty">在下面的日历里点一天开团</view>
+      <view wx:if="{{sessions.length === 0}}" class="card text-light block-empty">{{i18n.t('在下面的日历里点一天开团', lang)}}</view>
 
       <view wx:for="{{sessions}}" wx:key="_id" class="card session {{item.open ? '' : 'session-closed'}}">
         <view class="session-head">
@@ -45,22 +46,22 @@
             <view class="gb-bar-fill" style="width: {{item.p.pct}}%"></view>
           </view>
           <view class="gb-line">
-            <text class="gb-text">{{item.countText}}{{item.forced ? ' · 照常送' : ''}}</text>
+            <text class="gb-text">{{item.countText}}{{item.forced ? i18n.t(' · 照常送', lang) : ''}}</text>
             <text class="gb-cut">{{item.cutText}}</text>
           </view>
         </block>
         <view wx:elif="{{item.confirmLine}}" class="session-confirm">{{item.confirmLine}}</view>
 
         <view class="session-actions">
-          <view class="session-btn" bindtap="showSessionOrders" data-id="{{item._id}}">订单</view>
-          <view class="session-btn" bindtap="editSession" data-id="{{item._id}}">{{item.open ? '修改' : '设置'}}</view>
-          <view wx:if="{{item.open}}" class="session-btn" bindtap="goToPoster" data-id="{{item._id}}">海报</view>
-          <view wx:if="{{item.canForce}}" class="session-btn session-btn-hot" bindtap="forceSession" data-id="{{item._id}}">照常送</view>
+          <view class="session-btn" bindtap="showSessionOrders" data-id="{{item._id}}">{{i18n.t('订单', lang)}}</view>
+          <view class="session-btn" bindtap="editSession" data-id="{{item._id}}">{{item.open ? i18n.t('修改', lang) : i18n.t('设置', lang)}}</view>
+          <view wx:if="{{item.open}}" class="session-btn" bindtap="goToPoster" data-id="{{item._id}}">{{i18n.t('海报', lang)}}</view>
+          <view wx:if="{{item.canForce}}" class="session-btn session-btn-hot" bindtap="forceSession" data-id="{{item._id}}">{{i18n.t('照常送', lang)}}</view>
         </view>
       </view>
 
       <!-- ========== 开团日历 ========== -->
-      <view class="section-title section-title-bar">开团</view>
+      <view class="section-title section-title-bar">{{i18n.t('开团', lang)}}</view>
       <view class="card calendar">
         <view class="cal-row">
           <text wx:for="{{week}}" wx:key="*this" class="cal-week">{{item}}</text>
@@ -74,33 +75,33 @@
           </view>
         </view>
         <view class="cal-legend">
-          <text class="cal-legend-mine"></text><text>我的团</text>
-          <text class="cal-dot cal-legend-dot"></text><text>别家开团</text>
+          <text class="cal-legend-mine"></text><text>{{i18n.t('我的团', lang)}}</text>
+          <text class="cal-dot cal-legend-dot"></text><text>{{i18n.t('别家开团', lang)}}</text>
         </view>
       </view>
 
       <!-- ========== 订单 ========== -->
       <view id="orders" class="tabs">
-        <view class="tab {{tab === 'forming' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="forming">拼团中</view>
-        <view class="tab {{tab === 'pending' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="pending">待确认</view>
-        <view class="tab {{tab === 'active' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="active">进行中</view>
-        <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">已完成</view>
+        <view class="tab {{tab === 'forming' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="forming">{{i18n.t('拼团中', lang)}}</view>
+        <view class="tab {{tab === 'pending' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="pending">{{i18n.t('待确认', lang)}}</view>
+        <view class="tab {{tab === 'active' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="active">{{i18n.t('进行中', lang)}}</view>
+        <view class="tab {{tab === 'done' ? 'tab-on' : ''}}" bindtap="switchTab" data-tab="done">{{i18n.t('已完成', lang)}}</view>
       </view>
 
-      <view wx:if="{{filter}}" class="filter" bindtap="clearFilter">只看 {{filter.text}} 这一场 <text class="filter-x">×</text></view>
+      <view wx:if="{{filter}}" class="filter" bindtap="clearFilter">{{i18n.f('只看 {0} 这一场', lang, filter.text)}} <text class="filter-x">×</text></view>
 
-      <view wx:if="{{orders.length === 0}}" class="text-light empty-orders">暂无订单</view>
+      <view wx:if="{{orders.length === 0}}" class="text-light empty-orders">{{i18n.t('暂无订单', lang)}}</view>
 
       <view wx:for="{{orders}}" wx:key="_id" class="card order">
         <view class="order-head">
           <view class="order-id">#{{item.shortId}}</view>
-          <view class="text-light order-time">{{item.dayText}} · {{item.timeText}} 下单</view>
+          <view class="text-light order-time">{{i18n.f('{0} · {1} 下单', lang, item.dayText, item.timeText)}}</view>
           <view class="order-total">${{item.total}}</view>
         </view>
 
-        <view class="order-buyer">{{item.buyer_nickname || '买家'}} · {{item.pickup_info}}</view>
+        <view class="order-buyer">{{item.buyer_nickname || i18n.t('买家', lang)}} · {{item.pickup_info}}</view>
         <!-- 买家选了「其他」手填的地址：不在楼栋名单里，确认能送到再接 -->
-        <view wx:if="{{item.address_unlisted}}" class="order-unlisted">名单外地址，先确认能不能送到</view>
+        <view wx:if="{{item.address_unlisted}}" class="order-unlisted">{{i18n.t('名单外地址，先确认能不能送到', lang)}}</view>
 
         <view class="order-items">
           <view wx:for="{{item.items}}" wx:for-item="product" wx:key="name" class="order-product">
@@ -109,7 +110,7 @@
           </view>
         </view>
 
-        <view wx:if="{{item.note}}" class="order-note">备注：{{item.note}}</view>
+        <view wx:if="{{item.note}}" class="order-note">{{i18n.f('备注：{0}', lang, item.note)}}</view>
         <!-- 买家附的图：要确认款式尺寸的店，这几张比那段文字管用 -->
         <view wx:if="{{item.note_images.length}}" class="order-note-imgs">
           <image wx:for="{{item.note_images}}" wx:for-item="img" wx:key="*this"
@@ -119,33 +120,33 @@
 
         <view class="order-contact">
           <!-- 2026-10-13 起下单填邮箱，之前的老单只有微信号 -->
-          <text wx:if="{{item.contact_email}}" class="text-light">邮箱：{{item.contact_email}}</text>
-          <text wx:else class="text-light">微信：{{item.contact_wechat || '未填写'}}</text>
-          <text wx:if="{{item.contact_email || item.contact_wechat}}" class="order-copy" bindtap="copyContact" data-text="{{item.contact_email || item.contact_wechat}}">复制</text>
+          <text wx:if="{{item.contact_email}}" class="text-light">{{i18n.f('邮箱：{0}', lang, item.contact_email)}}</text>
+          <text wx:else class="text-light">{{i18n.f('微信：{0}', lang, item.contact_wechat || i18n.t('未填写', lang))}}</text>
+          <text wx:if="{{item.contact_email || item.contact_wechat}}" class="order-copy" bindtap="copyContact" data-text="{{item.contact_email || item.contact_wechat}}">{{i18n.t('复制', lang)}}</text>
         </view>
         <view wx:if="{{item.phone}}" class="order-contact">
-          <text class="text-light">手机：{{item.phone}}</text>
-          <text class="order-copy" bindtap="callBuyer" data-phone="{{item.phone}}">拨打</text>
+          <text class="text-light">{{i18n.f('手机：{0}', lang, item.phone)}}</text>
+          <text class="order-copy" bindtap="callBuyer" data-phone="{{item.phone}}">{{i18n.t('拨打', lang)}}</text>
         </view>
 
         <view wx:if="{{item.status === 'cancelled' && item.cancel_reason}}" class="order-cancel">
-          取消原因：{{item.cancel_reason}}
+          {{i18n.f('取消原因：{0}', lang, item.cancel_reason)}}
         </view>
 
         <!-- 按钮跟着状态走，一次最多两个 -->
         <view class="order-actions">
           <block wx:if="{{item.status === 'forming'}}">
-            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">拒单</button>
+            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">{{i18n.t('拒单', lang)}}</button>
           </block>
           <block wx:elif="{{item.status === 'confirming' || item.status === 'pending'}}">
-            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">取消</button>
-            <button class="btn-primary btn-sm" bindtap="confirmOrder" data-id="{{item._id}}">确认订单</button>
+            <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}">{{i18n.t('取消', lang)}}</button>
+            <button class="btn-primary btn-sm" bindtap="confirmOrder" data-id="{{item._id}}">{{i18n.t('确认订单', lang)}}</button>
           </block>
           <block wx:elif="{{item.status === 'accepted'}}">
-            <button class="btn-primary btn-sm" bindtap="startDelivery" data-id="{{item._id}}">开始配送</button>
+            <button class="btn-primary btn-sm" bindtap="startDelivery" data-id="{{item._id}}">{{i18n.t('开始配送', lang)}}</button>
           </block>
           <block wx:elif="{{item.status === 'delivering'}}">
-            <button class="btn-primary btn-sm" bindtap="completeOrder" data-id="{{item._id}}">已送达</button>
+            <button class="btn-primary btn-sm" bindtap="completeOrder" data-id="{{item._id}}">{{i18n.t('已送达', lang)}}</button>
           </block>
           <block wx:else>
             <view class="text-light order-done">{{item.statusText}}</view>
@@ -157,15 +158,15 @@
     <view class="entries">
       <view class="entry card" bindtap="goToMenu">
         <view class="entry-icon"><image src="/images/modules/shop.svg" class="ico-md"></image></view>
-        <view class="entry-label">商品管理</view>
+        <view class="entry-label">{{i18n.t('商品管理', lang)}}</view>
       </view>
       <view class="entry card" bindtap="goToSettings">
         <view class="entry-icon"><image src="/images/ui/gear.svg" class="ico-md"></image></view>
-        <view class="entry-label">小店设置</view>
+        <view class="entry-label">{{i18n.t('小店设置', lang)}}</view>
       </view>
       <view wx:if="{{ordering}}" class="entry card" bindtap="enableOrderAlert">
         <view class="entry-icon"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
-        <view class="entry-label">新单提醒</view>
+        <view class="entry-label">{{i18n.t('新单提醒', lang)}}</view>
       </view>
     </view>
   </block>

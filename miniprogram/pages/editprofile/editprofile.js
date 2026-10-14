@@ -1,5 +1,6 @@
 const { myProfile, fetchMyProfile, readCachedProfile, writeCachedProfile } = require('../../utils/user.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { t } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -52,20 +53,20 @@ Page({
     const email = this.data.emailInput.trim().toLowerCase()
     // 和 emailVerify 的 STUDENT_RE 同一条规则，服务端那边才是闸门
     if (!/@(?:[a-z0-9-]+\.)+edu(?:\.[a-z]{2})?$/i.test(email)) {
-      wx.showToast({ title: '请使用学校邮箱（.edu）', icon: 'none' })
+      wx.showToast({ title: t('请使用学校邮箱（.edu）'), icon: 'none' })
       return
     }
     this.sending = true
-    wx.showLoading({ title: '发送中', mask: true })
+    wx.showLoading({ title: t('发送中'), mask: true })
     try {
       const res = await wx.cloud.callFunction({ name: 'emailVerify', data: { action: 'send', email: email } })
       const r = (res && res.result) || {}
       wx.hideLoading()
       if (!r.success) {
-        wx.showToast({ title: r.message || '发送失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '发送失败'), icon: 'none' })
         return
       }
-      wx.showToast({ title: '已发送，看看邮箱', icon: 'none' })
+      wx.showToast({ title: t('已发送，看看邮箱'), icon: 'none' })
       this.setData({ codeSent: true, countdown: 60 })
       clearInterval(this.timer)
       this.timer = setInterval(() => {
@@ -76,7 +77,7 @@ Page({
     } catch (err) {
       console.error('发送验证码失败：', err)
       wx.hideLoading()
-      wx.showToast({ title: '发送失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('发送失败，请重试'), icon: 'none' })
     } finally {
       this.sending = false
     }
@@ -86,11 +87,11 @@ Page({
     if (this.verifying) return
     const email = this.data.emailInput.trim().toLowerCase()
     if (!/^\d{6}$/.test(this.data.code)) {
-      wx.showToast({ title: '请填写 6 位验证码', icon: 'none' })
+      wx.showToast({ title: t('请填写 6 位验证码'), icon: 'none' })
       return
     }
     this.verifying = true
-    wx.showLoading({ title: '验证中', mask: true })
+    wx.showLoading({ title: t('验证中'), mask: true })
     try {
       const res = await wx.cloud.callFunction({
         name: 'emailVerify',
@@ -99,7 +100,7 @@ Page({
       const r = (res && res.result) || {}
       wx.hideLoading()
       if (!r.success) {
-        wx.showToast({ title: r.message || '验证失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '验证失败'), icon: 'none' })
         return
       }
 
@@ -117,12 +118,12 @@ Page({
         email: r.email, emailVerified: true, isStudent: !!r.isStudent,
         changingEmail: false, code: '', codeSent: false, countdown: 0
       })
-      wx.showToast({ title: '验证成功', icon: 'success' })
+      wx.showToast({ title: t('验证成功'), icon: 'success' })
       if (this.backAfterVerify) setTimeout(() => wx.navigateBack(), 1000)
     } catch (err) {
       console.error('验证邮箱失败：', err)
       wx.hideLoading()
-      wx.showToast({ title: '验证失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('验证失败，请重试'), icon: 'none' })
     } finally {
       this.verifying = false
     }
@@ -144,7 +145,7 @@ Page({
   save: async function () {
     if (this.data.saving) return
     this.setData({ saving: true })
-    wx.showLoading({ title: '保存中', mask: true })
+    wx.showLoading({ title: t('保存中'), mask: true })
 
     try {
       // 昵称和微信号会展示给别的同学看，属于 UGC，要过内容安全检测
@@ -185,15 +186,15 @@ Page({
         const app = getApp()
         if (app.globalData) app.globalData.profile = cached
 
-        wx.showToast({ title: '已保存', icon: 'success' })
+        wx.showToast({ title: t('已保存'), icon: 'success' })
         setTimeout(() => wx.navigateBack(), 1000)
       } else {
-        wx.showToast({ title: '保存失败', icon: 'none' })
+        wx.showToast({ title: t('保存失败'), icon: 'none' })
       }
     } catch (err) {
       console.error('保存资料失败：', err)
       wx.hideLoading()
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('保存失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ saving: false })
     }
@@ -213,9 +214,9 @@ Page({
   deleteAccount: function () {
     if (this.data.deletingAccount) return
     wx.showModal({
-      title: '注销账号',
-      content: '资料、邮箱、发布的内容和留言会删掉，不能恢复。订单记录按法律要求保留三年。',
-      confirmText: '注销',
+      title: t('注销账号'),
+      content: t('资料、邮箱、发布的内容和留言会删掉，不能恢复。订单记录按法律要求保留三年。'),
+      confirmText: t('注销'),
       confirmColor: '#C8102E',
       success: res => {
         if (!res.confirm) return
@@ -223,7 +224,7 @@ Page({
         wx.cloud.callFunction({ name: 'deleteAccount' }).then(r => {
           const result = (r && r.result) || {}
           if (!result.success) {
-            wx.showModal({ title: '暂时不能注销', content: result.message || '注销失败，请重试', showCancel: false })
+            wx.showModal({ title: t('暂时不能注销'), content: t(result.message || '注销失败，请重试'), showCancel: false })
             return
           }
           // 本机缓存的资料、购物车、上次填的取货点都是这个账号的，一起清掉。
@@ -240,11 +241,11 @@ Page({
           app.globalData.roles = []
           app.globalData.profileReady = fresh
           app.globalData.profileFresh = fresh
-          wx.showToast({ title: '已注销', icon: 'success' })
+          wx.showToast({ title: t('已注销'), icon: 'success' })
           setTimeout(() => wx.reLaunch({ url: '/pages/home/home' }), 1000)
         }).catch(err => {
           console.error('注销失败：', err)
-          wx.showToast({ title: '注销失败，请重试', icon: 'none' })
+          wx.showToast({ title: t('注销失败，请重试'), icon: 'none' })
         }).then(() => {
           this.setData({ deletingAccount: false })
         })

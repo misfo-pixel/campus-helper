@@ -5,9 +5,10 @@
 const { isDemand, rentText } = require('../../utils/kinds.js')
 const { thumbOf } = require('../../utils/thumb.js')
 const { toLocalPath } = require('../../utils/poster.js')
-const { withCover, storeTitle } = require('../../utils/share.js')
+const { withCover, withPromo, storeTitle } = require('../../utils/share.js')
 const { stashPreview } = require('../../utils/preview.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
+const { t, f } = require('../../i18n/index.js')
 
 const app = getApp()
 
@@ -39,7 +40,7 @@ function countPhrase(buckets, keys) {
     .filter(k => buckets[k].length > 0)
     .map(k => {
       const n = buckets[k].length
-      return (n >= PAGE_LIMIT ? PAGE_LIMIT + '+' : n) + ' ' + UNITS[k] + LABELS[k]
+      return f('{0} ' + UNITS[k] + LABELS[k], n >= PAGE_LIMIT ? PAGE_LIMIT + '+' : n)
     })
     .join('、')
 }
@@ -50,35 +51,35 @@ function normalize(type, doc) {
   const cover = (doc.images && doc.images[0]) || ''   // 转发封面要大图，缩略图放大会糊
   // 同一个页签里「在卖」和「求购」会混着排，价格得能分辨出是要价还是预算
   const demand = isDemand(doc.kind)
-  const money = demand ? '预算 $' : '$'
+  const money = demand ? t('预算 $') : '$'
 
   if (type === 'sublet') {
     return {
-      _id: doc._id, type: 'sublet', label: demand ? '求租' : LABELS.sublet, image: image, cover: cover,
+      _id: doc._id, type: 'sublet', label: t(demand ? '求租' : LABELS.sublet), image: image, cover: cover,
       title: doc.title,
-      price: money + rentText(doc) + '/月',
+      price: money + rentText(doc) + t('/月'),
       sub: [doc.room_type, doc.address].filter(Boolean).join(' · ')
     }
   }
   if (type === 'task') {
     return {
-      _id: doc._id, type: 'task', label: LABELS.task, image: image, cover: cover,
+      _id: doc._id, type: 'task', label: t(LABELS.task), image: image, cover: cover,
       title: doc.title,
       price: '$' + doc.reward,
-      sub: doc.deadline ? '截止 ' + doc.deadline : ''
+      sub: doc.deadline ? f('截止 {0}', doc.deadline) : ''
     }
   }
   if (type === 'group') {
     // 没有价钱，「找搭子 / 长期群」放在价钱那一行
     return {
-      _id: doc._id, type: 'group', label: LABELS.group, image: image, cover: cover,
+      _id: doc._id, type: 'group', label: t(LABELS.group), image: image, cover: cover,
       title: doc.title,
       price: '',
-      sub: doc.kind === 'club' ? '长期群' : ('找搭子' + (doc.event_date ? ' · ' + doc.event_date : ''))
+      sub: doc.kind === 'club' ? t('长期群') : (t('找搭子') + (doc.event_date ? ' · ' + doc.event_date : ''))
     }
   }
   return {
-    _id: doc._id, type: 'item', label: demand ? '求购' : LABELS.item, image: image, cover: cover,
+    _id: doc._id, type: 'item', label: t(demand ? '求购' : LABELS.item), image: image, cover: cover,
     title: doc.title,
     price: money + doc.price,
     sub: ''
@@ -157,7 +158,7 @@ Page({
     this.hotId = r.hot_item || ''
     this.setData({ seller: r.seller || {}, loading: false })
     this.applyTab(this.data.tab)
-    wx.setNavigationBarTitle({ title: ((r.seller || {}).nickname || '同学') + '的主页' })
+    wx.setNavigationBarTitle({ title: f('{0}的主页', (r.seller || {}).nickname || t('同学')) })
   },
 
   applyTab: function (tab) {
@@ -167,7 +168,7 @@ Page({
 
     const tabs = TAB_ORDER.map(key => ({
       key: key,
-      label: key === 'all' ? '全部' : LABELS[key],
+      label: t(key === 'all' ? '全部' : LABELS[key]),
       count: key === 'all' ? all.length : b[key].length
     }))
 
@@ -187,7 +188,9 @@ Page({
     const fileID = (first && first.cover) || ''
     if (fileID !== this.coverID) {
       this.coverID = fileID
-      this.cover = toLocalPath(this.data.isMe ? fileID : (first.image || fileID))
+      const cover = toLocalPath(this.data.isMe ? fileID : (first.image || fileID))
+      // 活动贴纸只贴二手的封面
+      this.cover = first.type === 'item' ? withPromo(this.selectComponent('#gs'), cover) : cover
     }
     return fileID
   },
@@ -209,7 +212,7 @@ Page({
   // 分享当前页签：停在「转租」时分享出去，别人点开也停在「转租」。
   // 页面本身无状态，靠 URL 参数还原。
   onShareAppMessage: function () {
-    const name = this.data.seller.nickname || '同学'
+    const name = this.data.seller.nickname || t('同学')
     const tab = this.data.tab
     const b = this.buckets || emptyBuckets()
     const counts = countPhrase(b, tab === 'all' ? TYPES : [tab])
@@ -219,8 +222,8 @@ Page({
     const title = hot && (this.raw || {})[hot._id]
       ? storeTitle(this.raw[hot._id], b.item.length)
       : counts
-        ? name + ' 发布了 ' + counts + '，来看看吧'
-        : name + ' 在明尼助手' + (tab === 'all' ? '发布的内容' : ('的' + LABELS[tab]))
+        ? f('{0} 发布了 {1}，来看看吧', name, counts)
+        : (tab === 'all' ? f('{0} 在明尼助手发布的内容', name) : f('{0} 在明尼助手的' + LABELS[tab], name))
     // 不指定 imageUrl 的话，微信会自动截页面顶部——截到的是头像和页签，
     // 一张灰白的界面图。拿最可能卖掉的那件（没有就第一件）的实拍图当封面
     const fileID = this.coverOf(hot || (this.data.shown || [])[0])

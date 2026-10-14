@@ -1,6 +1,7 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <skeleton wx:if="{{loading}}" type="text" />
-  <view wx:elif="{{orders.length === 0}}" class="text-light empty">暂无订单</view>
+  <view wx:elif="{{orders.length === 0}}" class="text-light empty">{{i18n.t('暂无订单', lang)}}</view>
 
   <view wx:for="{{orders}}" wx:key="_id" class="card order">
     <view class="order-head">
@@ -17,8 +18,8 @@
     </view>
 
     <view class="order-total">
-      合计 <text class="order-amount">${{item.total}}</text>
-      <text wx:if="{{item.delivery_fee_charged > 0}}" class="text-light order-fee">（含配送费 ${{item.delivery_fee_charged}}）</text>
+      {{i18n.t('合计', lang)}} <text class="order-amount">${{item.total}}</text>
+      <text wx:if="{{item.delivery_fee_charged > 0}}" class="text-light order-fee">{{i18n.f('（含配送费 ${0}）', lang, item.delivery_fee_charged)}}</text>
     </view>
 
     <!-- 拼团中：进度 + 喊人上车 -->
@@ -28,14 +29,14 @@
       </view>
       <view class="gb-line">
         <text class="{{item.p.open ? 'gb-text-quiet' : 'gb-text'}}">{{item.hint}}</text>
-        <button class="order-share" open-type="share" data-index="{{index}}">喊人上车</button>
+        <button class="order-share" open-type="share" data-index="{{index}}">{{i18n.t('喊人上车', lang)}}</button>
       </view>
     </block>
     <view wx:elif="{{item.hint}}" class="order-hint {{item.status === 'confirming' ? 'order-hint-hot' : ''}}">{{item.hint}}</view>
 
     <!-- 下单时自己填的补充说明。留在这里是为了「我当时写了啥」随时翻得到 -->
     <view wx:if="{{item.note}}" class="note-box">
-      <view class="note-label">我的补充说明</view>
+      <view class="note-label">{{i18n.t('我的补充说明', lang)}}</view>
       <view class="note-text">{{item.note}}</view>
       <view wx:if="{{item.note_images.length}}" class="note-imgs">
         <image wx:for="{{item.note_images}}" wx:for-item="img" wx:key="*this"
@@ -44,15 +45,19 @@
       </view>
     </view>
 
-    <view wx:if="{{item.cancel_reason}}" class="order-cancel">取消原因：{{item.cancel_reason}}</view>
+    <view wx:if="{{item.cancel_reason}}" class="order-cancel">{{i18n.f('取消原因：{0}', lang, item.cancel_reason)}}</view>
 
-    <view class="order-contact">
-      <text class="text-light">店长微信：{{item.shop_wechat || '未填写'}}</text>
-      <text wx:if="{{item.shop_wechat}}" class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">复制微信号</text>
+    <view wx:if="{{item.shop_phone}}" class="order-contact">
+      <text class="text-light">{{i18n.f('店长手机：{0}', lang, item.shop_phone)}}</text>
+      <text class="order-copy" bindtap="callShop" data-phone="{{item.shop_phone}}">{{i18n.t('拨打', lang)}}</text>
+    </view>
+    <view wx:elif="{{item.shop_wechat}}" class="order-contact">
+      <text class="text-light">{{i18n.f('店长微信：{0}', lang, item.shop_wechat)}}</text>
+      <text class="order-copy" bindtap="copyText" data-text="{{item.shop_wechat}}">{{i18n.t('复制微信号', lang)}}</text>
     </view>
 
     <view wx:if="{{item.status === 'forming' || item.status === 'confirming' || item.status === 'pending'}}" class="order-actions">
-      <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}" data-status="{{item.status}}">取消订单</button>
+      <button class="btn-sm" bindtap="cancelOrder" data-id="{{item._id}}" data-status="{{item.status}}">{{i18n.t('取消订单', lang)}}</button>
     </view>
   </view>
 </view>

@@ -7,6 +7,7 @@
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { ORDERING_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
 const { uploadShopImage, validatePoints } = require('../../utils/shopForm.js')
+const { t } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -22,7 +23,7 @@ Page({
     tempLogo: '',      // 本次新选的本地文件，提交时才上传
     description: '',
     min_order: '',
-    contact_wechat: '',
+    contact_phone: '',
     slogan: '',        // 广告语：海报大标题、店长自己转发时的卡片标题
 
     // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
@@ -58,7 +59,7 @@ Page({
       // 会把一个开着店的店长踢进开店向导，让他以为店没了。
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
 
@@ -76,7 +77,7 @@ Page({
         logo: shop.logo || '',
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
-        contact_wechat: shop.contact_wechat || '',
+        contact_phone: shop.contact_phone || '',
         slogan: shop.slogan || '',
         noteRequired: shop.note_required === true,
         note_hint: shop.note_hint || '',
@@ -91,7 +92,7 @@ Page({
     }).catch(err => {
       console.error('读取小店失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -139,29 +140,30 @@ Page({
 
     // 漏填时指名道姓，而不是甩一句「请填完必填项」让店长自己回去找
     if (!d.name) {
-      wx.showToast({ title: '请填写小店名称', icon: 'none' })
+      wx.showToast({ title: t('请填写小店名称'), icon: 'none' })
       return
     }
-    if (!d.contact_wechat) {
-      wx.showToast({ title: '请填写联系微信', icon: 'none' })
+    const phoneDigits = d.contact_phone.replace(/\D/g, '')
+    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+      wx.showToast({ title: t('请填写正确的手机号'), icon: 'none' })
       return
     }
     if (d.needsDelivery && !d.exactAddress) {
       // 云函数那边也拦一道，这里先拦是为了不让店长白等一个来回
       const bad = validatePoints(d.planPoints)
       if (bad) {
-        wx.showToast({ title: bad, icon: 'none' })
+        wx.showToast({ title: t(bad), icon: 'none' })
         return
       }
     }
 
     this.setData({ saving: true })
-    wx.showLoading({ title: '保存中...', mask: true })
+    wx.showLoading({ title: t('保存中...'), mask: true })
 
     try {
       // 小店资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.slogan, d.description, d.contact_wechat, d.note_hint]
+        texts: [d.name, d.slogan, d.description, d.note_hint]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -182,7 +184,7 @@ Page({
           logo: logo,
           description: d.description,
           min_order: d.min_order,
-          contact_wechat: d.contact_wechat,
+          contact_phone: d.contact_phone,
           slogan: d.slogan,
           note_required: d.noteRequired,
           note_hint: d.noteRequired ? d.note_hint : '',
@@ -196,16 +198,16 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '保存失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '保存失败'), icon: 'none' })
         return
       }
 
-      wx.showToast({ title: '已保存', icon: 'success' })
+      wx.showToast({ title: t('已保存'), icon: 'success' })
       setTimeout(() => wx.navigateBack(), 1000)
     } catch (err) {
       wx.hideLoading()
       console.error('保存小店失败：', err)
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('保存失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ saving: false })
     }
@@ -215,9 +217,9 @@ Page({
   removeShop: function () {
     if (this.data.deleting) return
     wx.showModal({
-      title: '删除小店',
-      content: '店铺、商品、场次和开团订阅会一起删掉，不能恢复。订单记录会保留。',
-      confirmText: '删除',
+      title: t('删除小店'),
+      content: t('店铺、商品、场次和开团订阅会一起删掉，不能恢复。订单记录会保留。'),
+      confirmText: t('删除'),
       confirmColor: '#C8102E',
       success: res => {
         if (!res.confirm) return
@@ -225,14 +227,14 @@ Page({
         wx.cloud.callFunction({ name: 'shopManage', data: { action: 'remove' } }).then(r => {
           const result = (r && r.result) || {}
           if (!result.success) {
-            wx.showModal({ title: '删不了', content: result.message || '删除失败，请重试', showCancel: false })
+            wx.showModal({ title: t('删不了'), content: t(result.message || '删除失败，请重试'), showCancel: false })
             return
           }
-          wx.showToast({ title: '已删除', icon: 'success' })
+          wx.showToast({ title: t('已删除'), icon: 'success' })
           setTimeout(() => wx.switchTab({ url: '/pages/profile/profile' }), 1000)
         }).catch(err => {
           console.error('删除小店失败：', err)
-          wx.showToast({ title: '删除失败，请重试', icon: 'none' })
+          wx.showToast({ title: t('删除失败，请重试'), icon: 'none' })
         }).then(() => {
           this.setData({ deleting: false })
         })

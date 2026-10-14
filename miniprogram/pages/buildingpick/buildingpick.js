@@ -5,8 +5,9 @@
 // 名单里找不到的楼可以选「其他」手填：这一单店长会看到「名单外地址」，
 // 自己判断送不送得到；下单时云函数顺手写一条意见反馈，管理员核实后加进名单。
 // 传回去的 _id 是 'other'，name 是买家填的地址。
+const { t } = require('../../i18n/index.js')
 
-const KIND_TEXT = { campus: '教学楼', dorm: '宿舍', apartment: '公寓' }
+const KIND_TEXT = { campus: t('教学楼'), dorm: t('宿舍'), apartment: t('公寓') }
 
 Page({
   data: {
@@ -29,7 +30,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false, loadError: true })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || t('读取失败')), icon: 'none' })
         return
       }
       this.areas = r.areas || []
@@ -41,7 +42,7 @@ Page({
     }).catch(err => {
       console.error('读取楼栋失败：', err)
       this.setData({ loading: false, loadError: true })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -74,14 +75,14 @@ Page({
 
   pickOther: function () {
     wx.showModal({
-      title: '输入你的地址',
+      title: t('输入你的地址'),
       editable: true,
-      placeholderText: '公寓名或街道门牌，如 1234 SE 5th St',
+      placeholderText: t('公寓名或街道门牌，如 1234 SE 5th St'),
       success: res => {
         const text = String(res.content || '').trim()
         if (!res.confirm) return
         if (text.length < 4) {
-          wx.showToast({ title: '地址写完整一点', icon: 'none' })
+          wx.showToast({ title: t('地址写完整一点'), icon: 'none' })
           return
         }
         const channel = this.getOpenerEventChannel && this.getOpenerEventChannel()

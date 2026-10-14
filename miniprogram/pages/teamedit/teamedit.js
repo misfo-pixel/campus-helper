@@ -5,6 +5,7 @@
 // 除此之外这里管队伍本身：叫什么、找谁、钱打到哪、谁在队里。
 
 const { ensureContentOk } = require('../../utils/contentCheck.js')
+const { t, f } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -67,7 +68,7 @@ Page({
 
   fail: function (message) {
     this.setData({ loading: false, loadError: true })
-    wx.showToast({ title: message, icon: 'none' })
+    wx.showToast({ title: t(message), icon: 'none' })
   },
 
   retry: function () {
@@ -85,24 +86,24 @@ Page({
     if (d.saving) return
 
     if (d.isNew && !d.create_code.trim()) {
-      wx.showToast({ title: '请填写开队码', icon: 'none' })
+      wx.showToast({ title: t('请填写开队码'), icon: 'none' })
       return
     }
     if (!d.name.trim()) {
-      wx.showToast({ title: '请填写队伍名称', icon: 'none' })
+      wx.showToast({ title: t('请填写队伍名称'), icon: 'none' })
       return
     }
     if (!d.contact_wechat.trim()) {
-      wx.showToast({ title: '请填写队长微信', icon: 'none' })
+      wx.showToast({ title: t('请填写队长微信'), icon: 'none' })
       return
     }
     if (!d.payment_note.trim()) {
-      wx.showToast({ title: '请填写收款方式', icon: 'none' })
+      wx.showToast({ title: t('请填写收款方式'), icon: 'none' })
       return
     }
 
     this.setData({ saving: true })
-    wx.showLoading({ title: d.isNew ? '创建中' : '保存中', mask: true })
+    wx.showLoading({ title: t(d.isNew ? '创建中' : '保存中'), mask: true })
 
     try {
       // 队伍名和简介会展示给店长看，属于 UGC
@@ -125,27 +126,27 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '提交失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '提交失败'), icon: 'none' })
         return
       }
 
       if (d.isNew) {
         // 没有核对这一步了：建完就能被店长选到
         wx.showModal({
-          title: '队伍建好了',
-          content: '店长现在就能选到你们。有人发来配送请求时，会出现在配送工作台。',
+          title: t('队伍建好了'),
+          content: t('店长现在就能选到你们。有人发来配送请求时，会出现在配送工作台。'),
           showCancel: false,
-          confirmText: '知道了',
+          confirmText: t('知道了'),
           success: () => this.load()
         })
       } else {
-        wx.showToast({ title: '已保存', icon: 'success' })
+        wx.showToast({ title: t('已保存'), icon: 'success' })
         this.load()
       }
     } catch (err) {
       wx.hideLoading()
       console.error('保存队伍失败：', err)
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('保存失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ saving: false })
     }
@@ -156,27 +157,27 @@ Page({
     if (!code) return
     wx.setClipboardData({
       data: code,
-      success: () => wx.showToast({ title: '邀请码已复制', icon: 'success' })
+      success: () => wx.showToast({ title: t('邀请码已复制'), icon: 'success' })
     })
   },
 
   resetCode: function () {
     wx.showModal({
-      title: '重置邀请码',
-      content: '换一个新码，旧码立刻失效。已经在队里的人不受影响。',
+      title: t('重置邀请码'),
+      content: t('换一个新码，旧码立刻失效。已经在队里的人不受影响。'),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({ name: 'deliveryManage', data: { action: 'resetCode' } }).then(r => {
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已重置', icon: 'success' })
+            wx.showToast({ title: t('已重置'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: result.message || '重置失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '重置失败'), icon: 'none' })
           }
         }).catch(err => {
           console.error('重置邀请码失败：', err)
-          wx.showToast({ title: '重置失败', icon: 'none' })
+          wx.showToast({ title: t('重置失败'), icon: 'none' })
         })
       }
     })
@@ -187,12 +188,12 @@ Page({
   // 所以这条路必须有。按微信号找人——对方得先在「编辑资料」里填过。
   addMember: function () {
     wx.showModal({
-      title: '添加队员',
+      title: t('添加队员'),
       editable: true,
-      placeholderText: '输入对方的微信号',
+      placeholderText: t('输入对方的微信号'),
       success: res => {
         if (!res.confirm || !res.content) return
-        wx.showLoading({ title: '添加中', mask: true })
+        wx.showLoading({ title: t('添加中'), mask: true })
         wx.cloud.callFunction({
           name: 'deliveryManage',
           data: { action: 'addMemberByWechat', wechat: res.content }
@@ -200,19 +201,19 @@ Page({
           wx.hideLoading()
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已添加 ' + result.nickname, icon: 'none' })
+            wx.showToast({ title: f('已添加 {0}', result.nickname), icon: 'none' })
             this.load()
           } else {
             wx.showModal({
-              title: '没能添加',
-              content: result.message || '添加失败',
+              title: t('没能添加'),
+              content: t(result.message || '添加失败'),
               showCancel: false
             })
           }
         }).catch(err => {
           wx.hideLoading()
           console.error('添加队员失败：', err)
-          wx.showToast({ title: '添加失败', icon: 'none' })
+          wx.showToast({ title: t('添加失败'), icon: 'none' })
         })
       }
     })
@@ -220,10 +221,10 @@ Page({
 
   removeMember: function (e) {
     const openid = e.currentTarget.dataset.openid
-    const nickname = e.currentTarget.dataset.nickname || '这名队员'
+    const nickname = e.currentTarget.dataset.nickname || t('这名队员')
     wx.showModal({
-      title: '移出队伍',
-      content: '把' + nickname + '移出队伍？他已经领的单不会受影响。',
+      title: t('移出队伍'),
+      content: f('把{0}移出队伍？他已经领的单不会受影响。', nickname),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({
@@ -232,14 +233,14 @@ Page({
         }).then(r => {
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已移出', icon: 'success' })
+            wx.showToast({ title: t('已移出'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: result.message || '操作失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '操作失败'), icon: 'none' })
           }
         }).catch(err => {
           console.error('移除成员失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })
@@ -247,21 +248,21 @@ Page({
 
   quitTeam: function () {
     wx.showModal({
-      title: '退出队伍',
-      content: '退出后就看不到这个队的配送单了。确定吗？',
+      title: t('退出队伍'),
+      content: t('退出后就看不到这个队的配送单了。确定吗？'),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({ name: 'deliveryManage', data: { action: 'removeMember' } }).then(r => {
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已退出', icon: 'success' })
+            wx.showToast({ title: t('已退出'), icon: 'success' })
             setTimeout(() => wx.navigateBack(), 800)
           } else {
-            wx.showToast({ title: result.message || '操作失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '操作失败'), icon: 'none' })
           }
         }).catch(err => {
           console.error('退出失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })

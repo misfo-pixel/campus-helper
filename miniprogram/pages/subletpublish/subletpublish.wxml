@@ -1,18 +1,19 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!-- 卧室/卫生间两个下拉。转租时放在「基本信息」里必填，求租时放在「详细信息」里选填，两处共用这一份。
      求租的下拉最前面多一个「不限」，下标怎么错开见 subletpublish.js 的 pickedIndex -->
 <template name="rooms">
   <view class="form-pair">
     <picker mode="selector" range="{{demand ? bedroomsAny : bedrooms}}" value="{{demand ? (bedroomIndex === null ? 0 : bedroomIndex + 1) : bedroomIndex}}" bindchange="onBedroomChange" class="form-pair-item">
       <view class="form-row">
-        <text class="form-row-label">卧室</text>
-        <text class="form-row-value {{bedroomIndex === null ? 'form-row-empty' : ''}}">{{bedroomIndex === null ? (demand ? '不限' : '请选择') : (bedrooms[bedroomIndex] === 'Studio' ? 'Studio' : bedrooms[bedroomIndex] + ' 室')}}</text>
+        <text class="form-row-label">{{i18n.t('卧室', lang)}}</text>
+        <text class="form-row-value {{bedroomIndex === null ? 'form-row-empty' : ''}}">{{bedroomIndex === null ? (demand ? i18n.t('不限', lang) : i18n.t('请选择', lang)) : (bedrooms[bedroomIndex] === 'Studio' ? 'Studio' : bedrooms[bedroomIndex] + i18n.t(' 室', lang))}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
     <picker mode="selector" range="{{demand ? bathroomsAny : bathrooms}}" value="{{demand ? (bathroomIndex === null ? 0 : bathroomIndex + 1) : bathroomIndex}}" bindchange="onBathroomChange" class="form-pair-item form-pair-right">
       <view class="form-row">
-        <text class="form-row-label">卫生间</text>
-        <text class="form-row-value {{bathroomIndex === null ? 'form-row-empty' : ''}}">{{bathroomIndex === null ? (demand ? '不限' : '请选择') : bathrooms[bathroomIndex] + ' 卫'}}</text>
+        <text class="form-row-label">{{i18n.t('卫生间', lang)}}</text>
+        <text class="form-row-value {{bathroomIndex === null ? 'form-row-empty' : ''}}">{{bathroomIndex === null ? (demand ? i18n.t('不限', lang) : i18n.t('请选择', lang)) : bathrooms[bathroomIndex] + i18n.t(' 卫', lang)}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
@@ -22,7 +23,7 @@
 <view class="page-container with-submit-bar">
   <view class="page-head">
     <view class="icon-box"><image src="/images/modules/sublet.svg"></image></view>
-    <view class="page-head-text"><view class="page-head-title">{{demand ? '发布求租' : '发布你的转租'}}</view></view>
+    <view class="page-head-text"><view class="page-head-title">{{demand ? i18n.t('发布求租', lang) : i18n.t('发布你的转租', lang)}}</view></view>
   </view>
 
   <view class="kind-switch">
@@ -33,46 +34,46 @@
     </view>
   </view>
 
-  <view class="section-title">基本信息（必填）</view>
+  <view class="section-title">{{i18n.t('基本信息（必填）', lang)}}</view>
   <view class="form-group">
-    <input placeholder="{{demand ? '求租标题（如 找3-5月学校附近转租）' : '房源标题（如 Radius 单间转租）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
-    <input wx:if="{{!demand}}" placeholder="月租（美元）" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="form-input" />
+    <input placeholder="{{demand ? i18n.t('求租标题（如 找3-5月学校附近转租）', lang) : i18n.t('房源标题（如 Radius 单间转租）', lang)}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <input wx:if="{{!demand}}" placeholder="{{i18n.t('月租（美元）', lang)}}" type="digit" value="{{rent}}" bindinput="onInput" data-field="rent" class="form-input" />
     <!-- 找房的人预算往往说不死一个数，给个区间 -->
     <view wx:else class="form-pair">
-      <input placeholder="最低月租（美元）" type="digit" value="{{rent_min}}" bindinput="onInput" data-field="rent_min" class="form-input form-pair-item" />
-      <input placeholder="最高月租（美元）" type="digit" value="{{rent_max}}" bindinput="onInput" data-field="rent_max" class="form-input form-pair-item form-pair-right" />
+      <input placeholder="{{i18n.t('最低月租（美元）', lang)}}" type="digit" value="{{rent_min}}" bindinput="onInput" data-field="rent_min" class="form-input form-pair-item" />
+      <input placeholder="{{i18n.t('最高月租（美元）', lang)}}" type="digit" value="{{rent_max}}" bindinput="onInput" data-field="rent_max" class="form-input form-pair-item form-pair-right" />
     </view>
-    <input wx:if="{{!demand}}" placeholder="详细地址 / 公寓名" value="{{address}}" bindinput="onInput" data-field="address" class="form-input" />
-    <input placeholder="{{demand ? '你的微信号（房东联系用）' : '你的微信号（租客联系用）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
+    <input wx:if="{{!demand}}" placeholder="{{i18n.t('详细地址 / 公寓名', lang)}}" value="{{address}}" bindinput="onInput" data-field="address" class="form-input" />
+    <input placeholder="{{demand ? i18n.t('你的微信号（房东联系用）', lang) : i18n.t('你的微信号（租客联系用）', lang)}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
 
     <block wx:if="{{!demand}}">
-      <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex}}" />
+      <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex, lang}}" />
     </block>
 
     <!-- 选完之后框里只剩日期，每行左边写明是哪一天。
          求租填的是「想什么时候租」，不是已经定下的租期，两边措辞分开 -->
     <picker mode="date" value="{{start_date}}" bindchange="onStartDateChange">
       <view class="form-row">
-        <text class="form-row-label">{{demand ? '希望入住' : '起租日期'}}</text>
-        <text class="form-row-value {{start_date ? '' : 'form-row-empty'}}">{{start_date || (demand ? '请选择' : '可入住那天')}}</text>
+        <text class="form-row-label">{{demand ? i18n.t('希望入住', lang) : i18n.t('起租日期', lang)}}</text>
+        <text class="form-row-value {{start_date ? '' : 'form-row-empty'}}">{{start_date || (demand ? i18n.t('请选择', lang) : i18n.t('可入住那天', lang))}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
     <picker mode="date" value="{{end_date}}" bindchange="onEndDateChange">
       <view class="form-row">
-        <text class="form-row-label">{{demand ? '希望租到' : '租期结束'}}</text>
-        <text class="form-row-value {{end_date ? '' : 'form-row-empty'}}">{{end_date || (demand ? '过了自动下架' : '到期自动下架')}}</text>
+        <text class="form-row-label">{{demand ? i18n.t('希望租到', lang) : i18n.t('租期结束', lang)}}</text>
+        <text class="form-row-value {{end_date ? '' : 'form-row-empty'}}">{{end_date || (demand ? i18n.t('过了自动下架', lang) : i18n.t('到期自动下架', lang))}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
   </view>
 
-  <view class="section-title">详细信息（选填）</view>
+  <view class="section-title">{{i18n.t('详细信息（选填）', lang)}}</view>
   <view class="form-group">
     <!-- 找房的人常常是「学校附近都行」，区域和房型不强求，放到这一节 -->
     <block wx:if="{{demand}}">
-      <input placeholder="想找的区域（如 Dinkytown 附近）" value="{{address}}" bindinput="onInput" data-field="address" class="form-input" />
-      <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex}}" />
+      <input placeholder="{{i18n.t('想找的区域（如 Dinkytown 附近）', lang)}}" value="{{address}}" bindinput="onInput" data-field="address" class="form-input" />
+      <template is="rooms" data="{{demand, bedrooms, bedroomsAny, bedroomIndex, bathrooms, bathroomsAny, bathroomIndex, lang}}" />
     </block>
 
     <view class="uploader">
@@ -89,16 +90,16 @@
     </view>
 
     <view class="form-row">
-      <text class="form-row-label">带家具</text>
+      <text class="form-row-label">{{i18n.t('带家具', lang)}}</text>
       <switch checked="{{furnished}}" bindchange="onFurnishedChange" color="#7A0019" style="margin-left: auto;" />
     </view>
 
     <view class="form-pair">
-      <input placeholder="每月水电（美元）" type="digit" value="{{utilities}}" bindinput="onInput" data-field="utilities" class="form-input form-pair-item" />
-      <input placeholder="押金（美元）" type="digit" value="{{deposit}}" bindinput="onInput" data-field="deposit" class="form-input form-pair-item form-pair-right" />
+      <input placeholder="{{i18n.t('每月水电（美元）', lang)}}" type="digit" value="{{utilities}}" bindinput="onInput" data-field="utilities" class="form-input form-pair-item" />
+      <input placeholder="{{i18n.t('押金（美元）', lang)}}" type="digit" value="{{deposit}}" bindinput="onInput" data-field="deposit" class="form-input form-pair-item form-pair-right" />
     </view>
-    <textarea placeholder="室友情况（几人合租、性别、作息等）" value="{{roommate_info}}" bindinput="onInput" data-field="roommate_info" class="form-textarea" style="height: 120rpx;"></textarea>
-    <textarea placeholder="其他说明" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea" style="height: 120rpx;"></textarea>
+    <textarea placeholder="{{i18n.t('室友情况（几人合租、性别、作息等）', lang)}}" value="{{roommate_info}}" bindinput="onInput" data-field="roommate_info" class="form-textarea" style="height: 120rpx;"></textarea>
+    <textarea placeholder="{{i18n.t('其他说明', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea" style="height: 120rpx;"></textarea>
   </view>
 
   <disclaimer-bar type="publish" />
@@ -106,5 +107,7 @@
 
 <!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
 <view class="submit-bar">
-  <button class="btn-primary" bindtap="submitPublish">发布</button>
+  <button class="btn-primary" bindtap="submitPublish">{{i18n.t('发布', lang)}}</button>
 </view>
+
+<share-guide show="{{guide.show}}" status="{{guide.status}}" headline="{{guide.headline}}" title="{{guide.title}}" cover="{{guide.cover}}" bind:close="onGuideClose" />

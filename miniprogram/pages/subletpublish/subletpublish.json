@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "发布转租",
   "usingComponents": {
+    "share-guide": "/components/shareGuide/index",
     "disclaimer-bar": "/components/disclaimerBar/index"
   }
 }

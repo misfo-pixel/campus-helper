@@ -1,19 +1,20 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="menu-head">
-    <view class="page-title" style="margin-bottom: 0;">商品管理</view>
+    <view class="page-title" style="margin-bottom: 0;">{{i18n.t('商品管理', lang)}}</view>
     <view class="cat-toggle {{useCategory ? 'cat-on' : ''}}" bindtap="toggleCategory">
       <text class="cat-icon">☰</text>
-      <text>{{useCategory ? '已开启分类' : '开启分类'}}</text>
+      <text>{{useCategory ? i18n.t('已开启分类', lang) : i18n.t('开启分类', lang)}}</text>
     </view>
   </view>
 
   <skeleton wx:if="{{loading}}" type="row" thumb="{{150}}" count="{{3}}" />
   <view wx:elif="{{itemCount === 0}}" class="text-light empty">
-    还没有商品，点下面的框加第一件
+    {{i18n.t('还没有商品，点下面的框加第一件', lang)}}
   </view>
 
   <block wx:for="{{groups}}" wx:key="category">
-    <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
+    <view wx:if="{{item.category}}" class="section-title">{{i18n.t(item.category, lang)}}</view>
 
     <view wx:for="{{item.items}}" wx:for-item="product" wx:key="_id" class="card product">
       <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" class="product-img" />
@@ -28,8 +29,8 @@
       <view class="product-right">
         <switch checked="{{product.available}}" color="#7A0019" bindchange="toggleItem" data-id="{{product._id}}" />
         <view class="product-ops">
-          <text class="product-op" bindtap="editItem" data-id="{{product._id}}">编辑</text>
-          <text class="product-op product-op-danger" bindtap="deleteItem" data-id="{{product._id}}" data-name="{{product.name}}">删除</text>
+          <text class="product-op" bindtap="editItem" data-id="{{product._id}}">{{i18n.t('编辑', lang)}}</text>
+          <text class="product-op product-op-danger" bindtap="deleteItem" data-id="{{product._id}}" data-name="{{product.name}}">{{i18n.t('删除', lang)}}</text>
         </view>
       </view>
     </view>
@@ -38,6 +39,6 @@
   <!-- 虚线占位框。比一个顶部按钮更像「这里还能再加一件」 -->
   <view wx:if="{{!loading}}" class="product-add" bindtap="addItem">
     <view class="product-add-icon">＋</view>
-    <view class="product-add-text">添加商品</view>
+    <view class="product-add-text">{{i18n.t('添加商品', lang)}}</view>
   </view>
 </view>

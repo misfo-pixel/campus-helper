@@ -1,3 +1,4 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="contact-card">
   <!-- 头像+昵称这一块可点：进对方的公开主页。
        只有传了 link-to-store 的页面才有这个行为，转租/任务页没有主页可去，
@@ -6,13 +7,13 @@
     <image wx:if="{{avatar}}" src="{{avatar}}" mode="aspectFill" class="contact-avatar" />
     <image wx:else src="/images/loon.png" mode="aspectFill" class="contact-avatar" />
     <view class="contact-meta">
-      <view class="contact-name">{{nickname || '校园用户'}}</view>
-      <view class="contact-wechat">微信：{{maskedWechat || '未填写'}}</view>
+      <view class="contact-name">{{nickname || i18n.t('校园用户', lang)}}</view>
+      <view class="contact-wechat">{{i18n.f('微信：{0}', lang, maskedWechat || i18n.t('未填写', lang))}}</view>
     </view>
     <view wx:if="{{linkToStore}}" class="contact-arrow">›</view>
   </view>
 
   <view class="contact-divider"></view>
 
-  <button class="contact-btn" bindtap="copyWechat">复制微信号</button>
+  <button class="contact-btn" bindtap="copyWechat">{{i18n.t('复制微信号', lang)}}</button>
 </view>

@@ -1,3 +1,4 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!-- 完整版：只在开店勾协议那一屏用 -->
 <view wx:if="{{full}}" class="disclaimer">
   <view class="disclaimer-head">
@@ -5,11 +6,11 @@
     <text class="disclaimer-title">{{title}}</text>
   </view>
   <view class="disclaimer-line" wx:for="{{lines}}" wx:key="*this">{{item}}</view>
-  <view class="disclaimer-link" bindtap="openFull">查看完整免责声明 ›</view>
+  <view class="disclaimer-link" bindtap="openFull">{{i18n.t('查看完整免责声明 ›', lang)}}</view>
 </view>
 
 <!-- 默认：一行灰字，点进去看全文 -->
 <view wx:else class="brief" bindtap="openFull">
   <text class="brief-text">{{brief}}</text>
-  <text class="brief-link">详情 ›</text>
+  <text class="brief-link">{{i18n.t('详情 ›', lang)}}</text>
 </view>

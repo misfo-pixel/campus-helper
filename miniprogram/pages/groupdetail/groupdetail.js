@@ -2,6 +2,7 @@ const { markStale } = require('../../utils/refresh.js')
 const { takePreview } = require('../../utils/preview.js')
 const { prefetchCover, detailShare } = require('../../utils/share.js')
 const { KINDS, closedLabel, reviewHint } = require('../../utils/kinds.js')
+const { t, f } = require('../../i18n/index.js')
 
 function tabOf(item) {
   const kind = (item && item.kind) || KINDS.group.default
@@ -47,7 +48,7 @@ Page({
   // 胶囊和按钮上的字只看 kind，列表带过来的预览里就有，首屏就能画
   labels: function (item) {
     const tab = tabOf(item)
-    return { kindLabel: tab.label, closeText: '标记为' + tab.closed }
+    return { kindLabel: tab.label, closeText: f('标记为{0}', tab.closed) }
   },
 
   onLoad: function (options) {
@@ -84,8 +85,8 @@ Page({
   // 群主：凑齐了 / 不再招新。卡片从列表下架，群本身当然还在微信里
   markDone: function () {
     wx.showModal({
-      title: this.data.closeText,
-      content: '标记后这条会从列表下架，确定吗？',
+      title: t(this.data.closeText),
+      content: t('标记后这条会从列表下架，确定吗？'),
       success: (res) => {
         if (!res.confirm) return
         const db = wx.cloud.database()
@@ -95,11 +96,11 @@ Page({
           markStale('group')
           const item = Object.assign({}, this.data.item, { status: 'done' })
           this.setData({ item: item, closed: closedLabel('group', item) })
-          wx.showToast({ title: '已下架', icon: 'success' })
+          wx.showToast({ title: t('已下架'), icon: 'success' })
           setTimeout(() => wx.navigateBack(), 1000)
         }).catch(err => {
           console.error('标记失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })
@@ -107,18 +108,24 @@ Page({
 
   deleteItem: function () {
     wx.showModal({
-      title: '确认删除',
-      content: '删除后无法恢复，确定吗？',
+      title: t('确认删除'),
+      content: t('删除后无法恢复，确定吗？'),
       success: (res) => {
         if (!res.confirm) return
-        const db = wx.cloud.database()
-        db.collection('group_items').doc(this.data.item._id).remove().then(() => {
+        wx.cloud.callFunction({
+          name: 'deleteItem',
+          data: { type: 'group', itemId: this.data.item._id }
+        }).then(res => {
+          if (!res.result.success) {
+            wx.showToast({ title: t(res.result.message || '删除失败'), icon: 'none' })
+            return
+          }
           markStale('group')
-          wx.showToast({ title: '已删除', icon: 'success' })
+          wx.showToast({ title: t('已删除'), icon: 'success' })
           setTimeout(() => wx.navigateBack(), 1000)
         }).catch(err => {
           console.error('删除失败：', err)
-          wx.showToast({ title: '删除失败', icon: 'none' })
+          wx.showToast({ title: t('删除失败'), icon: 'none' })
         })
       }
     })

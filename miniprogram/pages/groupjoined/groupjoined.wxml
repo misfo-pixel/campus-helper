@@ -1,6 +1,7 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container joined">
   <view class="icon-box tint-cream joined-icon"><image src="/images/modules/shop.svg"></image></view>
-  <view class="joined-shop">已参团 · {{name}}</view>
+  <view class="joined-shop">{{i18n.f('已参团 · {0}', lang, name)}}</view>
   <view class="joined-headline">{{headline}}</view>
 
   <block wx:if="{{p && !p.open}}">
@@ -13,18 +14,18 @@
 
   <view class="card joined-card">
     <view class="joined-row">
-      <text class="text-light">取货</text>
+      <text class="text-light">{{i18n.t('取货', lang)}}</text>
       <text>{{pickText}}</text>
     </view>
     <view class="joined-row">
-      <text class="text-light">之后</text>
-      <text>{{p.open ? '截单后联系店长确认' : '成团后联系店长确认'}}</text>
+      <text class="text-light">{{i18n.t('之后', lang)}}</text>
+      <text>{{p.open ? i18n.t('截单后联系店长确认', lang) : i18n.t('成团后联系店长确认', lang)}}</text>
     </view>
   </view>
 
-  <button class="btn-primary" open-type="share">约上饭搭子</button>
-  <button class="btn-outline joined-second" bindtap="makePoster" loading="{{posterBusy}}">生成海报</button>
-  <view class="joined-link" bindtap="goToOrders">查看订单</view>
+  <button class="btn-primary" open-type="share">{{i18n.t('约上饭搭子', lang)}}</button>
+  <button class="btn-outline joined-second" bindtap="makePoster" loading="{{posterBusy}}">{{i18n.t('生成海报', lang)}}</button>
+  <view class="joined-link" bindtap="goToOrders">{{i18n.t('查看订单', lang)}}</view>
 </view>
 
 <group-share id="gs" />

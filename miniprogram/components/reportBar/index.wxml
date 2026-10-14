@@ -1,4 +1,11 @@
-<view class="report-bar" bindtap="onReport">
-  <image src="/images/ui/warn.svg" class="report-icon"></image>
-  <text>举报此内容</text>
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="report-row">
+  <view class="report-bar" bindtap="onReport">
+    <image src="/images/ui/warn.svg" class="report-icon"></image>
+    <text>{{i18n.t('举报此内容', lang)}}</text>
+  </view>
+  <view wx:if="{{!owner}}" class="report-bar" bindtap="onBlock">
+    <image src="/images/ui/ban.svg" class="report-icon"></image>
+    <text>{{i18n.t('屏蔽发布者', lang)}}</text>
+  </view>
 </view>

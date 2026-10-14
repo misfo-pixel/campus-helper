@@ -1,12 +1,13 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
   <view class="head">
     <view class="head-shop">{{shopName}}</view>
-    <view class="text-light">{{batchLabel ? batchLabel + ' · ' : ''}}{{deliverTime}} 送达 · 还剩 {{remaining}} 单未送达</view>
+    <view class="text-light">{{i18n.f('{0}{1} 送达 · 还剩 {2} 单未送达', lang, batchLabel ? batchLabel + ' · ' : '', deliverTime, remaining)}}</view>
   </view>
 
   <!-- 取货清单：直接念给店长 -->
-  <view class="section-title">取货清单（报给店长）</view>
+  <view class="section-title">{{i18n.t('取货清单（报给店长）', lang)}}</view>
   <view class="card pickup-card">
     <view wx:for="{{pickup}}" wx:key="name" class="pickup-line">
       <text class="pickup-name">{{item.name}}</text>
@@ -15,16 +16,16 @@
   </view>
 
   <button wx:if="{{!allPicked}}" class="btn-primary" bindtap="markPicked" style="margin: 24rpx 0;">
-    我到店取到货了
+    {{i18n.t('我到店取到货了', lang)}}
   </button>
-  <view wx:else class="picked-tip">已标记取货，店长那边显示配送中</view>
+  <view wx:else class="picked-tip">{{i18n.t('已标记取货，店长那边显示配送中', lang)}}</view>
 
   <!-- 交付清单：按服务地点走 -->
-  <view class="section-title">交付清单（按服务地点）</view>
+  <view class="section-title">{{i18n.t('交付清单（按服务地点）', lang)}}</view>
 
   <view wx:for="{{points}}" wx:key="point" class="building">
     <view class="building-head">
-      {{item.point}}（{{item.orders.length}} 单）
+      {{i18n.f('{0}（{1} 单）', lang, item.point, item.orders.length)}}
       <text wx:if="{{item.address}}" class="building-addr">{{item.address}}</text>
     </view>
 
@@ -33,15 +34,15 @@
       <view class="drop-main">
         <view class="drop-room">{{o.buyer_nickname}}</view>
         <view class="drop-items">{{o.items}}</view>
-        <view wx:if="{{o.note}}" class="drop-note">备注：{{o.note}}</view>
+        <view wx:if="{{o.note}}" class="drop-note">{{i18n.f('备注：{0}', lang, o.note)}}</view>
         <view class="drop-contact">
-          <text class="text-light">微信：{{o.contact_wechat || '未填'}}</text>
-          <text wx:if="{{o.contact_wechat}}" class="drop-copy" bindtap="copyWechat" data-wechat="{{o.contact_wechat}}">复制</text>
+          <text class="text-light">{{i18n.f('微信：{0}', lang, o.contact_wechat || i18n.t('未填', lang))}}</text>
+          <text wx:if="{{o.contact_wechat}}" class="drop-copy" bindtap="copyWechat" data-wechat="{{o.contact_wechat}}">{{i18n.t('复制', lang)}}</text>
         </view>
       </view>
 
       <button wx:if="{{o.delivery_status !== 'delivered'}}" class="btn-primary btn-sm"
-              bindtap="markDelivered" data-id="{{o.order_id}}">送达</button>
+              bindtap="markDelivered" data-id="{{o.order_id}}">{{i18n.t('送达', lang)}}</button>
       <text wx:else class="drop-ok">✓</text>
     </view>
   </view>

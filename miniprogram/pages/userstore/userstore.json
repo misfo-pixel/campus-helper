@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "闲置主页",
   "usingComponents": {
+    "group-share": "/components/groupShare/index",
     "disclaimer-bar": "/components/disclaimerBar/index"
   }
 }

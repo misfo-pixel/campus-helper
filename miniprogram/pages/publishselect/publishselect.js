@@ -2,13 +2,14 @@
 const { guideProfileSetupOnce } = require('../../utils/user.js')
 const { GROUP_MODULE_ENABLED } = require('../../config.js')
 const { layoutTiles } = require('../../utils/tiles.js')
+const { t } = require('../../i18n/index.js')
 
 // 图标和底色跟首页同一个模块对得上：首页黄色的是二手，这里黄色的也是二手
 const TILES = [
-  { key: 'market', title: '发布闲置', sub: '闲置变现金，几步搞定', color: 'gold', url: '/pages/publish/publish' },
-  { key: 'sublet', title: '发布转租', sub: '找到下一位租客', color: '', url: '/pages/subletpublish/subletpublish' },
-  { key: 'task', title: '发布委托', sub: '求购物品 / 找人帮忙', color: 'maroon', url: '/pages/taskpublish/taskpublish' },
-  { key: 'group', title: '发布群组', sub: '凑人、组队、拉群', color: '', url: '/pages/grouppublish/grouppublish',
+  { key: 'market', title: t('发布闲置'), sub: t('闲置变现金，几步搞定'), color: 'gold', url: '/pages/publish/publish' },
+  { key: 'sublet', title: t('发布转租'), sub: t('找到下一位租客'), color: '', url: '/pages/subletpublish/subletpublish' },
+  { key: 'task', title: t('发布委托'), sub: t('求购物品 / 找人帮忙'), color: 'maroon', url: '/pages/taskpublish/taskpublish' },
+  { key: 'group', title: t('发布群组'), sub: t('凑人、组队、拉群'), color: '', url: '/pages/grouppublish/grouppublish',
     enabled: GROUP_MODULE_ENABLED }
 ]
 

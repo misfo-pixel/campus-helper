@@ -1,9 +1,14 @@
 const { ensureContentOk } = require('../../utils/contentCheck.js')
 const { ask } = require('../../utils/subscribe.js')
+const { t } = require('../../i18n/index.js')
+
+// 存进 feedback 集合的是中文原文（管理员按它筛），下拉里显示翻译
+const TYPES = ['功能建议', 'Bug 报告', '内容问题', '其他']
 
 Page({
   data: {
-    types: ['功能建议', 'Bug 报告', '内容问题', '其他'],
+    types: TYPES,
+    typeLabels: TYPES.map(x => t(x)),
     typeIndex: 0,
     content: '',
     contact: '',
@@ -16,7 +21,7 @@ Page({
   async submit() {
     const content = this.data.content.trim()
     if (!content) {
-      wx.showToast({ title: '请填写反馈内容', icon: 'none' })
+      wx.showToast({ title: t('请填写反馈内容'), icon: 'none' })
       return
     }
     if (this.data.submitting) return          // 防止连点重复提交
@@ -39,12 +44,12 @@ Page({
       })
       // 说明:从客户端 add 时,微信云开发会自动给这条记录写上 _openid,
       // 所以你不用手动传身份,后台能看出是谁提交的。
-      wx.showToast({ title: '已提交,谢谢!', icon: 'success' })
+      wx.showToast({ title: t('已提交,谢谢!'), icon: 'success' })
       this.setData({ content: '', contact: '', typeIndex: 0 })
       setTimeout(() => wx.navigateBack(), 1200)
     } catch (err) {
       console.error(err)
-      wx.showToast({ title: '提交失败,请重试', icon: 'none' })
+      wx.showToast({ title: t('提交失败,请重试'), icon: 'none' })
     } finally {
       this.setData({ submitting: false })       // 无论成败都解锁按钮
     }

@@ -9,6 +9,7 @@
 
 const { ask } = require('../../utils/subscribe.js')
 const { addDays, md, weekday } = require('../../utils/group.js')
+const { t, f } = require('../../i18n/index.js')
 
 const MIN_OPTIONS = [0, 3, 5, 8, 10, 15, 20, 30]
 const DEFAULT_MIN = 10
@@ -27,7 +28,7 @@ function atLabel(at) {
 }
 
 function minLabel(n) {
-  return n ? n + ' 单' : '不设门槛'
+  return n ? f('{0} 单', n) : t('不设门槛')
 }
 
 Page({
@@ -69,7 +70,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
       const today = r.now.slice(0, 10)
@@ -77,7 +78,7 @@ Page({
       const picked = s ? (s.points || []).map(p => p.name) : null
       const min = s ? (s.min_orders || 0) : DEFAULT_MIN
 
-      wx.setNavigationBarTitle({ title: s ? '这一场' : '开团' })
+      wx.setNavigationBarTitle({ title: t(s ? '这一场' : '开团') })
       this.setData({
         loading: false,
         editing: !!s,
@@ -110,7 +111,7 @@ Page({
     }).catch(err => {
       console.error('读取开团信息失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -150,7 +151,7 @@ Page({
   onMin: function (e) {
     const i = Number(e.detail.value)
     if (this.data.locked && this.data.minOptions[i] > this.data.minOptions[this.data.minIndex]) {
-      wx.showToast({ title: '已经有人下单，门槛只能调低', icon: 'none' })
+      wx.showToast({ title: t('已经有人下单，门槛只能调低'), icon: 'none' })
       return
     }
     this.setData({ minIndex: i })
@@ -175,11 +176,11 @@ Page({
     if (d.saving) return
     if (!d.closed && !d.locked) {
       if (d.tooEarly) {
-        wx.showToast({ title: '出发太早，留不出确认时间', icon: 'none' })
+        wx.showToast({ title: t('出发太早，留不出确认时间'), icon: 'none' })
         return
       }
       if (!d.exactAddress && !d.points.some(p => p.on)) {
-        wx.showToast({ title: '至少选一个取货点', icon: 'none' })
+        wx.showToast({ title: t('至少选一个取货点'), icon: 'none' })
         return
       }
     }
@@ -206,7 +207,7 @@ Page({
     }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '保存失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '保存失败'), icon: 'none' })
         return
       }
       // 开团提醒：通知订阅了这家店的买家。不等结果，同一场服务端只发一次
@@ -214,11 +215,11 @@ Page({
         wx.cloud.callFunction({ name: 'shopSubscribe', data: { action: 'announceSession', sessionId: r.sessionId } })
           .catch(err => console.warn('开团提醒触发失败：', err))
       }
-      wx.showToast({ title: d.editing ? '已保存' : '已开团', icon: 'success' })
+      wx.showToast({ title: t(d.editing ? '已保存' : '已开团'), icon: 'success' })
       setTimeout(() => wx.navigateBack(), 800)
     }).catch(err => {
       console.error('保存场次失败：', err)
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('保存失败，请重试'), icon: 'none' })
     }).then(() => {
       this.setData({ saving: false })
     })
@@ -226,10 +227,10 @@ Page({
 
   cancelSession: function () {
     wx.showModal({
-      title: '取消这一场',
-      content: this.data.count ? '这一场的 ' + this.data.count + ' 单会一起取消。' : '确定取消吗？',
-      confirmText: '取消这一场',
-      cancelText: '再想想',
+      title: t('取消这一场'),
+      content: t(this.data.count ? '这一场的 ' + this.data.count + ' 单会一起取消。' : '确定取消吗？'),
+      confirmText: t('取消这一场'),
+      cancelText: t('再想想'),
       confirmColor: '#C8102E',
       success: res => {
         if (!res.confirm) return
@@ -239,14 +240,14 @@ Page({
         }).then(r => {
           const result = (r && r.result) || {}
           if (!result.success) {
-            wx.showToast({ title: result.message || '取消失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '取消失败'), icon: 'none' })
             return
           }
-          wx.showToast({ title: '已取消', icon: 'success' })
+          wx.showToast({ title: t('已取消'), icon: 'success' })
           setTimeout(() => wx.navigateBack(), 800)
         }).catch(err => {
           console.error('取消场次失败：', err)
-          wx.showToast({ title: '取消失败', icon: 'none' })
+          wx.showToast({ title: t('取消失败'), icon: 'none' })
         })
       }
     })

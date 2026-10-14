@@ -1,14 +1,15 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="search-bar">
-  <input class="search-input" placeholder="搜索楼名或公寓名" value="{{keyword}}"
+  <input class="search-input" placeholder="{{i18n.t('搜索楼名或公寓名', lang)}}" value="{{keyword}}"
          bindinput="onSearch" confirm-type="search" />
 </view>
 
 <view class="page-container pick-page">
   <loading-spinner wx:if="{{loading}}" />
-  <view wx:elif="{{loadError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+  <view wx:elif="{{loadError}}" class="text-light empty" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
 
   <block wx:else>
-    <view wx:if="{{groups.length === 0}}" class="text-light empty">没有叫这个名字的楼</view>
+    <view wx:if="{{groups.length === 0}}" class="text-light empty">{{i18n.t('没有叫这个名字的楼', lang)}}</view>
 
     <block wx:for="{{groups}}" wx:for-item="g" wx:key="area">
       <view class="area">{{g.area}}</view>
@@ -25,9 +26,9 @@
     <!-- 名单外的楼：可以手填，但这一单店长会看到「名单外地址」，确认能送才接；
          同时自动进管理员的意见反馈，核实后加进名单 -->
     <view class="card other" bindtap="pickOther">
-      <view class="other-name">其他：名单里没有我的楼</view>
-      <view class="other-desc">手动输入地址，店长确认能送到才会接单</view>
+      <view class="other-name">{{i18n.t('其他：名单里没有我的楼', lang)}}</view>
+      <view class="other-desc">{{i18n.t('手动输入地址，店长确认能送到才会接单', lang)}}</view>
     </view>
-    <view class="missing">只送明大 Minneapolis 校区和周边约 1 mile 的公寓</view>
+    <view class="missing">{{i18n.t('只送明大 Minneapolis 校区和周边约 1 mile 的公寓', lang)}}</view>
   </block>
 </view>

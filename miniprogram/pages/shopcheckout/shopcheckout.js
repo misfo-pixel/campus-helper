@@ -11,6 +11,7 @@ const { md, weekday, cutoffText } = require('../../utils/group.js')
 const { ask } = require('../../utils/subscribe.js')
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { readCachedProfile, checkEmailVerified } = require('../../utils/user.js')
+const { t, f } = require('../../i18n/index.js')
 
 const CART_KEY = 'shopCart'
 
@@ -66,7 +67,7 @@ Page({
   // 从资料页验证完邮箱返回时刷新
   onShow: function () {
     const profile = readCachedProfile() || {}
-    this.setData({ email: profile.emailVerified ? (profile.email || '已验证') : '' })
+    this.setData({ email: profile.emailVerified ? (profile.email || t('已验证')) : '' })
   },
 
   goVerifyEmail: function () {
@@ -77,8 +78,8 @@ Page({
     const cart = wx.getStorageSync(CART_KEY)
     if (!cart || !cart.items || cart.items.length === 0) {
       wx.showModal({
-        title: '购物车是空的',
-        content: '请先回去选商品',
+        title: t('购物车是空的'),
+        content: t('请先回去选商品'),
         showCancel: false,
         success: () => wx.navigateBack()
       })
@@ -112,7 +113,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
 
@@ -121,8 +122,8 @@ Page({
       if (!s || (r.exact_address === true && !EXACT_ADDRESS_ENABLED) || (!r.exact_address && !s.points.length)) {
         this.setData({ loading: false })
         wx.showModal({
-          title: '这一场已截单',
-          content: '回店铺看看其他场次',
+          title: t('这一场已截单'),
+          content: t('回店铺看看其他场次'),
           showCancel: false,
           success: () => wx.navigateBack()
         })
@@ -134,14 +135,14 @@ Page({
         noteRequired: r.note_required === true,
         noteHint: r.note_hint || '',
         session: Object.assign({}, s, {
-          whenText: md(s.date) + ' ' + weekday(s.date) + ' ' + s.depart_time + ' 出发',
+          whenText: f('{0} {1} {2} 出发', md(s.date), weekday(s.date), s.depart_time),
           cutText: cutoffText(s, ''),
-          ruleText: min ? '满 ' + min + ' 单成团，成团后联系店长确认' : '截单后联系店长确认'
+          ruleText: min ? f('满 {0} 单成团，成团后联系店长确认', min) : t('截单后联系店长确认')
         }),
         exactAddress: r.exact_address === true,
         flatFee: Number(r.flat_delivery_fee) || 0,
         points: s.points,
-        pointLabels: s.points.map(p => p.name + ' · 约 ' + p.arrive + ' 到' + (p.fee > 0 ? ' · $' + p.fee : '')),
+        pointLabels: s.points.map(p => f('{0} · 约 {1} 到', p.name, p.arrive) + (p.fee > 0 ? ' · $' + p.fee : '')),
         // 只有一个点就替买家选上
         pointIndex: s.points.length === 1 ? 0 : null,
         loading: false
@@ -149,7 +150,7 @@ Page({
     }).catch(err => {
       console.error('读取场次失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -212,23 +213,23 @@ Page({
     if (!checkEmailVerified()) return
     const digits = d.phone.replace(/\D/g, '')
     if (digits.length < 10 || digits.length > 15) {
-      wx.showToast({ title: '请填写正确的手机号', icon: 'none' })
+      wx.showToast({ title: t('请填写正确的手机号'), icon: 'none' })
       return
     }
     if (d.exactAddress && !d.buildingId) {
-      wx.showToast({ title: '请选择楼栋', icon: 'none' })
+      wx.showToast({ title: t('请选择楼栋'), icon: 'none' })
       return
     }
     if (d.exactAddress && !d.unit.trim()) {
-      wx.showToast({ title: '请填写房间号', icon: 'none' })
+      wx.showToast({ title: t('请填写房间号'), icon: 'none' })
       return
     }
     if (!d.exactAddress && d.pointIndex === null) {
-      wx.showToast({ title: '请选择取货点', icon: 'none' })
+      wx.showToast({ title: t('请选择取货点'), icon: 'none' })
       return
     }
     if (d.noteRequired && !d.note.trim()) {
-      wx.showToast({ title: '请填写补充说明', icon: 'none' })
+      wx.showToast({ title: t('请填写补充说明'), icon: 'none' })
       return
     }
 
@@ -238,7 +239,7 @@ Page({
     await ask(d.session.min_orders ? ['orderProgress', 'groupProgress'] : 'orderProgress')
 
     this.setData({ submitting: true })
-    wx.showLoading({ title: '提交中...', mask: true })
+    wx.showLoading({ title: t('提交中...'), mask: true })
 
     try {
       // 备注会被店长和配送员看到，属于 UGC
@@ -279,7 +280,7 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '下单失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '下单失败'), icon: 'none' })
         return
       }
 
@@ -314,7 +315,7 @@ Page({
     } catch (err) {
       wx.hideLoading()
       console.error('下单失败：', err)
-      wx.showToast({ title: '下单失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('下单失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ submitting: false })
     }

@@ -1,16 +1,17 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
 
   <!-- 读取失败 / 还没加入任何队伍 / 已在队里，三种状态分开说。
        读失败落到「你还不在配送队里」的话，队长会以为自己的队被删了 -->
-  <view wx:if="{{loadError}}" class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+  <view wx:if="{{loadError}}" class="text-light empty" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
   <block wx:elif="{{!team}}">
     <view class="empty-box">
       <view class="empty-emoji"><image src="/images/ui/delivery.svg" class="ico-lg"></image></view>
-      <view class="empty-title">你还不在配送队里</view>
-      <view class="text-light">建队要平台管理员给的开队码</view>
-      <button class="btn-primary" bindtap="goToEdit" style="margin-top: 40rpx;">创建配送队</button>
-      <button bindtap="joinTeam" style="margin-top: 20rpx;">用邀请码加入</button>
+      <view class="empty-title">{{i18n.t('你还不在配送队里', lang)}}</view>
+      <view class="text-light">{{i18n.t('建队要平台管理员给的开队码', lang)}}</view>
+      <button class="btn-primary" bindtap="goToEdit" style="margin-top: 40rpx;">{{i18n.t('创建配送队', lang)}}</button>
+      <button bindtap="joinTeam" style="margin-top: 20rpx;">{{i18n.t('用邀请码加入', lang)}}</button>
     </view>
   </block>
 
@@ -19,7 +20,7 @@
     <view class="hero head">
       <view class="head-top">
         <view class="head-name">{{team.name}}</view>
-        <text class="head-role">{{role === 'admin' ? '队长' : '队员'}}</text>
+        <text class="head-role">{{role === 'admin' ? i18n.t('队长', lang) : i18n.t('队员', lang)}}</text>
         <view class="head-icons">
           <view wx:if="{{role === 'admin'}}" class="head-chip" bindtap="askReminder">
             <image src="/images/ui/bell.svg" class="head-ico"></image>
@@ -32,26 +33,26 @@
       <view class="head-stats">
         <view class="head-stat">
           <view class="head-num {{openCount ? 'head-num-hot' : ''}}">{{openCount}}</view>
-          <view class="head-label">待联系</view>
+          <view class="head-label">{{i18n.t('待联系', lang)}}</view>
         </view>
         <view class="head-stat">
           <view class="head-num">{{acceptedCount}}</view>
-          <view class="head-label">配送中</view>
+          <view class="head-label">{{i18n.t('配送中', lang)}}</view>
         </view>
       </view>
     </view>
 
     <view wx:if="{{takedown}}" class="takedown">
-      <view class="takedown-title">队伍已被下架</view>
-      <view class="takedown-desc">{{team.takedown_reason === 'no_show' ? '爽约次数太多，' : ''}}收不到新请求，手上已接的单可以送完。有异议请在「我的 → 意见反馈」联系我们。</view>
+      <view class="takedown-title">{{i18n.t('队伍已被下架', lang)}}</view>
+      <view class="takedown-desc">{{i18n.f('{0}收不到新请求，手上已接的单可以送完。有异议请在「我的 → 意见反馈」联系我们。', lang, team.takedown_reason === 'no_show' ? i18n.t('爽约次数太多，', lang) : '')}}</view>
     </view>
 
     <!-- ========== 待处理 ========== -->
-    <view class="section-title section-title-bar">待处理</view>
+    <view class="section-title section-title-bar">{{i18n.t('待处理', lang)}}</view>
 
-    <view wx:if="{{requestsError}}" class="text-light block-empty" bindtap="retry">读取失败，点击重试</view>
+    <view wx:if="{{requestsError}}" class="text-light block-empty" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
     <view wx:elif="{{active.length === 0}}" class="card block-empty">
-      <view class="text-light">暂时没有店长找你们</view>
+      <view class="text-light">{{i18n.t('暂时没有店长找你们', lang)}}</view>
     </view>
 
     <view wx:for="{{active}}" wx:key="_id" class="card req req-{{item.status}}">
@@ -60,8 +61,8 @@
         <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
       </view>
       <view class="req-time">
-        {{item.timeText}} 发来
-        <text wx:if="{{item.broadcast && item.status === 'open'}}" class="req-race">群发 · 先接先得</text>
+        {{i18n.f('{0} 发来', lang, item.timeText)}}
+        <text wx:if="{{item.broadcast && item.status === 'open'}}" class="req-race">{{i18n.t('群发 · 先接先得', lang)}}</text>
       </view>
       <!-- 几点出发、送哪、几单、多少钱：扫一眼就能决定接不接。单数没办完前跟着订单变 -->
       <view wx:if="{{item.totalText}}" class="req-price">
@@ -73,31 +74,31 @@
       <view wx:if="{{item.note}}" class="req-note">{{item.note}}</view>
 
       <view class="req-contact">
-        <text class="req-wechat-label">店长微信</text>
-        <text class="req-wechat">{{item.broadcast && item.status === 'open' ? '接下后可见' : (item.shop_wechat || '没填')}}</text>
+        <text class="req-wechat-label">{{i18n.t('店长微信', lang)}}</text>
+        <text class="req-wechat">{{item.broadcast && item.status === 'open' ? i18n.t('接下后可见', lang) : (item.shop_wechat || i18n.t('没填', lang))}}</text>
         <text wx:if="{{item.shop_wechat}}" class="req-copy"
-              bindtap="copyWechat" data-text="{{item.shop_wechat}}">复制微信</text>
+              bindtap="copyWechat" data-text="{{item.shop_wechat}}">{{i18n.t('复制微信', lang)}}</text>
       </view>
 
       <view class="req-actions">
         <block wx:if="{{item.status === 'open'}}">
-          <text class="req-decline" bindtap="decline" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">不接</text>
+          <text class="req-decline" bindtap="decline" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">{{i18n.t('不接', lang)}}</text>
           <button class="btn-primary btn-sm" bindtap="accept" data-id="{{item._id}}"
-                  loading="{{busyId === item._id}}">接下这单</button>
+                  loading="{{busyId === item._id}}">{{i18n.t('接下这单', lang)}}</button>
         </block>
         <!-- 去不了就退单，别不吭声：店长标「没来送」会记爽约，满 3 次下架 -->
         <block wx:else>
-          <text class="req-decline" bindtap="release" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">退单</text>
+          <text class="req-decline" bindtap="release" data-id="{{item._id}}" data-broadcast="{{item.broadcast}}">{{i18n.t('退单', lang)}}</text>
           <!-- 送达照片是这套流程里唯一的凭证，所以标记送达必须传图 -->
           <button class="btn-primary btn-sm" bindtap="deliver" data-id="{{item._id}}"
-                  loading="{{busyId === item._id}}">拍照标记送达</button>
+                  loading="{{busyId === item._id}}">{{i18n.t('拍照标记送达', lang)}}</button>
         </block>
       </view>
     </view>
 
     <!-- ========== 历史 ========== -->
     <block wx:if="{{history.length}}">
-      <view class="section-title section-title-bar">历史</view>
+      <view class="section-title section-title-bar">{{i18n.t('历史', lang)}}</view>
       <view class="card history">
         <block wx:for="{{history}}" wx:key="_id">
           <view wx:if="{{historyOpen || index < historyFolded}}" class="his-row">
@@ -106,7 +107,7 @@
                 <text class="his-shop">{{item.shop_name}}</text>
                 <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
               </view>
-              <view class="his-time">{{item.timeText}} 发来{{item.endText ? ' · ' + item.endText + item.endVerb : ''}}</view>
+              <view class="his-time">{{i18n.f('{0} 发来{1}', lang, item.timeText, item.endText ? ' · ' + item.endText + item.endVerb : '')}}</view>
               <view wx:if="{{item.totalText}}" class="his-note">{{item.departText ? item.departText + ' · ' : ''}}{{item.detail}} · {{item.totalText}}</view>
               <view wx:if="{{item.note}}" class="his-note">{{item.note}}</view>
             </view>
@@ -118,7 +119,7 @@
           </view>
         </block>
         <view wx:if="{{history.length > historyFolded}}" class="his-more" bindtap="toggleHistory">
-          {{historyOpen ? '收起' : '展开全部 ' + history.length + ' 条'}}
+          {{historyOpen ? i18n.t('收起', lang) : i18n.t('展开全部 ', lang) + history.length + i18n.t(' 条', lang)}}
         </view>
       </view>
     </block>

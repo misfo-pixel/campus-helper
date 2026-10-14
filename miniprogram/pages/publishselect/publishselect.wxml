@@ -1,10 +1,11 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/publishselect/publishselect.wxml-->
 <view class="page-container">
   <!-- 比列表页头的系统字标题多一点设计感，又不像首页那样整条出图：
        自绘邮筒图标歪一点 + 「分享」两个字金色划线 -->
   <view class="ps-head">
     <view class="icon-box tint-gold ps-head-icon"><image src="/images/ui/mailbox.svg"></image></view>
-    <view class="ps-head-title">有什么要<text class="ps-head-hl">分享</text>的？</view>
+    <view class="ps-head-title">{{i18n.t('有什么要', lang)}}<text class="ps-head-hl">{{i18n.t('分享', lang)}}</text>{{i18n.t('的？', lang)}}</view>
   </view>
 
   <!-- 和首页同一套入口格（app.wxss 的 .tile） -->

@@ -1,0 +1,9 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="page-container">
+  <view wx:if="{{!loading && users.length === 0}}" class="text-light block-empty">{{i18n.t('你还没有屏蔽任何人', lang)}}</view>
+  <view wx:for="{{users}}" wx:key="uid" class="card block-row">
+    <image src="{{item.avatarUrl || '/images/loon.png'}}" mode="aspectFill" class="block-avatar" />
+    <view class="block-name">{{item.nickname || i18n.t('同学', lang)}}</view>
+    <text class="block-undo" bindtap="unblock" data-uid="{{item.uid}}">{{i18n.t('取消屏蔽', lang)}}</text>
+  </view>
+</view>

@@ -1,14 +1,15 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="text" />
 <view wx:else class="page-container">
   <view class="head">
     <view>
-      <view class="page-head-title">开店码</view>
-      <view class="page-head-sub">一码开一家店，7 天内有效</view>
+      <view class="page-head-title">{{i18n.t('开店码', lang)}}</view>
+      <view class="page-head-sub">{{i18n.t('一码开一家店，7 天内有效', lang)}}</view>
     </view>
-    <button class="btn-primary btn-sm" bindtap="makeCode" loading="{{busy}}">+ 生成</button>
+    <button class="btn-primary btn-sm" bindtap="makeCode" loading="{{busy}}">{{i18n.t('+ 生成', lang)}}</button>
   </view>
 
-  <view wx:if="{{codes.length === 0}}" class="card text-light block-empty">暂无开店码</view>
+  <view wx:if="{{codes.length === 0}}" class="card text-light block-empty">{{i18n.t('暂无开店码', lang)}}</view>
   <view wx:else class="card list">
     <view wx:for="{{codes}}" wx:key="_id" class="code-row">
       <view class="code-main">
@@ -17,7 +18,7 @@
       </view>
       <view class="code-sub">
         <text class="text-light">{{item.stateText}}</text>
-        <text wx:if="{{item.live}}" class="code-copy" bindtap="copyCode" data-code="{{item.code}}">复制</text>
+        <text wx:if="{{item.live}}" class="code-copy" bindtap="copyCode" data-code="{{item.code}}">{{i18n.t('复制', lang)}}</text>
       </view>
     </view>
   </view>

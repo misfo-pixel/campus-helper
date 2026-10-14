@@ -7,11 +7,12 @@
 // 做成一条窄带而不是方框：全小程序的提示条已经够多了，再多一个红框
 // 只会让人连带着把旁边的也一起忽略。摆在那儿能扫到就够，细节点进去看。
 
+const { t } = require('../../i18n/index.js')
 const BANNED = '酒精烟草、大麻、处方药与疗效宣称、色情低俗、武器管制刀具、假冒仿品'
 
 Component({
   data: {
-    banned: BANNED
+    banned: t(BANNED)
   },
   methods: {
     openFull: function () {

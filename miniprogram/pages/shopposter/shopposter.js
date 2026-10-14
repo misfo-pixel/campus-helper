@@ -6,11 +6,12 @@
 
 const { md, weekday, ownerTitle, cardData, longData } = require('../../utils/group.js')
 const { showPoster } = require('../../utils/groupCover.js')
+const { t } = require('../../i18n/index.js')
 
 const STYLES = [
-  { key: 'magazine', label: '杂志' },
-  { key: 'chalkboard', label: '黑板' },
-  { key: 'scrapbook', label: '手账' }
+  { key: 'magazine', label: t('杂志') },
+  { key: 'chalkboard', label: t('黑板') },
+  { key: 'scrapbook', label: t('手账') }
 ]
 
 Page({
@@ -39,7 +40,7 @@ Page({
       const s = (r.sessions || []).find(x => x._id === this.sessionId)
       if (!r.success || !s) {
         this.setData({ loading: false })
-        wx.showModal({ title: '这一场已截单', showCancel: false, success: () => wx.navigateBack() })
+        wx.showModal({ title: t('这一场已截单'), showCancel: false, success: () => wx.navigateBack() })
         return
       }
       this.shop = r.shop
@@ -55,7 +56,7 @@ Page({
     }).catch(err => {
       console.error('读取海报信息失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -100,7 +101,7 @@ Page({
   // 店长转发：标题用广告语，主图是按这家店配色画的卡片
   onShareAppMessage: function () {
     const s = this.session
-    if (!s) return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
+    if (!s) return { title: t('一起拼团 · 满单成团，送到学校'), path: '/pages/shoplist/shoplist' }
     const share = {
       title: ownerTitle(this.shop, s),
       path: '/pages/shopdetail/shopdetail?id=' + this.shop._id + '&s=' + s._id + '&from=share'

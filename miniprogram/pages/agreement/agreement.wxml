@@ -1,54 +1,55 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container agreement">
   <view class="agreement-intro">
-    使用「明尼助手」即表示你已阅读并同意以下条款。
+    {{i18n.t('使用「明尼助手」即表示你已阅读并同意以下条款。', lang)}}
   </view>
 
-  <view class="section-title">一、平台性质</view>
-  <view class="para">明尼助手是面向明尼苏达地区中国留学生的校园信息发布与展示平台。平台只提供信息的发布和浏览功能，不参与、不撮合、不担保用户之间的任何交易，也不提供任何支付服务。</view>
-  <view class="para">用户之间的沟通、约定、交付和款项往来，均由双方自行在平台外完成，与平台无关。</view>
+  <view class="section-title">{{i18n.t('一、平台性质', lang)}}</view>
+  <view class="para">{{i18n.t('明尼助手是面向明尼苏达地区中国留学生的校园信息发布与展示平台。平台只提供信息的发布和浏览功能，不参与、不撮合、不担保用户之间的任何交易，也不提供任何支付服务。', lang)}}</view>
+  <view class="para">{{i18n.t('用户之间的沟通、约定、交付和款项往来，均由双方自行在平台外完成，与平台无关。', lang)}}</view>
 
-  <view class="section-title">二、用户发布规则</view>
-  <view class="para">你对自己发布的全部内容负责，并保证内容真实、准确、合法，且不侵犯他人权益。以下内容禁止发布：</view>
+  <view class="section-title">{{i18n.t('二、用户发布规则', lang)}}</view>
+  <view class="para">{{i18n.t('你对自己发布的全部内容负责，并保证内容真实、准确、合法，且不侵犯他人权益。以下内容禁止发布：', lang)}}</view>
   <view class="list">
-    <view class="li">违反法律法规、危害国家安全的内容</view>
-    <view class="li">色情、低俗、暴力、赌博、毒品相关内容</view>
-    <view class="li">虚假信息、诈骗信息、冒充他人身份</view>
-    <view class="li">辱骂、人身攻击、歧视性言论</view>
-    <view class="li">广告、垃圾信息、与校园生活无关的推广</view>
-    <view class="li">烟酒、药品、管制刀具、动物等法律限制交易的物品</view>
-    <view class="li">侵犯他人著作权、肖像权、隐私权的内容</view>
-    <view class="li">未经他人同意公开他人联系方式或个人信息</view>
+    <view class="li">{{i18n.t('违反法律法规、危害国家安全的内容', lang)}}</view>
+    <view class="li">{{i18n.t('色情、低俗、暴力、赌博、毒品相关内容', lang)}}</view>
+    <view class="li">{{i18n.t('虚假信息、诈骗信息、冒充他人身份', lang)}}</view>
+    <view class="li">{{i18n.t('辱骂、人身攻击、歧视性言论', lang)}}</view>
+    <view class="li">{{i18n.t('广告、垃圾信息、与校园生活无关的推广', lang)}}</view>
+    <view class="li">{{i18n.t('烟酒、药品、管制刀具、动物等法律限制交易的物品', lang)}}</view>
+    <view class="li">{{i18n.t('侵犯他人著作权、肖像权、隐私权的内容', lang)}}</view>
+    <view class="li">{{i18n.t('未经他人同意公开他人联系方式或个人信息', lang)}}</view>
   </view>
 
-  <view class="section-title">三、内容审核与举报</view>
-  <view class="para">你发布的文字和图片会经过内容安全检测，未通过检测的内容无法发布。</view>
-  <view class="para">每条内容的详情页底部都有「举报此内容」入口。收到举报后我们会人工复核，确认违规的内容将被删除，情节严重的账号会被限制使用功能。</view>
-  <view class="para">如果你发现任何违规内容，欢迎通过举报入口或「我的 → 意见反馈」告诉我们。</view>
+  <view class="section-title">{{i18n.t('三、内容审核与举报', lang)}}</view>
+  <view class="para">{{i18n.t('你发布的文字和图片会经过内容安全检测，未通过检测的内容无法发布。', lang)}}</view>
+  <view class="para">{{i18n.t('每条内容的详情页底部都有「举报此内容」入口。收到举报后我们会人工复核，确认违规的内容将被删除，情节严重的账号会被限制使用功能。', lang)}}</view>
+  <view class="para">{{i18n.t('如果你发现任何违规内容，欢迎通过举报入口或「我的 → 意见反馈」告诉我们。', lang)}}</view>
 
-  <view class="section-title">四、个人信息</view>
-  <view class="para">为了让同学之间能取得联系，你在发布信息时填写的微信号会展示在该条内容的详情页上，其他用户可以看到并复制。请只填写你愿意公开的联系方式。</view>
-  <view class="para">你设置的头像和昵称会展示在你发布的内容旁边。你可以随时在「我的 → 编辑资料」中修改。</view>
-  <view class="para">下单和发布前需要验证学校邮箱（.edu），用来确认你的学生身份，邮箱不会公开展示。</view>
-  <view wx:if="{{shopEnabled}}" class="para">在校外小店下需要线下交付的订单时，你验证的邮箱和填写的手机号、楼栋、房间号只提供给这一单的店长，用于送货和联系你，不会公开展示。</view>
-  <view class="para">我们不会将你的个人信息出售或提供给无关第三方。关于个人信息的收集和使用范围，另见小程序内的《用户隐私保护指引》。</view>
+  <view class="section-title">{{i18n.t('四、个人信息', lang)}}</view>
+  <view class="para">{{i18n.t('为了让同学之间能取得联系，你在发布信息时填写的微信号会展示在该条内容的详情页上，其他用户可以看到并复制。请只填写你愿意公开的联系方式。', lang)}}</view>
+  <view class="para">{{i18n.t('你设置的头像和昵称会展示在你发布的内容旁边。你可以随时在「我的 → 编辑资料」中修改。', lang)}}</view>
+  <view class="para">{{i18n.t('下单和发布前需要验证学校邮箱（.edu），用来确认你的学生身份，邮箱不会公开展示。', lang)}}</view>
+  <view wx:if="{{shopEnabled}}" class="para">{{i18n.t('在校外小店下需要线下交付的订单时，你验证的邮箱和填写的手机号、楼栋、房间号只提供给这一单的店长，用于送货和联系你，不会公开展示。', lang)}}</view>
+  <view class="para">{{i18n.t('我们不会将你的个人信息出售或提供给无关第三方。关于个人信息的收集和使用范围，另见小程序内的《用户隐私保护指引》。', lang)}}</view>
 
   <block wx:if="{{shopEnabled}}">
-  <view class="section-title">五、校外小店</view>
-  <view class="para">平台上的小店由店长自行开设和经营，店长是独立的经营者。<text class="strong">平台不是经营者，不制作、不配送、不参与定价、不经手货款。</text></view>
-  <view class="para"><text class="strong">平台不对店长和商品做事前审核。</text>店长提交后即可开店，店铺出现在平台上不代表平台对其经营资质、商品安全或服务质量作出任何认可或保证。我们会对发布内容做机器安全检测，并在收到举报核实后下架违规内容或关停店铺。</view>
-  <view class="para">商品的成分、规格、价格、配送时间以店长实际提供为准。<text class="strong">如果你有食物过敏或其他特殊需求，请务必在下单前直接向店长确认</text>，不要仅依赖平台上展示的信息。</view>
-  <view class="para">平台只把你的下单意向记录下来传达给店长，不参与交易、不提供支付功能、不做资金托管、不提供交易担保、不处理退款。交易如何完成由你与店长自行协商。</view>
-  <view class="para">下单时你可以填写补充说明并附图（例如尺寸、颜色、款式），部分店长会要求必填。<text class="strong">这些内容会展示给店长，也会经过安全检测</text>，请不要在其中填写与订单无关的个人敏感信息。</view>
-  <view class="para">如果发生商品与描述不符、未收到商品、安全或质量问题等情况，请直接与店长协商解决；平台不是交易的当事方，不承担赔偿责任，但你可以通过举报入口告知我们，我们会对违规店长采取下架或关店措施。</view>
+  <view class="section-title">{{i18n.t('五、校外小店', lang)}}</view>
+  <view class="para">{{i18n.t('平台上的小店由店长自行开设和经营，店长是独立的经营者。', lang)}}<text class="strong">{{i18n.t('平台不是经营者，不制作、不配送、不参与定价、不经手货款。', lang)}}</text></view>
+  <view class="para"><text class="strong">{{i18n.t('平台不对店长和商品做事前审核。', lang)}}</text>{{i18n.t('店长提交后即可开店，店铺出现在平台上不代表平台对其经营资质、商品安全或服务质量作出任何认可或保证。我们会对发布内容做机器安全检测，并在收到举报核实后下架违规内容或关停店铺。', lang)}}</view>
+  <view class="para">{{i18n.t('商品的成分、规格、价格、配送时间以店长实际提供为准。', lang)}}<text class="strong">{{i18n.t('如果你有食物过敏或其他特殊需求，请务必在下单前直接向店长确认', lang)}}</text>{{i18n.t('，不要仅依赖平台上展示的信息。', lang)}}</view>
+  <view class="para">{{i18n.t('平台只把你的下单意向记录下来传达给店长，不参与交易、不提供支付功能、不做资金托管、不提供交易担保、不处理退款。交易如何完成由你与店长自行协商。', lang)}}</view>
+  <view class="para">{{i18n.t('下单时你可以填写补充说明并附图（例如尺寸、颜色、款式），部分店长会要求必填。', lang)}}<text class="strong">{{i18n.t('这些内容会展示给店长，也会经过安全检测', lang)}}</text>{{i18n.t('，请不要在其中填写与订单无关的个人敏感信息。', lang)}}</view>
+  <view class="para">{{i18n.t('如果发生商品与描述不符、未收到商品、安全或质量问题等情况，请直接与店长协商解决；平台不是交易的当事方，不承担赔偿责任，但你可以通过举报入口告知我们，我们会对违规店长采取下架或关店措施。', lang)}}</view>
   </block>
 
-  <view class="section-title">{{shopEnabled ? '六' : '五'}}、免责声明</view>
-  <view class="para">平台上的所有信息均由用户自行发布，平台不对信息的真实性、准确性、合法性作出任何保证。</view>
-  <view class="para">你在与其他用户交易或往来前，应自行核实对方身份和信息的真实性，注意资金与人身安全。因用户之间的交易、租赁、委托产生的任何纠纷、损失或法律责任，由当事双方自行承担和解决，平台不承担责任，但会在能力范围内配合提供必要的信息。</view>
-  <view class="para">涉及房屋租赁、转租的信息，请自行确认是否符合你与房东或公寓方的合同约定及当地法律，平台不提供任何房产中介服务。</view>
+  <view class="section-title">{{i18n.f('{0}、免责声明', lang, shopEnabled ? i18n.t('六', lang) : i18n.t('五', lang))}}</view>
+  <view class="para">{{i18n.t('平台上的所有信息均由用户自行发布，平台不对信息的真实性、准确性、合法性作出任何保证。', lang)}}</view>
+  <view class="para">{{i18n.t('你在与其他用户交易或往来前，应自行核实对方身份和信息的真实性，注意资金与人身安全。因用户之间的交易、租赁、委托产生的任何纠纷、损失或法律责任，由当事双方自行承担和解决，平台不承担责任，但会在能力范围内配合提供必要的信息。', lang)}}</view>
+  <view class="para">{{i18n.t('涉及房屋租赁、转租的信息，请自行确认是否符合你与房东或公寓方的合同约定及当地法律，平台不提供任何房产中介服务。', lang)}}</view>
 
-  <view class="section-title">{{shopEnabled ? '七' : '六'}}、条款变更</view>
-  <view class="para">我们可能会不定期更新本协议。更新后继续使用本小程序，即视为你接受更新后的条款。</view>
+  <view class="section-title">{{i18n.f('{0}、条款变更', lang, shopEnabled ? i18n.t('七', lang) : i18n.t('六', lang))}}</view>
+  <view class="para">{{i18n.t('我们可能会不定期更新本协议。更新后继续使用本小程序，即视为你接受更新后的条款。', lang)}}</view>
 
-  <view class="updated">最后更新：2026 年 9 月</view>
+  <view class="updated">{{i18n.t('最后更新：2026 年 9 月', lang)}}</view>
 </view>

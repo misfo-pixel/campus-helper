@@ -2,12 +2,13 @@
 // 有这个页面，提审时才说得出「举报有人工复核」这句话。
 // 权限在 getReports / handleReport 两个云函数里服务端校验，前端这层只是入口。
 
-const TYPE_TEXT = { item: '闲置', sublet: '转租', task: '委托', group: '群组', shop: '店铺', team: '配送队', message: '留言' }
+const TYPE_TEXT = { item: t('闲置'), sublet: t('转租'), task: t('委托'), group: t('群组'), shop: t('店铺'), team: t('配送队'), message: t('留言') }
 // 店铺和配送队只下架不删（底下挂着订单 / 请求），按钮和结果都说「下架」
 const TAKEDOWN_TYPES = ['shop', 'team']
 
 const { ask } = require('../../utils/subscribe.js')
 const { formatTime } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -36,7 +37,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || t('读取失败')), icon: 'none' })
         return
       }
       const reports = (r.reports || []).map(item => Object.assign({}, item, {
@@ -48,7 +49,7 @@ Page({
     }).catch(err => {
       console.error('读取举报列表失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -56,10 +57,10 @@ Page({
   removeContent: function (e) {
     const { id, takedown } = e.currentTarget.dataset
     wx.showModal({
-      title: takedown ? '下架' : '删除内容',
-      content: takedown
-        ? '下架后不再对外展示，记录保留。配送队可在「配送队管理」里恢复。确定吗？'
-        : '会把这条被举报的内容从市场里删掉，无法恢复。确定吗？',
+      title: t(takedown ? t('下架') : t('删除内容')),
+      content: t(takedown
+        ? t('下架后不再对外展示，记录保留。配送队可在「配送队管理」里恢复。确定吗？')
+        : t('会把这条被举报的内容从市场里删掉，无法恢复。确定吗？')),
       success: res => {
         if (res.confirm) this.handle(id, 'delete')
       }
@@ -72,7 +73,7 @@ Page({
   },
 
   handle: function (reportId, action) {
-    wx.showLoading({ title: '处理中', mask: true })
+    wx.showLoading({ title: t('处理中'), mask: true })
     wx.cloud.callFunction({
       name: 'handleReport',
       data: { reportId: reportId, action: action }
@@ -80,15 +81,15 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: '已处理', icon: 'success' })
+        wx.showToast({ title: t('已处理'), icon: 'success' })
         this.load()
       } else {
-        wx.showToast({ title: r.message || '处理失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || t('处理失败')), icon: 'none' })
       }
     }).catch(err => {
       wx.hideLoading()
       console.error('处理举报失败：', err)
-      wx.showToast({ title: '处理失败', icon: 'none' })
+      wx.showToast({ title: t('处理失败'), icon: 'none' })
     })
   }
 })

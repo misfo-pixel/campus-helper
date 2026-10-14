@@ -1,99 +1,112 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <!-- 用户信息区：整块点进去就是编辑资料 -->
   <view bindtap="goToEdit" class="card card-tap" style="display: flex; align-items: center; padding: 40rpx;">
     <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="profile-avatar" />
     <image wx:else src="/images/loon.png" mode="aspectFill" class="profile-avatar" />
     <view style="flex: 1; min-width: 0;">
-      <view style="font-size: 36rpx; font-weight: bold;">{{nickname || '点击设置昵称'}}<text wx:if="{{isStudent}}" class="badge student-badge">学生</text></view>
-      <view class="text-light">{{isAdmin ? '管理员' : '普通用户'}}</view>
+      <view style="font-size: 36rpx; font-weight: bold;">{{nickname || i18n.t('点击设置昵称', lang)}}<text wx:if="{{isStudent}}" class="badge student-badge">{{i18n.t('学生', lang)}}</text></view>
+      <view class="text-light">{{isAdmin ? i18n.t('管理员', lang) : i18n.t('普通用户', lang)}}</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>
 
   <!-- ========== 我发布的 ========== -->
-  <view class="profile-group">我发布的</view>
+  <view class="profile-group">{{i18n.t('我发布的', lang)}}</view>
 
   <view bindtap="goToMyItems" class="card card-tap profile-row">
-    <image src="/images/modules/market.svg" class="profile-row-icon"></image><view class="profile-row-label">我的闲置</view>
+    <image src="/images/modules/market.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的闲置', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view bindtap="goToMySublets" class="card card-tap profile-row">
-    <image src="/images/modules/sublet.svg" class="profile-row-icon"></image><view class="profile-row-label">我的转租</view>
+    <image src="/images/modules/sublet.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的转租', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view bindtap="goToMyTasks" class="card card-tap profile-row">
-    <image src="/images/modules/task.svg" class="profile-row-icon"></image><view class="profile-row-label">我的委托</view>
+    <image src="/images/modules/task.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的委托', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view wx:if="{{groupEnabled}}" bindtap="goToMyGroups" class="card card-tap profile-row">
-    <image src="/images/modules/group.svg" class="profile-row-icon"></image><view class="profile-row-label">我的群组</view>
+    <image src="/images/modules/group.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的群组', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- ========== 一起拼团 ==========
        「我的订单」是买家视角（我在别人店里点的），
        「我的小店」是店长视角（我自己开的店）。分组标题负责把这层区别讲清楚。 -->
-  <view wx:if="{{shopEnabled}}" class="profile-group">一起拼团</view>
+  <view wx:if="{{shopEnabled}}" class="profile-group">{{i18n.t('一起拼团', lang)}}</view>
 
   <view wx:if="{{shopEnabled && ordering}}" bindtap="goToShopOrders" class="card card-tap profile-row">
-    <image src="/images/ui/order.svg" class="profile-row-icon"></image><view class="profile-row-label">我的订单</view>
+    <image src="/images/ui/order.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的订单', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <view wx:if="{{shopEnabled}}" bindtap="goToShop" class="card card-tap profile-row">
-    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">我的小店</view>
+    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的小店', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 配送工作台：配送队管理员 / 有店的店长 / 已在队里的人才看得到 -->
   <view wx:if="{{teamEnabled && shopEnabled && canSeeDelivery}}" bindtap="goToTeam" class="card card-tap profile-row">
-    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">我的配送</view>
+    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('我的配送', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- ========== 管理 ==========
        标题本身也要跟着权限走，否则普通用户会看到一个空标题。 -->
-  <view wx:if="{{isAdmin}}" class="profile-group">管理</view>
+  <view wx:if="{{isAdmin}}" class="profile-group">{{i18n.t('管理', lang)}}</view>
 
   <!-- 举报处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToReports" class="card card-tap profile-row">
-    <image src="/images/ui/shield.svg" class="profile-row-icon"></image><view class="profile-row-label">举报处理</view>
+    <image src="/images/ui/shield.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('举报处理', lang)}}</view>
     <view wx:if="{{pendingReports > 0}}" class="profile-row-badge">{{pendingReports}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 开店码：超管 / 运营管理员。开店要凭码，和配送队开关无关 -->
   <view wx:if="{{shopEnabled && canManageTeams}}" bindtap="goToShopCodes" class="card card-tap profile-row">
-    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">开店码</view>
+    <image src="/images/modules/shop.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('开店码', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 开队码 + 下架配送队：超管 / 运营管理员 -->
   <view wx:if="{{teamEnabled && canManageTeams}}" bindtap="goToTeamAdmin" class="card card-tap profile-row">
-    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">配送管理</view>
+    <image src="/images/ui/delivery.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('配送管理', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 送上门的楼栋名单：超管 / 运营管理员 -->
   <view wx:if="{{shopEnabled && exactAddressEnabled && canManageTeams}}" bindtap="goToBuildingAdmin" class="card card-tap profile-row">
-    <image src="/images/ui/box.svg" class="profile-row-icon"></image><view class="profile-row-label">配送楼栋</view>
+    <image src="/images/ui/box.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('配送楼栋', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- 意见反馈处理：只有管理员看得到 -->
   <view wx:if="{{isAdmin}}" bindtap="goToFeedbacks" class="card card-tap profile-row">
-    <image src="/images/modules/feedback.svg" class="profile-row-icon"></image><view class="profile-row-label">意见反馈</view>
+    <image src="/images/modules/feedback.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('意见反馈', lang)}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 
   <!-- ========== 其他 ========== -->
-  <view class="profile-group">其他</view>
+  <view class="profile-group">{{i18n.t('其他', lang)}}</view>
 
   <view bindtap="goToAgreement" class="card card-tap profile-row">
-    <image src="/images/ui/doc.svg" class="profile-row-icon"></image><view class="profile-row-label">用户协议与免责声明</view>
+    <image src="/images/ui/doc.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('用户协议与免责声明', lang)}}</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <view bindtap="goToBlocklist" class="card card-tap profile-row">
+    <image src="/images/ui/ban.svg" class="profile-row-icon"></image><view class="profile-row-label">{{i18n.t('已屏蔽的用户', lang)}}</view>
+    <view class="profile-row-arrow">›</view>
+  </view>
+
+  <!-- 两种语言都写上，切错了也找得回来 -->
+  <view bindtap="switchLang" class="card card-tap profile-row">
+    <image src="/images/ui/globe.svg" class="profile-row-icon"></image><view class="profile-row-label">语言 / Language</view>
+    <view class="profile-row-value">{{lang === 'en' ? 'English' : '中文'}}</view>
     <view class="profile-row-arrow">›</view>
   </view>
 </view>

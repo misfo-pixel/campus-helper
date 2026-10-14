@@ -2,6 +2,7 @@ const { KINDS, isDemand, rentText } = require('../../utils/kinds.js')
 const { stashFrom } = require('../../utils/preview.js')
 const { shouldReload } = require('../../utils/refresh.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
+const { filterHidden } = require('../../utils/blocks.js')
 
 const CFG = KINDS.sublet
 const PAGE_SIZE = 20
@@ -9,7 +10,7 @@ const CACHE_KEY = 'subletFirstPage.v1.'   // 按转/找分开存第一页，先�
 
 // 缓存里存的是库里的原始字段，显示用的派生字段每次现算，缓存和新数据走同一条路
 function decorate(list) {
-  return list.map(it => Object.assign({}, it, { rentText: rentText(it) }))
+  return filterHidden('sublet', list).map(it => Object.assign({}, it, { rentText: rentText(it) }))
 }
 
 Page({

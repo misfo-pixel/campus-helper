@@ -1,0 +1,5 @@
+.block-empty { text-align: center; padding: 120rpx 0; }
+.block-row { display: flex; align-items: center; padding: 24rpx 28rpx; gap: 20rpx; }
+.block-avatar { width: 72rpx; height: 72rpx; border-radius: 50%; flex-shrink: 0; background: var(--color-bg); }
+.block-name { flex: 1; min-width: 0; font-size: 30rpx; }
+.block-undo { font-size: 28rpx; color: var(--color-primary); }

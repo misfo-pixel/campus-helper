@@ -1,10 +1,11 @@
 // 我的订单（买家侧）。
-// 订单展示店长微信，还会回显买家自己下单时填的补充说明和配图。
+// 订单展示店长手机，还会回显买家自己下单时填的补充说明和配图。
 // 拼团中的单画进度条、能直接转发喊人；待确认的单写清楚几点前联系店长。
 // 不出现任何付款指引（《店长责任告知书》第六节）。
 
 const { formatTime } = require('../../utils/date.js')
 const { md, weekday, progress, shareTitle, atText, cardData } = require('../../utils/group.js')
+const { t, f } = require('../../i18n/index.js')
 
 const STATUS_TEXT = {
   forming: '拼团中',
@@ -35,7 +36,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         if (done) done()
         return
       }
@@ -43,12 +44,12 @@ Page({
         const p = o.progress ? progress(o.progress, true) : null
         let hint = ''
         if (o.status === 'forming') hint = p ? p.text : ''
-        else if (o.status === 'confirming') hint = '已成团，' + atText(o.confirm_at, r.now) + ' 前联系店长确认'
+        else if (o.status === 'confirming') hint = f('已成团，{0} 前联系店长确认', atText(o.confirm_at, r.now))
         else if (o.status === 'accepted' || o.status === 'delivering') {
           hint = md(o.batch_date) + ' ' + weekday(o.batch_date) + ' ' + o.deliver_time + ' · ' + (o.pickup_point || o.pickup_info)
         }
         return Object.assign({}, o, {
-          statusText: STATUS_TEXT[o.status] || o.status,
+          statusText: t(STATUS_TEXT[o.status] || o.status),
           hint: hint,
           p: p,
           timeText: formatTime(o.created_at),
@@ -60,7 +61,7 @@ Page({
     }).catch(err => {
       console.error('读取订单失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
       if (done) done()
     })
   },
@@ -85,7 +86,7 @@ Page({
         .catch(() => share)
       return share
     }
-    return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
+    return { title: t('一起拼团 · 满单成团，送到学校'), path: '/pages/shoplist/shoplist' }
   },
 
   previewNoteImages: function (e) {
@@ -93,12 +94,18 @@ Page({
     wx.previewImage({ urls: urls, current: e.currentTarget.dataset.url })
   },
 
+  callShop: function (e) {
+    const phone = e.currentTarget.dataset.phone
+    if (!phone) return
+    wx.makePhoneCall({ phoneNumber: phone.replace(/[^\d+]/g, ''), fail: () => {} })
+  },
+
   copyText: function (e) {
     const text = e.currentTarget.dataset.text
     if (!text) return
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制', icon: 'success' })
+      success: () => wx.showToast({ title: t('已复制'), icon: 'success' })
     })
   },
 
@@ -106,11 +113,11 @@ Page({
   cancelOrder: function (e) {
     const { id, status } = e.currentTarget.dataset
     wx.showModal({
-      title: '取消订单',
-      content: status === 'confirming' ? '已经成团了，取消会记一次爽约。' : '确定取消吗？',
+      title: t('取消订单'),
+      content: t(status === 'confirming' ? '已经成团了，取消会记一次爽约。' : '确定取消吗？'),
       success: res => {
         if (!res.confirm) return
-        wx.showLoading({ title: '处理中', mask: true })
+        wx.showLoading({ title: t('处理中'), mask: true })
         wx.cloud.callFunction({
           name: 'buyerOrders',
           data: { action: 'cancel', orderId: id }
@@ -118,15 +125,15 @@ Page({
           wx.hideLoading()
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已取消', icon: 'success' })
+            wx.showToast({ title: t('已取消'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: result.message || '取消失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '取消失败'), icon: 'none' })
           }
         }).catch(err => {
           wx.hideLoading()
           console.error('取消订单失败：', err)
-          wx.showToast({ title: '取消失败', icon: 'none' })
+          wx.showToast({ title: t('取消失败'), icon: 'none' })
         })
       }
     })

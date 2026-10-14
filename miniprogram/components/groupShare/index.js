@@ -3,10 +3,14 @@
 //   this.selectComponent('#gs').themeFor(shop)   这家店的配色（从 logo 取色）
 //   .card(d) / .long(d)                          出图，数据格式见 utils/groupCover.js
 //   .themeFromPhotos([fileID...], style)          二手：从头像和商品照片取色
+//   .promoCover(本地图, 本地贴纸)                   二手转发封面贴上活动贴纸（见 utils/share.js 的 withPromo）
+//
+// 只用来贴活动贴纸的页面写 <group-share id="gs" no-font />：贴纸是图，用不上展示字体，
+// 二手详情页人人都会打开，不该每次都去下一遍字体
 //
 // 同一块画布同时只能画一张，连着叫的话排队，不然后一张会把前一张画了一半的冲掉。
 
-const { renderCard, renderLong } = require('../../utils/groupCover.js')
+const { renderCard, renderLong, renderPromoCover } = require('../../utils/groupCover.js')
 const { withFont } = require('../../utils/fonts.js')
 const { getCanvasNode, toLocalPath, loadImage } = require('../../utils/poster.js')
 const { fromColors, toHex, FALLBACK } = require('../../utils/theme.js')
@@ -52,10 +56,14 @@ function dominantColors(ctx, img) {
 }
 
 Component({
+  properties: {
+    noFont: Boolean
+  },
+
   lifetimes: {
     // 页面一打开就开始下字体，等到点转发时多半已经好了
     attached: function () {
-      withFont(0)
+      if (!this.data.noFont) withFont(0)
     }
   },
 
@@ -72,6 +80,10 @@ Component({
 
     long: function (d) {
       return this.queue(() => withFont(LONG_FONT_WAIT).then(() => renderLong('#gsLong', this, d)))
+    },
+
+    promoCover: function (src, sticker) {
+      return this.queue(() => renderPromoCover('#gsCard', this, src, sticker))
     },
 
     // 几张图里的主色，合在一起返回。哪张下载失败就跳过

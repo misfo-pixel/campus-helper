@@ -1,4 +1,5 @@
 const { myProfile, guideProfileSetupOnce } = require('../../utils/user.js')
+const { getLang, setLang } = require('../../i18n/index.js')
 const { SHOP_MODULE_ENABLED, TEAM_MODULE_ENABLED, ORDERING_ENABLED, GROUP_MODULE_ENABLED, EXACT_ADDRESS_ENABLED } = require('../../config.js')
 
 const DELIVERY_ACCESS_KEY = 'deliveryAccess.v1'
@@ -41,6 +42,20 @@ Page({
   },
   goToAgreement: function () {
     wx.navigateTo({ url: '/pages/agreement/agreement' })
+  },
+  goToBlocklist: function () {
+    wx.navigateTo({ url: '/pages/blocklist/blocklist' })
+  },
+  // 切换后整个小程序重启（见 i18n/index.js 的 setLang）
+  switchLang: function () {
+    const langs = ['zh', 'en']
+    wx.showActionSheet({
+      itemList: ['中文', 'English'],
+      success: res => {
+        const lang = langs[res.tapIndex]
+        if (lang && lang !== getLang()) setLang(lang)
+      }
+    })
   },
   goToShop: function () {
     wx.navigateTo({ url: '/pages/shopdashboard/shopdashboard' })

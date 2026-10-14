@@ -1,19 +1,20 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/taskmarket/taskmarket.wxml-->
 <view class="page-container">
   <view class="page-head">
     <view class="icon-box tint-maroon"><image src="/images/modules/task.svg"></image></view>
     <view class="page-head-text">
-      <view class="page-head-title">帮个忙</view>
-      <view class="page-head-sub">代取、代购、跑腿都行</view>
+      <view class="page-head-title">{{i18n.t('帮个忙', lang)}}</view>
+      <view class="page-head-sub">{{i18n.t('代取、代购、跑腿都行', lang)}}</view>
     </view>
-    <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
+    <button class="btn-primary btn-sm" bindtap="goToPublish">{{i18n.t('+ 发布', lang)}}</button>
   </view>
 
   <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box tint-maroon"><image src="/images/modules/task.svg"></image></view>
-    <view class="empty-state-text">还没有委托任务，来发布第一个吧</view>
-    <button class="btn-primary" bindtap="goToPublish">发布委托</button>
+    <view class="empty-state-text">{{i18n.t('还没有委托任务，来发布第一个吧', lang)}}</view>
+    <button class="btn-primary" bindtap="goToPublish">{{i18n.t('发布委托', lang)}}</button>
   </view>
 
   <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap">
@@ -22,6 +23,6 @@
       <view class="price text-card-price">${{item.reward}}</view>
     </view>
     <view class="text-card-desc">{{item.description}}</view>
-    <view wx:if="{{item.deadline}}" style="margin-top: 16rpx;"><text class="chip">{{item.deadline}} 截止</text></view>
+    <view wx:if="{{item.deadline}}" style="margin-top: 16rpx;"><text class="chip">{{i18n.f('{0} 截止', lang, item.deadline)}}</text></view>
   </view>
 </view>

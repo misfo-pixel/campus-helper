@@ -1,39 +1,40 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
-  <view class="page-title">编辑资料</view>
+  <view class="page-title">{{i18n.t('编辑资料', lang)}}</view>
 
   <!-- 头像：点一下弹微信头像选择（也可以拍照/相册） -->
   <button class="card avatar-row" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-    <view class="avatar-label">头像</view>
+    <view class="avatar-label">{{i18n.t('头像', lang)}}</view>
     <image wx:if="{{avatarUrl}}" src="{{avatarUrl}}" mode="aspectFill" class="avatar-img" />
     <image wx:else src="/images/loon.png" mode="aspectFill" class="avatar-img" />
     <view class="chevron">›</view>
   </button>
 
-  <view class="section-title">昵称</view>
+  <view class="section-title">{{i18n.t('昵称', lang)}}</view>
   <!-- type="nickname" 会弹「使用微信昵称」的快捷填写 -->
-  <input type="nickname" placeholder="填一个昵称" value="{{nickname}}" bindinput="onInput" bindblur="onInput" data-field="nickname" class="card" style="padding: 24rpx;" />
+  <input type="nickname" placeholder="{{i18n.t('填一个昵称', lang)}}" value="{{nickname}}" bindinput="onInput" bindblur="onInput" data-field="nickname" class="card" style="padding: 24rpx;" />
 
-  <view class="section-title">微信号</view>
-  <input placeholder="填你的微信号（发布时自动填入）" value="{{wechat}}" bindinput="onInput" data-field="wechat" class="card" style="padding: 24rpx;" />
+  <view class="section-title">{{i18n.t('微信号', lang)}}</view>
+  <input placeholder="{{i18n.t('填你的微信号（发布时自动填入）', lang)}}" value="{{wechat}}" bindinput="onInput" data-field="wechat" class="card" style="padding: 24rpx;" />
 
-  <view class="section-title">邮箱</view>
+  <view class="section-title">{{i18n.t('邮箱', lang)}}</view>
   <view wx:if="{{emailVerified && !changingEmail}}" class="card email-row">
     <text class="email-text">{{email}}</text>
-    <text wx:if="{{isStudent}}" class="badge">学生</text>
-    <text class="email-action" bindtap="changeEmail">更换</text>
+    <text wx:if="{{isStudent}}" class="badge">{{i18n.t('学生', lang)}}</text>
+    <text class="email-action" bindtap="changeEmail">{{i18n.t('更换', lang)}}</text>
   </view>
   <block wx:else>
     <view class="card email-row">
       <input placeholder="name@school.edu" value="{{emailInput}}" bindinput="onInput" data-field="emailInput" class="email-input" />
-      <text class="email-action {{countdown ? 'email-action-off' : ''}}" bindtap="sendCode">{{countdown ? countdown + 's' : '发送验证码'}}</text>
+      <text class="email-action {{countdown ? 'email-action-off' : ''}}" bindtap="sendCode">{{countdown ? countdown + 's' : i18n.t('发送验证码', lang)}}</text>
     </view>
     <view wx:if="{{codeSent}}" class="card email-row">
-      <input type="number" maxlength="6" placeholder="6 位验证码" value="{{code}}" bindinput="onInput" data-field="code" class="email-input" />
-      <text class="email-action" bindtap="verifyCode">验证</text>
+      <input type="number" maxlength="6" placeholder="{{i18n.t('6 位验证码', lang)}}" value="{{code}}" bindinput="onInput" data-field="code" class="email-input" />
+      <text class="email-action" bindtap="verifyCode">{{i18n.t('验证', lang)}}</text>
     </view>
   </block>
 
-  <button class="btn-primary" bindtap="save" style="margin-top: 40rpx;">保存</button>
+  <button class="btn-primary" bindtap="save" style="margin-top: 40rpx;">{{i18n.t('保存', lang)}}</button>
 
-  <view class="delete-account" bindtap="deleteAccount">{{deletingAccount ? '注销中...' : '注销账号'}}</view>
+  <view class="delete-account" bindtap="deleteAccount">{{deletingAccount ? i18n.t('注销中...', lang) : i18n.t('注销账号', lang)}}</view>
 </view>

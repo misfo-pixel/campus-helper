@@ -1,5 +1,47 @@
 // app.js
 const { fetchMyProfile, readCachedProfile } = require('./utils/user.js')
+const { getLang, t } = require('./i18n/index.js')
+const NAV_TITLES = require('./i18n/titles.js')
+const { refresh: refreshBlocks } = require('./utils/blocks.js')
+
+// 中英文切换（见 i18n/index.js）：每个页面和组件的 data 里都带一个 lang，
+// WXML 里 {{i18n.t('保存', lang)}} 靠它决定显示哪种语言。
+// 在这里统一包一层 Page / Component，就不用 47 个页面各自去加。
+// 导航栏标题写死在各页的 json 里，英文时在 onLoad 里换掉（页面自己再设标题会覆盖这次）；
+// 底部 tab 的文字同理，在 tab 页 onShow 时换。
+const TAB_TEXTS = ['功能', '发布', '我的']
+const TAB_ROUTES = ['pages/home/home', 'pages/publishselect/publishselect', 'pages/profile/profile']
+const rawPage = Page
+const rawComponent = Component
+
+function withLang(data) {
+  return Object.assign({}, data, { lang: getLang() })
+}
+
+Page = function (options) {
+  options.data = withLang(options.data)
+  const onLoad = options.onLoad
+  options.onLoad = function () {
+    if (this.data.lang !== getLang()) this.setData({ lang: getLang() })
+    if (getLang() === 'en' && NAV_TITLES[this.route]) {
+      wx.setNavigationBarTitle({ title: t(NAV_TITLES[this.route]) })
+    }
+    if (onLoad) return onLoad.apply(this, arguments)
+  }
+  const onShow = options.onShow
+  options.onShow = function () {
+    if (getLang() === 'en' && TAB_ROUTES.indexOf(this.route) !== -1) {
+      TAB_TEXTS.forEach((text, index) => wx.setTabBarItem({ index: index, text: t(text), fail: () => {} }))
+    }
+    if (onShow) return onShow.apply(this, arguments)
+  }
+  return rawPage(options)
+}
+
+Component = function (options) {
+  options.data = withLang(options.data)
+  return rawComponent(options)
+}
 
 App({
   onLaunch: function () {
@@ -39,6 +81,8 @@ App({
         this.globalData.openid = profile.openid
         this.globalData.roles = profile.roles
         this.globalData.profile = profile
+        // 屏蔽名单后台刷新一次，列表页按它过滤（见 utils/blocks.js）
+        refreshBlocks().catch(() => {})
         return profile
       }).catch(err => {
         console.error('登录失败：', err)

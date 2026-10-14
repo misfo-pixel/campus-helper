@@ -389,7 +389,7 @@ exports.main = async (event) => {
           .limit(50)
           .get()
 
-        // 每单带上店长微信，买家在订单里就能直接联系上店长
+        // 每单带上店长手机，买家在订单里有急事能直接打过去
         const shopIds = [...new Set(res.data.map(o => o.shop_id))]
         const shopMap = {}
         if (shopIds.length > 0) {
@@ -397,7 +397,7 @@ exports.main = async (event) => {
             .where({ _id: _.in(shopIds) }).limit(100).get()
           shops.data.forEach(s => {
             // logo、广告语给「喊人上车」画转发卡片用
-            shopMap[s._id] = { name: s.name, contact_wechat: s.contact_wechat, logo: s.logo || '', slogan: s.slogan || '', poster_style: s.poster_style || 'magazine' }
+            shopMap[s._id] = { name: s.name, contact_phone: s.contact_phone, contact_wechat: s.contact_wechat, logo: s.logo || '', slogan: s.slogan || '', poster_style: s.poster_style || 'magazine' }
           })
         }
 
@@ -431,7 +431,9 @@ exports.main = async (event) => {
             return Object.assign({}, o, {
               // 店铺改过名就显示现在的名字；店删了才用下单时存的那个
               shop_name: s.name || o.shop_name,
-              shop_wechat: s.contact_wechat || '',
+              shop_phone: s.contact_phone || '',
+              // 老店还没补手机号时的兜底
+              shop_wechat: s.contact_phone ? '' : (s.contact_wechat || ''),
               shop_logo: s.logo || '',
               shop_slogan: s.slogan || '',
               shop_poster_style: s.poster_style || 'magazine',

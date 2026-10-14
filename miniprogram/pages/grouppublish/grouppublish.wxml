@@ -1,7 +1,8 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container with-submit-bar">
   <view class="page-head">
     <view class="icon-box"><image src="/images/modules/group.svg"></image></view>
-    <view class="page-head-text"><view class="page-head-title">{{kind === 'buddy' ? '找搭子' : '长期群招新'}}</view></view>
+    <view class="page-head-text"><view class="page-head-title">{{kind === 'buddy' ? i18n.t('找搭子', lang) : i18n.t('长期群招新', lang)}}</view></view>
   </view>
 
   <view class="kind-switch">
@@ -12,24 +13,24 @@
     </view>
   </view>
 
-  <view class="section-title">基本信息（必填）</view>
+  <view class="section-title">{{i18n.t('基本信息（必填）', lang)}}</view>
   <view class="form-group">
-    <input placeholder="{{kind === 'buddy' ? '找什么搭子（如 周六 Costco 拼车、乐队缺鼓手）' : '群名（如 Freefood 俱乐部）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
-    <textarea placeholder="{{kind === 'buddy' ? '具体安排、还差几个人、对搭子有什么要求' : '这个群是做什么的、多久活动一次、适合谁加入'}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
-    <input placeholder="你的微信号（想加入的人加你，你拉进群）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
+    <input placeholder="{{kind === 'buddy' ? i18n.t('找什么搭子（如 周六 Costco 拼车、乐队缺鼓手）', lang) : i18n.t('群名（如 Freefood 俱乐部）', lang)}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <textarea placeholder="{{kind === 'buddy' ? i18n.t('具体安排、还差几个人、对搭子有什么要求', lang) : i18n.t('这个群是做什么的、多久活动一次、适合谁加入', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <input placeholder="{{i18n.t('你的微信号（想加入的人加你，你拉进群）', lang)}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
   </view>
 
-  <view class="section-title">补充信息（选填）</view>
+  <view class="section-title">{{i18n.t('补充信息（选填）', lang)}}</view>
   <view class="form-group">
     <block wx:if="{{kind === 'buddy'}}">
       <picker mode="date" value="{{event_date}}" start="{{today}}" bindchange="onDateChange">
         <view class="form-row">
-          <text class="form-row-label">活动日期</text>
-          <text class="form-row-value {{event_date ? '' : 'form-row-empty'}}">{{event_date || '过了这天自动下架'}}</text>
+          <text class="form-row-label">{{i18n.t('活动日期', lang)}}</text>
+          <text class="form-row-value {{event_date ? '' : 'form-row-empty'}}">{{event_date || i18n.t('过了这天自动下架', lang)}}</text>
           <text class="form-row-arrow">›</text>
         </view>
       </picker>
-      <input placeholder="地点（如 Coffman、Dinkytown）" value="{{location}}" bindinput="onInput" data-field="location" class="form-input" />
+      <input placeholder="{{i18n.t('地点（如 Coffman、Dinkytown）', lang)}}" value="{{location}}" bindinput="onInput" data-field="location" class="form-input" />
     </block>
     <view class="uploader">
       <view class="uploader-inner">
@@ -50,5 +51,7 @@
 
 <!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
 <view class="submit-bar">
-  <button class="btn-primary" bindtap="submitPublish">发布</button>
+  <button class="btn-primary" bindtap="submitPublish">{{i18n.t('发布', lang)}}</button>
 </view>
+
+<share-guide show="{{guide.show}}" status="{{guide.status}}" headline="{{guide.headline}}" title="{{guide.title}}" cover="{{guide.cover}}" bind:close="onGuideClose" />

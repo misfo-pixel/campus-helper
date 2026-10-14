@@ -1,9 +1,10 @@
 const { markStale } = require('../../utils/refresh.js')
 // pages/publish.js
 const { myProfile, checkEmailVerified } = require('../../utils/user.js')
-const { createUploader, requestReview } = require('../../utils/publish.js')
+const { createUploader, guideShare, guideShareMessage } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
+const { t } = require('../../i18n/index.js')
 
 const CFG = KINDS.item
 
@@ -98,6 +99,22 @@ Page({
     wx.pageScrollTo({ scrollTop: 0, duration: 0 })
   },
 
+  // 面板上的「完成」
+  onGuideClose: function () {
+    wx.navigateBack()
+  },
+
+  // 搬家清仓常常一次要发好几件，面板上留一个「再发一件」，省得每件都退回列表再点进来
+  onGuideMore: function () {
+    this.shareGuide = null
+    this.setData({ 'guide.show': false })
+    this.resetForm()
+  },
+
+  onShareAppMessage: function () {
+    return guideShareMessage(this, 'item')
+  },
+
   // 发布
   submitPublish: async function () {
     const { title, price, description, seller_wechat, expire_date, images } = this.data
@@ -105,12 +122,12 @@ Page({
 
     // 校验
     if (!title || !price || !seller_wechat) {
-      wx.showToast({ title: '请填完整信息', icon: 'none' })
+      wx.showToast({ title: t('请填完整信息'), icon: 'none' })
       return
     }
     // 求购是「我想要什么」，本来就没有实物可拍，不强制传图
     if (!this.data.demand && images.length === 0) {
-      wx.showToast({ title: '请上传图片', icon: 'none' })
+      wx.showToast({ title: t('请上传图片'), icon: 'none' })
       return
     }
 
@@ -121,7 +138,7 @@ Page({
     if (!checkEmailVerified()) return
     ask(['expiring', 'inquiry'])
 
-    wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
+    wx.showLoading({ title: t('发布中...'), mask: true })   // 挡住连点和发布途中删图
 
     try {
       // 1. 拿图片的 fileID。选图时就开始在后台传了，这里多半直接拿到；没传完的等一等，失败过的重传
@@ -129,49 +146,34 @@ Page({
 
       // 2. 以「审核中」写库。市场页只查 on_sale，审核通过之前别人看不到
       const db = wx.cloud.database()
-      const added = await db.collection('secondhand_items').add({
-        data: {
-          title: title,
-          price: Number(price),
-          description: description,
-          images: up.images,       // 存的是所有图片地址的数组
-          thumb: up.thumb,         // 列表页只下载这张小图
-          seller_wechat: seller_wechat,
-          pickup_spot: pickupSpot,
-          expire_date: expire_date,
-          kind: this.data.kind,     // sell / want，决定它出现在市场页的哪一面
-          status: 'reviewing',
-          created_at: new Date()
-        }
-      })
+      const doc = {
+        title: title,
+        price: Number(price),
+        description: description,
+        images: up.images,       // 存的是所有图片地址的数组
+        thumb: up.thumb,         // 列表页只下载这张小图
+        seller_wechat: seller_wechat,
+        pickup_spot: pickupSpot,
+        expire_date: expire_date,
+        kind: this.data.kind,     // sell / want，决定它出现在市场页的哪一面
+        status: 'reviewing',
+        created_at: new Date()
+      }
+      const added = await db.collection('secondhand_items').add({ data: doc })
       this.uploader.commit()   // 图已经归这条帖子了，离开页面时别当成没用的删掉
       try {
         wx.setStorageSync(SPOT_KEY, pickupSpot)
       } catch (e) {}
 
-      // 3. 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
-      requestReview('item', added._id, title)
       wx.hideLoading()
       markStale('item')   // 列表页返回时会看到这条新发布的
-      // 搬家清仓常常一次要发好几件，问一句，省得每件都退回列表再点进来
-      wx.showModal({
-        title: '已提交，审核通过后自动公开',
-        content: this.data.demand ? '还有别的想收吗？' : '还有别的闲置要一起发吗？',
-        confirmText: '继续发布',
-        cancelText: '返回',
-        success: (res) => {
-          if (res.confirm) {
-            this.resetForm()
-          } else {
-            wx.navigateBack()
-          }
-        }
-      })
+      // 3. 送审，弹「转发到微信群」面板，审核通过了面板上的转发按钮才亮（见 utils/publish.js）
+      guideShare(this, 'item', Object.assign({ _id: added._id }, doc), images[0])
 
     } catch (err) {
       wx.hideLoading()
       console.error('发布失败：', err)
-      wx.showToast({ title: '发布失败', icon: 'none' })
+      wx.showToast({ title: t('发布失败'), icon: 'none' })
     }
   }
 })

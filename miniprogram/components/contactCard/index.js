@@ -1,4 +1,5 @@
 // 微信号显示成 abc****yz，完整的靠点「复制微信号」拿
+const { t } = require('../../i18n/index.js')
 function maskWechat(wechat) {
   if (!wechat) return ''
   const s = String(wechat)
@@ -36,12 +37,12 @@ Component({
     copyWechat: function () {
       const wechat = this.data.wechat
       if (!wechat) {
-        wx.showToast({ title: '对方还没填微信号', icon: 'none' })
+        wx.showToast({ title: t('对方还没填微信号'), icon: 'none' })
         return
       }
       wx.setClipboardData({
         data: wechat,
-        success: () => wx.showToast({ title: '微信号已复制', icon: 'success' })
+        success: () => wx.showToast({ title: t('微信号已复制'), icon: 'success' })
       })
     }
   }

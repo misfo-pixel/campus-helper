@@ -1,0 +1,38 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view wx:if="{{notFound}}" class="page-container ev-missing text-light">{{i18n.t('这个活动不存在', lang)}}</view>
+
+<view wx:elif="{{ev}}" class="ev">
+  <image src="{{ev.image}}" mode="widthFix" class="ev-banner" />
+
+  <view class="ev-body">
+    <view class="ev-head">
+      <view class="ev-title">{{ev.title}}</view>
+      <view class="ev-period">{{ended ? i18n.t('活动已结束', lang) : i18n.t('限时活动', lang)}}</view>
+    </view>
+
+    <!-- 这一页就为这个数：贴纸感的大字 -->
+    <view class="ev-amount">
+      <text class="ev-amount-num">{{ev.amount}}</text>
+      <text class="ev-amount-unit">{{ev.unit}}</text>
+    </view>
+
+    <view wx:if="{{ev.proof}}" class="ev-proof">{{ev.proof}}</view>
+
+    <view class="section-title">{{i18n.t('怎么领', lang)}}</view>
+    <view class="card ev-steps">
+      <view wx:for="{{ev.steps}}" wx:key="index" class="ev-step">
+        <view class="ev-step-no">{{index + 1}}</view>
+        <view class="ev-step-text">{{item}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{ev.notes.length}}" class="ev-notes">
+      <view wx:for="{{ev.notes}}" wx:key="index" class="ev-note">· {{item}}</view>
+    </view>
+  </view>
+
+  <view wx:if="{{!ended}}" class="ev-bar">
+    <view wx:if="{{ev.wechat}}" class="ev-btn ev-btn-ghost" bindtap="copyWechat">{{i18n.t('复制客服微信', lang)}}</view>
+    <view wx:if="{{ev.cta}}" class="ev-btn ev-btn-main" bindtap="goCta">{{ev.cta.text}}</view>
+  </view>
+</view>

@@ -1,12 +1,13 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="tabs">
-    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">待处理</view>
-    <view class="tab {{status === 'handled' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="handled">已处理</view>
+    <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">{{i18n.t('待处理', lang)}}</view>
+    <view class="tab {{status === 'handled' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="handled">{{i18n.t('已处理', lang)}}</view>
   </view>
 
   <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{reports.length === 0}}" class="text-light empty">
-    {{status === 'pending' ? '没有待处理的举报' : '还没有处理过的举报'}}
+    {{status === 'pending' ? i18n.t('没有待处理的举报', lang) : i18n.t('还没有处理过的举报', lang)}}
   </view>
 
   <view wx:for="{{reports}}" wx:key="_id" class="card report">
@@ -15,17 +16,17 @@
       <view class="text-light report-time">{{item.timeText}}</view>
     </view>
 
-    <view class="report-title">{{item.targetTitle || '（内容已删除）'}}</view>
-    <view class="report-reason">举报原因：{{item.reason}}</view>
+    <view class="report-title">{{item.targetTitle || i18n.t('（内容已删除）', lang)}}</view>
+    <view class="report-reason">{{i18n.f('举报原因：{0}', lang, item.reason)}}</view>
     <view wx:if="{{item.detail}}" class="text-light report-detail">{{item.detail}}</view>
 
     <view wx:if="{{status === 'pending'}}" class="report-actions">
       <button bindtap="removeContent" data-id="{{item._id}}" data-takedown="{{item.takedownOnly}}"
-              class="btn-danger btn-sm">{{item.takedownOnly ? '下架' : '删除内容'}}</button>
-      <button class="btn-sm" bindtap="dismiss" data-id="{{item._id}}">不违规</button>
+              class="btn-danger btn-sm">{{item.takedownOnly ? i18n.t('下架', lang) : i18n.t('删除内容', lang)}}</button>
+      <button class="btn-sm" bindtap="dismiss" data-id="{{item._id}}">{{i18n.t('不违规', lang)}}</button>
     </view>
     <view wx:else class="text-light report-done">
-      已{{item.action === 'delete' ? (item.takedownOnly ? '下架' : '删除内容') : '驳回'}}
+      {{i18n.f('已{0}', lang, item.action === 'delete' ? (item.takedownOnly ? i18n.t('下架', lang) : i18n.t('删除内容', lang)) : i18n.t('驳回', lang))}}
     </view>
   </view>
 </view>

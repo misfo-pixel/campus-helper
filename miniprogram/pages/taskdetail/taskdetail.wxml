@@ -1,10 +1,11 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/taskdetail/taskdetail.wxml-->
 <view wx:if="{{item}}">
   <!-- 分享卡片会在群里躺很久，点开时事情可能早就有人办完了。不放这一条的话，
        页面跟还开着时一模一样，就会有人白白去加发布者微信。放在最顶上，进来第一眼就看到。 -->
   <view wx:if="{{closed}}" class="closed-banner">
     <view class="closed-banner-label">{{closed}}</view>
-    <view class="closed-banner-hint">{{reviewHint || (isOwner ? '别人点开时也会先看到这一条' : '不用再联系发布者了')}}</view>
+    <view class="closed-banner-hint">{{reviewHint || (isOwner ? i18n.t('别人点开时也会先看到这一条', lang) : i18n.t('不用再联系发布者了', lang))}}</view>
   </view>
 
   <!-- 图片轮播（委托可能没图） -->
@@ -28,13 +29,13 @@
          不能拿不全的数据先画：比如列表没查「带不带家具」，先画出来就成了错误的「不带家具」 -->
     <block wx:if="{{!partial}}">
 
-    <view class="section-title">任务描述</view>
+    <view class="section-title">{{i18n.t('任务描述', lang)}}</view>
     <view class="detail-text">{{item.description}}</view>
 
     <!-- 补充信息 -->
     <view wx:if="{{item.deadline || item.location}}" class="kv-list">
-      <view wx:if="{{item.deadline}}" class="kv-row"><text class="kv-label">截止时间</text><text class="kv-value">{{item.deadline}}</text></view>
-      <view wx:if="{{item.location}}" class="kv-row"><text class="kv-label">地点</text><text class="kv-value">{{item.location}}</text></view>
+      <view wx:if="{{item.deadline}}" class="kv-row"><text class="kv-label">{{i18n.t('截止时间', lang)}}</text><text class="kv-value">{{item.deadline}}</text></view>
+      <view wx:if="{{item.location}}" class="kv-row"><text class="kv-label">{{i18n.t('地点', lang)}}</text><text class="kv-value">{{item.location}}</text></view>
     </view>
 
     <!-- 发布者名片。已结束的帖子不给别人亮联系方式：横幅写着结束了，底下还摆着「复制微信号」，照样有人去加。
@@ -43,22 +44,22 @@
 
     <!-- 发布者标记完成（已经完成的不用再标）；本人或管理员可以删除 -->
     <view wx:if="{{(isOwner && !closed) || canDelete}}" class="owner-actions">
-      <button wx:if="{{isOwner && !closed}}" bindtap="markDone" class="btn-outline">标记已完成</button>
-      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">删除</button>
+      <button wx:if="{{isOwner && !closed}}" bindtap="markDone" class="btn-outline">{{i18n.t('标记已完成', lang)}}</button>
+      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">{{i18n.t('删除', lang)}}</button>
     </view>
 
     <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
-    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">逛逛更多委托 ›</view>
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">{{i18n.t('逛逛更多委托 ›', lang)}}</view>
 
-    <message-board target-type="task" target-id="{{item._id}}" />
+    <message-board target-type="task" target-id="{{item._id}}" owner="{{isOwner}}" />
 
-    <report-bar target-type="task" target-id="{{item._id}}" />
+    <report-bar target-type="task" target-id="{{item._id}}" owner="{{isOwner}}" />
 
     <!-- 免责一行放在最底下 -->
     <disclaimer-bar type="task" />
     </block>
-    <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
+    <view wx:else class="text-light" style="margin-top: 32rpx;">{{i18n.t('加载详情…', lang)}}</view>
   </view>
 </view>
 
@@ -68,7 +69,7 @@
 <!-- 分享卡片会在群里躺很久，点开时内容可能已删或已下架。
      落地页不能假设数据一定还在，必须给出口。 -->
 <view wx:else class="detail-state">
-  <view class="detail-state-title">这条委托已经下架了</view>
-  <view class="text-light" style="margin-top: 12rpx;">可能已经完成，或者被发布者删掉了</view>
-  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">去看看别的委托</button>
+  <view class="detail-state-title">{{i18n.t('这条委托已经下架了', lang)}}</view>
+  <view class="text-light" style="margin-top: 12rpx;">{{i18n.t('可能已经完成，或者被发布者删掉了', lang)}}</view>
+  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">{{i18n.t('去看看别的委托', lang)}}</button>
 </view>

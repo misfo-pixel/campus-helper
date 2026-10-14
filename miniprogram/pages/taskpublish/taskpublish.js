@@ -1,7 +1,8 @@
 const { markStale } = require('../../utils/refresh.js')
 const { myProfile, checkEmailVerified } = require('../../utils/user.js')
-const { createUploader, requestReview } = require('../../utils/publish.js')
+const { createUploader, guideShare, guideShareMessage } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
+const { t } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -64,11 +65,20 @@ Page({
     this.setData({ deadline: e.detail.value })
   },
 
+  // 面板上的「完成」
+  onGuideClose: function () {
+    wx.navigateBack()
+  },
+
+  onShareAppMessage: function () {
+    return guideShareMessage(this, 'task')
+  },
+
   submitPublish: async function () {
     const d = this.data
     // 必填校验：title, reward, description, contact_wechat
     if (!d.title || !d.reward || !d.description || !d.contact_wechat) {
-      wx.showToast({ title: '请填完必填项', icon: 'none' })
+      wx.showToast({ title: t('请填完必填项'), icon: 'none' })
       return
     }
 
@@ -79,7 +89,7 @@ Page({
     if (!checkEmailVerified()) return
     ask('inquiry')
 
-    wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
+    wx.showLoading({ title: t('发布中...'), mask: true })   // 挡住连点和发布途中删图
 
     try {
       // 拿图片的 fileID。选图时就开始在后台传了，这里多半直接拿到
@@ -87,33 +97,29 @@ Page({
 
       // 以「审核中」写库。任务列表只查 open，审核通过之前别人看不到
       const db = wx.cloud.database()
-      const added = await db.collection('task_items').add({
-        data: {
-          title: d.title,
-          reward: Number(d.reward),
-          description: d.description,
-          contact_wechat: d.contact_wechat,
-          deadline: d.deadline,
-          location: d.location,
-          images: up.images,
-          thumb: up.thumb,          // 列表页只下载这张小图
-          status: 'reviewing',
-          created_at: new Date()
-        }
-      })
+      const doc = {
+        title: d.title,
+        reward: Number(d.reward),
+        description: d.description,
+        contact_wechat: d.contact_wechat,
+        deadline: d.deadline,
+        location: d.location,
+        images: up.images,
+        thumb: up.thumb,          // 列表页只下载这张小图
+        status: 'reviewing',
+        created_at: new Date()
+      }
+      const added = await db.collection('task_items').add({ data: doc })
       this.uploader.commit()   // 图已经归这条帖子了，离开页面时别当成没用的删掉
-
-      // 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
-      requestReview('task', added._id, d.title)
 
       wx.hideLoading()
       markStale('task')   // 列表页返回时会看到这条新发布的
-      wx.showToast({ title: '已提交，审核中', icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 1500)
+      // 送审，弹「转发到微信群」面板，审核通过了面板上的转发按钮才亮（见 utils/publish.js）
+      guideShare(this, 'task', Object.assign({ _id: added._id }, doc), d.images[0])
     } catch (err) {
       wx.hideLoading()
       console.error('发布失败：', err)
-      wx.showToast({ title: '发布失败', icon: 'none' })
+      wx.showToast({ title: t('发布失败'), icon: 'none' })
     }
   }
 })

@@ -1,20 +1,21 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container with-kind-pill">
-  <view class="page-title">我的闲置</view>
+  <view class="page-title">{{i18n.t('我的闲置', lang)}}</view>
 
   <!-- 海报把在售商品拼成一张图，发群、发朋友圈都行。
        右上角的 ••• 转发走的是 onShareAppMessage，两条路并存。 -->
   <view wx:if="{{!demand}}" class="share-card card">
     <view class="share-text">
-      <view class="share-title">分享我的闲置主页</view>
-      <view class="text-light">展示所有在售的闲置</view>
-      <view class="share-preview" bindtap="previewStore">预览 ›</view>
+      <view class="share-title">{{i18n.t('分享我的闲置主页', lang)}}</view>
+      <view class="text-light">{{i18n.t('展示所有在售的闲置', lang)}}</view>
+      <view class="share-preview" bindtap="previewStore">{{i18n.t('预览 ›', lang)}}</view>
     </view>
-    <view class="btn-primary btn-sm {{posterBusy ? 'btn-busy' : ''}}" bindtap="makePoster">海报分享</view>
+    <view class="btn-primary btn-sm {{posterBusy ? 'btn-busy' : ''}}" bindtap="makePoster">{{i18n.t('海报分享', lang)}}</view>
   </view>
 
   <skeleton wx:if="{{loading}}" type="{{demand ? 'text' : 'row'}}" thumb="{{140}}" />
   <view wx:elif="{{items.length === 0}}" class="text-light" style="text-align: center; margin-top: 100rpx;">
-    {{demand ? '你还没发过求购' : '你还没发布过闲置'}}
+    {{demand ? i18n.t('你还没发过求购', lang) : i18n.t('你还没发布过闲置', lang)}}
   </view>
 
   <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap" style="display: flex; align-items: center; padding: 20rpx;">
@@ -22,14 +23,14 @@
     <image wx:if="{{!demand}}" src="{{item.thumb || item.images[0]}}" mode="aspectFill" lazy-load style="width: 140rpx; height: 140rpx; border-radius: 12rpx; margin-right: 20rpx;"></image>
     <view style="flex: 1; min-width: 0;">
       <view style="font-size: 30rpx;">{{item.title}}</view>
-      <view class="price" style="margin-top: 8rpx;">{{demand ? '预算 ' : ''}}${{item.price}}</view>
-      <view class="text-light" style="margin-top: 8rpx;">状态：{{item.statusText}}</view>
+      <view class="price" style="margin-top: 8rpx;">{{demand ? i18n.t('预算 ', lang) : ''}}${{item.price}}</view>
+      <view class="text-light" style="margin-top: 8rpx;">{{i18n.f('状态：{0}', lang, item.statusText)}}</view>
     </view>
     <view style="color: #ccc; font-size: 40rpx;">›</view>
   </view>
 
   <loading-spinner wx:if="{{loadingMore}}" />
-  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">{{i18n.t('没有更多了', lang)}}</view>
 </view>
 
 <view class="kind-pill">

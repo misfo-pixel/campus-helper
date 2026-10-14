@@ -1,6 +1,7 @@
 // 商品管理。
 // 「今天这件卖完了」是每天要点好几次的操作，所以上架开关直接放在列表行上，
 // 不要求店长点进编辑页再保存。
+const { t, f } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -19,7 +20,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
       const items = r.items || []
@@ -35,7 +36,7 @@ Page({
     }).catch(err => {
       console.error('读取商品失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -72,12 +73,12 @@ Page({
         this.load()
       } else {
         this.setData({ useCategory: !use })
-        wx.showToast({ title: r.message || '设置失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '设置失败'), icon: 'none' })
       }
     }).catch(err => {
       console.error('切换分类开关失败：', err)
       this.setData({ useCategory: !use })
-      wx.showToast({ title: '设置失败', icon: 'none' })
+      wx.showToast({ title: t('设置失败'), icon: 'none' })
     })
   },
 
@@ -92,15 +93,15 @@ Page({
     }).then(res => {
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: available ? '已上架' : '已标记售罄', icon: 'none' })
+        wx.showToast({ title: t(available ? '已上架' : '已标记售罄'), icon: 'none' })
         this.load()
       } else {
-        wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
         this.load()   // 切换失败就刷回真实状态，别让开关停在假状态上
       }
     }).catch(err => {
       console.error('切换商品状态失败：', err)
-      wx.showToast({ title: '操作失败', icon: 'none' })
+      wx.showToast({ title: t('操作失败'), icon: 'none' })
       this.load()
     })
   },
@@ -109,8 +110,8 @@ Page({
     const id = e.currentTarget.dataset.id
     const name = e.currentTarget.dataset.name
     wx.showModal({
-      title: '删除商品',
-      content: '确定删除「' + name + '」吗？删除后无法恢复。',
+      title: t('删除商品'),
+      content: f('确定删除「{0}」吗？删除后无法恢复。', name),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({
@@ -119,14 +120,14 @@ Page({
         }).then(r => {
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '已删除', icon: 'success' })
+            wx.showToast({ title: t('已删除'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: result.message || '删除失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '删除失败'), icon: 'none' })
           }
         }).catch(err => {
           console.error('删除商品失败：', err)
-          wx.showToast({ title: '删除失败', icon: 'none' })
+          wx.showToast({ title: t('删除失败'), icon: 'none' })
         })
       }
     })

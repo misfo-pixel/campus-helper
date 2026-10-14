@@ -1,6 +1,7 @@
 // 统一的用户资料读取入口。
 // 云函数如果还没重新部署，这里会自动回落到直接查 users 表，
 // 所以页面不用关心云函数的部署状态。
+const { t } = require('../i18n/index.js')
 
 const PLACEHOLDER_NICKNAME = '匿名用户'
 
@@ -130,9 +131,9 @@ function checkEmailVerified() {
   const profile = readCachedProfile() || (app && app.globalData && app.globalData.profile) || {}
   if (profile.emailVerified) return true
   wx.showModal({
-    title: '先验证邮箱',
-    content: '下单和发布前需要验证学校邮箱（.edu）',
-    confirmText: '去验证',
+    title: t('先验证邮箱'),
+    content: t('下单和发布前需要验证学校邮箱（.edu）'),
+    confirmText: t('去验证'),
     success: res => {
       if (res.confirm) wx.navigateTo({ url: '/pages/editprofile/editprofile?verify=1' })
     }
@@ -151,10 +152,10 @@ function guideProfileSetupOnce(profile) {
 
   wx.setStorageSync(GUIDE_FLAG, true)
   wx.showModal({
-    title: '完善资料',
-    content: '设置头像和昵称，方便同学认出你',
-    confirmText: '去设置',
-    cancelText: '以后再说',
+    title: t('完善资料'),
+    content: t('设置头像和昵称，方便同学认出你'),
+    confirmText: t('去设置'),
+    cancelText: t('以后再说'),
     success: res => {
       if (res.confirm) wx.navigateTo({ url: '/pages/editprofile/editprofile' })
     }

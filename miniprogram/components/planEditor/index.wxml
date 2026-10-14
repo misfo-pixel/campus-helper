@@ -1,14 +1,15 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="plan-editor {{bare ? 'bare' : ''}}">
   <block wx:if="{{part !== 'time'}}">
-  <view wx:if="{{!bare}}" class="subsection-title">取货点与配送费</view>
+  <view wx:if="{{!bare}}" class="subsection-title">{{i18n.t('取货点与配送费', lang)}}</view>
   <view wx:for="{{points}}" wx:key="index" class="card row">
     <view class="row-head">
-      <input placeholder="取货点（如 Coffman 门口）" value="{{item.name}}" maxlength="20"
+      <input placeholder="{{i18n.t('取货点（如 Coffman 门口）', lang)}}" value="{{item.name}}" maxlength="20"
              bindinput="onPointInput" data-index="{{index}}" data-field="name" class="row-name" />
-      <text class="row-del" bindtap="removePoint" data-index="{{index}}">删除</text>
+      <text class="row-del" bindtap="removePoint" data-index="{{index}}">{{i18n.t('删除', lang)}}</text>
     </view>
     <view class="fee-line">
-      <text class="text-light">配送费</text>
+      <text class="text-light">{{i18n.t('配送费', lang)}}</text>
       <text class="dollar">$</text>
       <input type="digit" value="{{item.fee}}" placeholder="0"
              bindinput="onPointInput" data-index="{{index}}" data-field="fee" class="fee-input" />
@@ -16,40 +17,40 @@
     <picker mode="selector" range="{{etaLabels}}" value="{{item.etaIndex}}"
             bindchange="onEtaChange" data-index="{{index}}">
       <view class="fee-line">
-        <text class="text-light">出发后多久到</text>
-        <text class="eta">{{item.eta_minutes}} 分钟<text wx:if="{{item.arriveText}}" class="eta-at"> · 约 {{item.arriveText}} 到</text></text>
+        <text class="text-light">{{i18n.t('出发后多久到', lang)}}</text>
+        <text class="eta">{{i18n.f('{0} 分钟', lang, item.eta_minutes)}}<text wx:if="{{item.arriveText}}" class="eta-at"> {{i18n.f('· 约 {0} 到', lang, item.arriveText)}}</text></text>
       </view>
     </picker>
   </view>
 
-  <view class="add" bindtap="addPoint">+ 添加取货点</view>
+  <view class="add" bindtap="addPoint">{{i18n.t('+ 添加取货点', lang)}}</view>
   </block>
 
   <block wx:if="{{part !== 'points'}}">
-  <view wx:if="{{!bare}}" class="subsection-title">服务时间</view>
+  <view wx:if="{{!bare}}" class="subsection-title">{{i18n.t('服务时间', lang)}}</view>
   <view class="{{bare ? '' : 'card row'}}">
     <!-- 场次过了就没人能下单了，但店还挂在列表里，所以这条提示要显眼 -->
     <view wx:if="{{expired}}" class="expired">
-      上一场（{{batch.date}}）已过，买家现在下不了单，换个日期即可。
+      {{i18n.f('上一场（{0}）已过，买家现在下不了单，换个日期即可。', lang, batch.date)}}
     </view>
 
     <view class="slot-line">
-      <text class="slot-label">日期</text>
+      <text class="slot-label">{{i18n.t('日期', lang)}}</text>
       <picker mode="date" start="{{today}}" value="{{batch.date || today}}"
               bindchange="onBatchInput" data-field="date">
-        <view class="time {{expired || !batch.date ? 'time-warn' : ''}}">{{batch.date || '请选择'}}</view>
+        <view class="time {{expired || !batch.date ? 'time-warn' : ''}}">{{batch.date || i18n.t('请选择', lang)}}</view>
       </picker>
     </view>
 
     <view class="slot-line">
-      <text class="slot-label">截单时间</text>
+      <text class="slot-label">{{i18n.t('截单时间', lang)}}</text>
       <picker mode="time" value="{{batch.cutoff}}" bindchange="onBatchInput" data-field="cutoff">
         <view class="time">{{batch.cutoff}}</view>
       </picker>
     </view>
 
     <view class="slot-line">
-      <text class="slot-label">出发时间</text>
+      <text class="slot-label">{{i18n.t('出发时间', lang)}}</text>
       <picker mode="time" value="{{batch.depart_time}}" bindchange="onBatchInput" data-field="depart_time">
         <view class="time">{{batch.depart_time}}</view>
       </picker>

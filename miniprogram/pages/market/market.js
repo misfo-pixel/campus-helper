@@ -4,6 +4,7 @@ const { shouldReload } = require('../../utils/refresh.js')
 const { timedDb, timedCall } = require('../../utils/timing.js')
 const { DEBUG_TIMING } = require('../../config.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
+const { filterHidden } = require('../../utils/blocks.js')
 
 const CFG = KINDS.item
 const PAGE_SIZE = 20    // 小程序端单次 get 的硬上限就是 20 条，要更多只能分批拿
@@ -68,7 +69,7 @@ Page({
   reload: function () {
     const cached = this.data.keyword ? null : readCache(LIST_CACHE_KEY + this.data.kind)
     this.revalidating = !!cached
-    this.setData({ items: cached || [], loading: !cached, loadingMore: false, noMore: false })
+    this.setData({ items: filterHidden('item', cached || []), loading: !cached, loadingMore: false, noMore: false })
     this.fetch(0)
   },
 
@@ -131,7 +132,7 @@ Page({
           if (cacheable) writeCache(LIST_CACHE_KEY + kind, res.data)
         }
         this.setData({
-          items: skip === 0 ? res.data : this.data.items.concat(res.data),
+          items: filterHidden('item', skip === 0 ? res.data : this.data.items.concat(res.data)),
           loading: false,
           loadingMore: false,
           // 拿回来不满一页，说明后面没有了

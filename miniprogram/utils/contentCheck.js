@@ -3,6 +3,7 @@
 // 注意这是「fail-closed」的：云函数没部署、网络断了、接口报错，
 // 一律当作没通过。宁可让用户重试一次，也不能放没检测过的内容进库——
 // 微信审核查的就是这条链路有没有真的拦得住。
+const { t } = require('../i18n/index.js')
 
 // 检测内容。texts 是要检的文字，fileIDs 是已经传到云存储的图片。
 // scene: 1 资料 / 2 评论 / 3 论坛 / 4 社交日志
@@ -34,10 +35,10 @@ function ensureContentOk(options) {
     if (!result.pass) {
       wx.hideLoading()
       wx.showModal({
-        title: '内容未通过审核',
-        content: result.reason || '内容可能包含违规信息，请修改后重新提交',
+        title: t('内容未通过审核'),
+        content: t(result.reason || '内容可能包含违规信息，请修改后重新提交'),
         showCancel: false,
-        confirmText: '我知道了'
+        confirmText: t('我知道了')
       })
     }
     return result.pass

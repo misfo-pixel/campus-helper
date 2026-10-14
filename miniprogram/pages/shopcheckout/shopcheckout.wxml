@@ -1,6 +1,7 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{cart && !loading}}" class="page-container">
-  <view class="page-title">确认订单</view>
+  <view class="page-title">{{i18n.t('确认订单', lang)}}</view>
 
   <!-- 商品清单 -->
   <view class="card order-card">
@@ -13,15 +14,15 @@
 
     <view class="divider"></view>
     <view class="line">
-      <text class="line-name">小计</text>
+      <text class="line-name">{{i18n.t('小计', lang)}}</text>
       <text class="line-price">${{cart.subtotal}}</text>
     </view>
     <view class="line">
-      <text class="line-name">配送费</text>
+      <text class="line-name">{{i18n.t('配送费', lang)}}</text>
       <text class="line-price">${{deliveryFee}}</text>
     </view>
     <view class="line line-total">
-      <text class="line-name">合计</text>
+      <text class="line-name">{{i18n.t('合计', lang)}}</text>
       <text class="line-price">${{total}}</text>
     </view>
   </view>
@@ -29,7 +30,7 @@
   <!-- 哪一场、去哪取：左边写这一行是什么，右边是内容 -->
   <view class="card info-card">
     <view class="info-row info-row-split">
-      <text class="info-label">场次</text>
+      <text class="info-label">{{i18n.t('场次', lang)}}</text>
       <view class="info-value">
         <view>{{session.whenText}}</view>
         <view class="info-sub">{{session.cutText}}</view>
@@ -37,8 +38,8 @@
     </view>
     <picker wx:if="{{!exactAddress}}" mode="selector" range="{{pointLabels}}" value="{{pointIndex}}" bindchange="onPointChange">
       <view class="info-row">
-        <text class="info-label">取货点</text>
-        <text class="info-value {{pointIndex === null ? 'placeholder' : ''}}">{{pointIndex === null ? '请选择' : pointLabels[pointIndex]}}</text>
+        <text class="info-label">{{i18n.t('取货点', lang)}}</text>
+        <text class="info-value {{pointIndex === null ? 'placeholder' : ''}}">{{pointIndex === null ? i18n.t('请选择', lang) : pointLabels[pointIndex]}}</text>
         <text class="picker-arrow">›</text>
       </view>
     </picker>
@@ -46,12 +47,12 @@
 
   <view class="card info-card">
     <view class="info-row info-row-split" bindtap="{{email ? '' : 'goVerifyEmail'}}">
-      <text class="info-label">邮箱</text>
-      <text class="info-value {{email ? '' : 'placeholder'}}">{{email || '去验证'}}</text>
+      <text class="info-label">{{i18n.t('邮箱', lang)}}</text>
+      <text class="info-value {{email ? '' : 'placeholder'}}">{{email || i18n.t('去验证', lang)}}</text>
       <text wx:if="{{!email}}" class="picker-arrow">›</text>
     </view>
     <!-- 找不到人、邮件没回的时候，店长打这个 -->
-    <input placeholder="手机号" type="number" value="{{phone}}"
+    <input placeholder="{{i18n.t('手机号', lang)}}" type="number" value="{{phone}}"
            bindinput="onInput" data-field="phone" maxlength="15" class="info-input-row" />
   </view>
 
@@ -59,22 +60,22 @@
        名单外的走「其他」手填，店长那边会标出来 -->
   <view wx:if="{{exactAddress}}" class="card info-card">
     <view class="info-row info-row-split" bindtap="pickBuilding">
-      <text class="info-label">楼栋</text>
-      <text class="info-value {{buildingId ? '' : 'placeholder'}}">{{buildingId === 'other' ? '其他：' + buildingName : (buildingName || '请选择')}}</text>
+      <text class="info-label">{{i18n.t('楼栋', lang)}}</text>
+      <text class="info-value {{buildingId ? '' : 'placeholder'}}">{{buildingId === 'other' ? i18n.t('其他：', lang) + buildingName : (buildingName || i18n.t('请选择', lang))}}</text>
       <text class="picker-arrow">›</text>
     </view>
-    <view wx:if="{{buildingId === 'other'}}" class="info-warn">名单外的地址，店长确认能送到才会接单</view>
+    <view wx:if="{{buildingId === 'other'}}" class="info-warn">{{i18n.t('名单外的地址，店长确认能送到才会接单', lang)}}</view>
     <view class="info-row">
-      <text class="info-label">房间号</text>
-      <input class="info-input" placeholder="如 Apt 412 / Room 305" value="{{unit}}"
+      <text class="info-label">{{i18n.t('房间号', lang)}}</text>
+      <input class="info-input" placeholder="{{i18n.t('如 Apt 412 / Room 305', lang)}}" value="{{unit}}"
              bindinput="onInput" data-field="unit" maxlength="40" />
     </view>
   </view>
 
   <!-- 单独一个分节标题：不然紧跟在服务时间下面，店长的提示语会被读成时间的注释。
        框里仍是店长自己写的提示 -->
-  <view class="section-title">补充说明</view>
-  <textarea placeholder="{{noteRequired ? (noteHint || '写下你的要求') + '（必填）' : '规格、特殊要求等（选填）'}}"
+  <view class="section-title">{{i18n.t('补充说明', lang)}}</view>
+  <textarea placeholder="{{noteRequired ? (noteHint || i18n.t('写下你的要求', lang)) + i18n.t('（必填）', lang) : i18n.t('规格、特殊要求等（选填）', lang)}}"
             value="{{note}}" bindinput="onInput" data-field="note" class="card"
             style="padding: 24rpx; width: auto; height: 140rpx;"></textarea>
 
@@ -90,7 +91,7 @@
 
   <view class="rule">{{session.ruleText}}</view>
 
-  <button class="btn-primary" bindtap="submit" loading="{{submitting}}">立即参团</button>
+  <button class="btn-primary" bindtap="submit" loading="{{submitting}}">{{i18n.t('立即参团', lang)}}</button>
 
   <disclaimer-bar type="buyer" />
 </view>

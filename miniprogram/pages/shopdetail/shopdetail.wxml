@@ -1,3 +1,4 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="shop" />
 <view wx:if="{{shop}}" class="shop-page" style="{{themeStyle}}">
   <!-- 店头 -->
@@ -9,11 +10,11 @@
            用「证」而不用对勾：平台不核实，对勾会被读成「平台认证过」 -->
       <view class="shop-name">
         <text>{{shop.name}}</text>
-        <text wx:if="{{shop.license_image}}" class="license-badge" catchtap="previewLicense">证</text>
+        <text wx:if="{{shop.license_image}}" class="license-badge" catchtap="previewLicense">{{i18n.t('证', lang)}}</text>
       </view>
       <view wx:if="{{shop.description}}" class="shop-desc">{{shop.description}}</view>
-      <view wx:if="{{ordering && shop.min_order > 0}}" class="shop-info">起送 ${{shop.min_order}}</view>
-      <view wx:elif="{{!ordering && shop.contact_wechat}}" class="shop-info">微信：{{shop.contact_wechat}}</view>
+      <view wx:if="{{ordering && shop.min_order > 0}}" class="shop-info">{{i18n.f('起送 ${0}', lang, shop.min_order)}}</view>
+      <view wx:elif="{{!ordering && shop.contact_wechat}}" class="shop-info">{{i18n.f('微信：{0}', lang, shop.contact_wechat)}}</view>
     </view>
   </view>
 
@@ -26,8 +27,8 @@
 
     <view class="session-panel">
       <view class="session-head">
-        <text class="session-when">{{session.dayText}} · {{session.depart_time}} 出发</text>
-        <text wx:if="{{session.p.formed && !session.p.open}}" class="gb-sticker">已成团</text>
+        <text class="session-when">{{i18n.f('{0} · {1} 出发', lang, session.dayText, session.depart_time)}}</text>
+        <text wx:if="{{session.p.formed && !session.p.open}}" class="gb-sticker">{{i18n.t('已成团', lang)}}</text>
       </view>
       <view wx:if="{{!session.p.open}}" class="gb-bar {{session.p.formed ? 'gb-bar-done' : ''}} session-bar">
         <view class="gb-bar-fill" style="width: {{session.p.pct}}%"></view>
@@ -39,29 +40,29 @@
       <view class="session-points">
         <view wx:for="{{session.points}}" wx:key="name" class="session-point">
           <text class="session-point-name">{{item.name}}</text>
-          <text class="text-light">约 {{item.arrive}} 到{{item.fee > 0 ? ' · 配送费 $' + item.fee : ''}}</text>
+          <text class="text-light">{{i18n.f('约 {0} 到{1}', lang, item.arrive, item.fee > 0 ? i18n.t(' · 配送费 $', lang) + item.fee : '')}}</text>
         </view>
       </view>
-      <view class="session-poster" bindtap="makePoster">生成海报 ›</view>
+      <view class="session-poster" bindtap="makePoster">{{i18n.t('生成海报 ›', lang)}}</view>
     </view>
   </view>
 
-  <view wx:elif="{{ordering}}" class="no-session">暂无拼团</view>
+  <view wx:elif="{{ordering}}" class="no-session">{{i18n.t('暂无拼团', lang)}}</view>
 
   <!-- 开团提醒。没场次时更需要这个：现在买不了，开了再叫我 -->
   <view wx:if="{{subEnabled && !subMine && shop.needs_delivery !== false}}" class="sub-bar">
     <view class="sub-text">
-      <view class="sub-title">开团提醒</view>
-      <view wx:if="{{subTickets > 0}}" class="sub-hint">还会提醒你 {{subTickets}} 次</view>
+      <view class="sub-title">{{i18n.t('开团提醒', lang)}}</view>
+      <view wx:if="{{subTickets > 0}}" class="sub-hint">{{i18n.f('还会提醒你 {0} 次', lang, subTickets)}}</view>
     </view>
-    <view wx:if="{{subTickets > 0}}" class="sub-cancel" bindtap="unsubscribe">取消</view>
-    <view class="sub-btn {{subTickets > 0 ? 'sub-btn-more' : ''}}" bindtap="subscribe">{{subTickets > 0 ? '再加一次' : '订阅'}}</view>
+    <view wx:if="{{subTickets > 0}}" class="sub-cancel" bindtap="unsubscribe">{{i18n.t('取消', lang)}}</view>
+    <view class="sub-btn {{subTickets > 0 ? 'sub-btn-more' : ''}}" bindtap="subscribe">{{subTickets > 0 ? i18n.t('再加一次', lang) : i18n.t('订阅', lang)}}</view>
   </view>
 
   <view class="page-container">
     <!-- 商品 -->
     <block wx:for="{{groups}}" wx:key="category">
-      <view wx:if="{{item.category}}" class="section-title">{{item.category}}</view>
+      <view wx:if="{{item.category}}" class="section-title">{{i18n.t(item.category, lang)}}</view>
 
       <view wx:for="{{item.items}}" wx:for-item="product" wx:key="_id" class="card product">
         <image wx:if="{{product.image}}" src="{{product.image}}" mode="aspectFill" class="product-img" />
@@ -70,12 +71,12 @@
         <view class="product-meta">
           <view class="product-name {{product.available ? '' : 'product-off'}}">{{product.name}}</view>
           <view wx:if="{{product.description}}" class="text-light product-desc">{{product.description}}</view>
-          <view wx:if="{{product.specs}}" class="product-specs">含：{{product.specs}}</view>
+          <view wx:if="{{product.specs}}" class="product-specs">{{i18n.f('含：{0}', lang, product.specs)}}</view>
           <view class="product-price">${{product.price}}<text wx:if="{{product.unit}}" class="product-unit"> / {{product.unit}}</text></view>
         </view>
 
         <view class="product-ops">
-          <view wx:if="{{!product.available}}" class="product-soldout">售罄</view>
+          <view wx:if="{{!product.available}}" class="product-soldout">{{i18n.t('售罄', lang)}}</view>
           <block wx:elif="{{ordering}}">
             <view wx:if="{{product.count > 0}}" class="stepper-btn" bindtap="removeItem" data-id="{{product._id}}">−</view>
             <view wx:if="{{product.count > 0}}" class="stepper-count">{{product.count}}</view>
@@ -85,11 +86,11 @@
       </view>
     </block>
 
-    <view wx:if="{{groups.length === 0}}" class="text-light empty">这家店还没上架商品</view>
+    <view wx:if="{{groups.length === 0}}" class="text-light empty">{{i18n.t('这家店还没上架商品', lang)}}</view>
 
     <!-- 从转发卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
-    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">更多拼团 ›</view>
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToShopList">{{i18n.t('更多拼团 ›', lang)}}</view>
 
     <report-bar target-type="shop" target-id="{{shop._id}}" />
 
@@ -104,19 +105,19 @@
   <view wx:if="{{ordering && cartCount > 0}}" class="cart-bar">
     <view class="cart-info">
       <view class="cart-total">${{cartSubtotal}}</view>
-      <view class="cart-sub">{{cartCount}} 件{{session ? ' · ' + session.dayText + '送达' : ''}}</view>
+      <view class="cart-sub">{{i18n.f('{0} 件{1}', lang, cartCount, session ? ' · ' + session.dayText + i18n.t('送达', lang) : '')}}</view>
     </view>
     <view class="cart-btn {{canOrder ? '' : 'cart-btn-off'}}" bindtap="checkout">
-      {{reachMin ? '去拼团' : '差 $' + shop.min_order + ' 起送'}}
+      {{reachMin ? i18n.t('去拼团', lang) : i18n.t('差 $', lang) + shop.min_order + i18n.t(' 起送', lang)}}
     </view>
   </view>
 
   <view wx:if="{{!ordering && shop.contact_wechat}}" class="cart-bar">
     <view class="cart-info">
       <view class="cart-total wechat-id">{{shop.contact_wechat}}</view>
-      <view class="cart-sub">加微信联系店长</view>
+      <view class="cart-sub">{{i18n.t('加微信联系店长', lang)}}</view>
     </view>
-    <view class="cart-btn" bindtap="copyWechat">复制微信号</view>
+    <view class="cart-btn" bindtap="copyWechat">{{i18n.t('复制微信号', lang)}}</view>
   </view>
 </view>
 

@@ -3,6 +3,7 @@ const { takePreview } = require('../../utils/preview.js')
 const { prefetchCover, detailShare } = require('../../utils/share.js')
 const { isDemand, closedLabel, reviewHint, rentText } = require('../../utils/kinds.js')
 const { today } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 const app = getApp()
 
@@ -100,19 +101,19 @@ Page({
         markStale('sublet')   // 返回列表时要看到这次改动
         const next = Object.assign({}, item, data)
         this.setData({ item: next, closed: closedLabel('sublet', next) })
-        wx.showToast({ title: relist ? '已重新上架' : '已修改', icon: 'success' })
+        wx.showToast({ title: t(relist ? '已重新上架' : '已修改'), icon: 'success' })
       })
       .catch(err => {
         console.error('修改租期失败：', err)
-        wx.showToast({ title: '修改失败', icon: 'none' })
+        wx.showToast({ title: t('修改失败'), icon: 'none' })
       })
   },
 
   // 标记已租出（发布者）
   markRented: function () {
     wx.showModal({
-      title: '确认已租出',
-      content: '标记后房源将下架，确定吗？',
+      title: t('确认已租出'),
+      content: t('标记后房源将下架，确定吗？'),
       success: (res) => {
         if (res.confirm) {
           const db = wx.cloud.database()
@@ -123,11 +124,11 @@ Page({
             // 从分享卡片冷启动进来时 navigateBack 退不回去，页面会留在这儿，得当场换成已结束的样子
             const item = Object.assign({}, this.data.item, { status: 'rented' })
             this.setData({ item: item, closed: closedLabel('sublet', item), canEditEnd: false })
-            wx.showToast({ title: '已标记租出', icon: 'success' })
+            wx.showToast({ title: t('已标记租出'), icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {
             console.error('标记失败：', err)
-            wx.showToast({ title: '操作失败', icon: 'none' })
+            wx.showToast({ title: t('操作失败'), icon: 'none' })
           })
         }
       }
@@ -137,18 +138,24 @@ Page({
   // 删除
   deleteItem: function () {
     wx.showModal({
-      title: '确认删除',
-      content: '删除后无法恢复，确定吗？',
+      title: t('确认删除'),
+      content: t('删除后无法恢复，确定吗？'),
       success: (res) => {
         if (res.confirm) {
-          const db = wx.cloud.database()
-          db.collection('sublet_items').doc(this.data.item._id).remove().then(() => {
+          wx.cloud.callFunction({
+            name: 'deleteItem',
+            data: { type: 'sublet', itemId: this.data.item._id }
+          }).then(res => {
+            if (!res.result.success) {
+              wx.showToast({ title: t(res.result.message || '删除失败'), icon: 'none' })
+              return
+            }
             markStale('sublet')   // 返回列表时要看到这次改动
-            wx.showToast({ title: '已删除', icon: 'success' })
+            wx.showToast({ title: t('已删除'), icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {
             console.error('删除失败：', err)
-            wx.showToast({ title: '删除失败', icon: 'none' })
+            wx.showToast({ title: t('删除失败'), icon: 'none' })
           })
         }
       }

@@ -146,13 +146,45 @@ const GROUP_MODULE_ENABLED = true
 // 源文件在仓库外的 posters/ 目录。换活动还是要发版；真要频繁换，再把这张表挪进数据库。
 //   image  云存储 File ID（cloud://…），控制台「存储」里上传后复制
 //   link   点了去哪（非 tabBar 页面，走 navigateTo）
+//   wechat 填了就不跳页，点了弹出「活动详情」，可以复制这个微信号（活动要加客服微信领奖时用）
+//   detail 活动详情弹窗的正文，{0} 换成 wechat。谁能领、怎么领写清楚
+//   promo  选填。期内二手的转发封面和长图海报也带上这个活动（见 utils/promo.js）：
+//            sticker  转发封面右上角的透明贴纸，220×100 按 2 倍出 PNG
+//            how      海报上横幅下面那行字，{0} 换成 wechat
 //   from / until  'YYYY-MM-DD'，两头都含，按用户手机的本地日期判断
 const HOME_BANNERS = [
   {
-    image: 'cloud://cloud1-d1gv6rdj91aa53558.636c-cloud1-d1gv6rdj91aa53558-1457643521/banners/halloween-2026.jpg',
-    link: '/pages/market/market',
-    from: '2026-10-10',
-    until: '2026-10-31'
+    // 卖出有礼：卖家在二手市场成交满 3 单，加客服微信发这 3 单的成交截图，领 6.66。买家不领
+    // id 填了就有活动页：横幅点进去是 pages/event/event?id=…，按下面的 title / amount / steps / notes 排版。
+    // steps、notes 里的 {0} 会换成客服微信号
+    id: 'trade-2026',
+    title: '卖出有礼',
+    amount: '6.66',
+    unit: '元',
+    // 金额下面那条醒目的提示：凭什么领
+    proof: '仅限卖家：成交满 3 单，凭这 3 单买卖双方的交易凭证领取，比如微信聊天截图',
+    steps: [
+      '在二手市场挂出闲置，成交满 3 单',
+      '加客服微信 {0}',
+      '把这 3 单买卖双方的交易凭证发给客服，比如你们的微信聊天截图',
+      '领 6.66 元'
+    ],
+    // 截图里有买家的昵称、头像和聊天内容。拿去宣传前必须打码、先问卖家，这里先写清楚，免得事后说不清
+    notes: [
+      '仅限卖家领取，买家不参与',
+      '截图只用来核对成交。如果想用于活动宣传，会先征得你同意，并把双方的昵称、头像和联系方式打码'
+    ],
+    cta: { text: '去挂闲置', url: '/pages/publish/publish' },
+    share: '卖出有礼：成交满 3 单领 6.66 元',   // 活动页转发出去的标题
+    image: 'cloud://cloud1-d1gv6rdj91aa53558.636c-cloud1-d1gv6rdj91aa53558-1457643521/banners/trade-banner.jpg',
+    wechat: 'uauauauauauaua_',
+    detail: '在明尼助手二手市场成交满 3 单，卖家加客服微信 {0}，把这 3 单和买家的成交聊天截图发过去，就能领 6.66 元。\n\n仅限卖家领取，买家不参与。',
+    promo: {
+      sticker: 'cloud://cloud1-d1gv6rdj91aa53558.636c-cloud1-d1gv6rdj91aa53558-1457643521/banners/trade-sticker.png',
+      how: '成交满 3 单，卖家加客服微信 {0}，发成交截图领取'
+    },
+    from: '2026-10-13',
+    until: '2026-11-30'
   }
 ]
 

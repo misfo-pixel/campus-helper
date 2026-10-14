@@ -1,5 +1,6 @@
 // 商品编辑。带 id 进来是改，不带是加。
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
+const { t, f } = require('../../i18n/index.js')
 
 // 和云函数 shopManage 的 saveItem 同一个数，改的时候两边一起改
 const UNIT_MAX = 6
@@ -26,12 +27,12 @@ Page({
   onLoad: function (options) {
     this.setData({ useCategory: options.cat === '1' })
     if (!options.id) {
-      wx.setNavigationBarTitle({ title: '添加商品' })
+      wx.setNavigationBarTitle({ title: t('添加商品') })
       return
     }
 
     this.setData({ itemId: options.id, isNew: false, loading: true })
-    wx.setNavigationBarTitle({ title: '编辑商品' })
+    wx.setNavigationBarTitle({ title: t('编辑商品') })
 
     // 商品数量不多，直接复用列表接口挑出这一条，不用再加一个云函数 action
     wx.cloud.callFunction({ name: 'shopManage', data: { action: 'listItems' } }).then(res => {
@@ -39,7 +40,7 @@ Page({
       const item = (r.items || []).find(i => i._id === options.id)
       if (!item) {
         this.setData({ loading: false })
-        wx.showToast({ title: '商品不存在', icon: 'none' })
+        wx.showToast({ title: t('商品不存在'), icon: 'none' })
         return
       }
       this.setData({
@@ -56,7 +57,7 @@ Page({
     }).catch(err => {
       console.error('读取商品失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -96,21 +97,21 @@ Page({
     if (d.saving) return
 
     if (!d.name) {
-      wx.showToast({ title: '请填写商品名称', icon: 'none' })
+      wx.showToast({ title: t('请填写商品名称'), icon: 'none' })
       return
     }
     if (d.price === '' || !(Number(d.price) >= 0)) {
-      wx.showToast({ title: '请填写正确的价格', icon: 'none' })
+      wx.showToast({ title: t('请填写正确的价格'), icon: 'none' })
       return
     }
     // 输入框不限长（见 wxml），在这里卡。单位跟在价格后面显示，太长会挤掉商品名
     if (d.unit.trim().length > UNIT_MAX) {
-      wx.showToast({ title: '单位最多 ' + UNIT_MAX + ' 个字', icon: 'none' })
+      wx.showToast({ title: f('单位最多 {0} 个字', UNIT_MAX), icon: 'none' })
       return
     }
 
     this.setData({ saving: true })
-    wx.showLoading({ title: '保存中...', mask: true })
+    wx.showLoading({ title: t('保存中...'), mask: true })
 
     try {
       if (!(await ensureContentOk({
@@ -145,15 +146,15 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: '已保存', icon: 'success' })
+        wx.showToast({ title: t('已保存'), icon: 'success' })
         setTimeout(() => wx.navigateBack(), 800)
       } else {
-        wx.showToast({ title: r.message || '保存失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '保存失败'), icon: 'none' })
       }
     } catch (err) {
       wx.hideLoading()
       console.error('保存商品失败：', err)
-      wx.showToast({ title: '保存失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('保存失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ saving: false })
     }

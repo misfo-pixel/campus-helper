@@ -4,6 +4,7 @@
 // 下半是历史账单，每笔记着单数、金额、双方确认到哪一步了。
 //
 // 平台不碰钱：这一页只负责让两边对上数，转账在微信/Venmo 里自己完成。
+const { t, f } = require('../../i18n/index.js')
 
 const STATUS_TEXT = {
   pending: '待店长转账',
@@ -30,7 +31,7 @@ Page({
 
   onLoad: function (options) {
     this.setData({ as: options.as === 'shop' ? 'shop' : 'team' })
-    wx.setNavigationBarTitle({ title: '配送费对账' })
+    wx.setNavigationBarTitle({ title: t('配送费对账') })
   },
 
   onShow: function () {
@@ -52,7 +53,7 @@ Page({
 
       if (!s.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: s.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(s.message || '读取失败'), icon: 'none' })
         if (done) done()
         return
       }
@@ -70,7 +71,7 @@ Page({
     }).catch(err => {
       console.error('读取对账失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
       if (done) done()
     })
   },
@@ -82,13 +83,12 @@ Page({
     const count = e.currentTarget.dataset.count
 
     wx.showModal({
-      title: '发起对账',
-      content: '把和「' + name + '」之间 ' + count + ' 单、合计 $' + amount +
-               ' 的配送费打包成一张账单。打包后这些单不会再重复计入下一次对账。',
-      confirmText: '生成账单',
+      title: t('发起对账'),
+      content: f('把和「{0}」之间 {1} 单、合计 ${2} 的配送费打包成一张账单。打包后这些单不会再重复计入下一次对账。', name, count, amount),
+      confirmText: t('生成账单'),
       success: res => {
         if (!res.confirm) return
-        wx.showLoading({ title: '生成中', mask: true })
+        wx.showLoading({ title: t('生成中'), mask: true })
         wx.cloud.callFunction({
           name: 'settlement',
           data: { action: 'create', as: this.data.as, counterpartId: id }
@@ -96,15 +96,15 @@ Page({
           wx.hideLoading()
           const result = (r && r.result) || {}
           if (result.success) {
-            wx.showToast({ title: '账单已生成', icon: 'success' })
+            wx.showToast({ title: t('账单已生成'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: result.message || '生成失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '生成失败'), icon: 'none' })
           }
         }).catch(err => {
           wx.hideLoading()
           console.error('生成账单失败：', err)
-          wx.showToast({ title: '生成失败', icon: 'none' })
+          wx.showToast({ title: t('生成失败'), icon: 'none' })
         })
       }
     })
@@ -113,8 +113,8 @@ Page({
   markPaid: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '标记已转账',
-      content: '确认你已经把这笔配送费转给配送队了？队长确认收到后这笔就结清。',
+      title: t('标记已转账'),
+      content: t('确认你已经把这笔配送费转给配送队了？队长确认收到后这笔就结清。'),
       success: res => {
         if (res.confirm) this.act('markPaid', id)
       }
@@ -124,8 +124,8 @@ Page({
   confirmReceived: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '确认收款',
-      content: '确认已经收到这笔钱？确认后账单结清，相关订单不会再出现在待结算里。',
+      title: t('确认收款'),
+      content: t('确认已经收到这笔钱？确认后账单结清，相关订单不会再出现在待结算里。'),
       success: res => {
         if (res.confirm) this.act('confirm', id)
       }
@@ -135,8 +135,8 @@ Page({
   cancelBill: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '撤回账单',
-      content: '撤回后这些订单会退回待结算，可以重新打包。',
+      title: t('撤回账单'),
+      content: t('撤回后这些订单会退回待结算，可以重新打包。'),
       success: res => {
         if (res.confirm) this.act('cancel', id)
       }
@@ -144,7 +144,7 @@ Page({
   },
 
   act: function (action, settlementId) {
-    wx.showLoading({ title: '处理中', mask: true })
+    wx.showLoading({ title: t('处理中'), mask: true })
     wx.cloud.callFunction({
       name: 'settlement',
       data: { action: action, as: this.data.as, settlementId: settlementId }
@@ -152,15 +152,15 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: '已处理', icon: 'success' })
+        wx.showToast({ title: t('已处理'), icon: 'success' })
         this.load()
       } else {
-        wx.showToast({ title: r.message || '处理失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '处理失败'), icon: 'none' })
       }
     }).catch(err => {
       wx.hideLoading()
       console.error(action + ' 失败：', err)
-      wx.showToast({ title: '处理失败', icon: 'none' })
+      wx.showToast({ title: t('处理失败'), icon: 'none' })
     })
   },
 
@@ -169,7 +169,7 @@ Page({
     if (!text) return
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制', icon: 'success' })
+      success: () => wx.showToast({ title: t('已复制'), icon: 'success' })
     })
   }
 })

@@ -1,16 +1,17 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="card">
-    <view class="section-title">建议类型</view>
-    <picker range="{{types}}" value="{{typeIndex}}" bindchange="onTypeChange">
-      <view class="fb-field">{{types[typeIndex]}}</view>
+    <view class="section-title">{{i18n.t('建议类型', lang)}}</view>
+    <picker range="{{typeLabels}}" value="{{typeIndex}}" bindchange="onTypeChange">
+      <view class="fb-field">{{typeLabels[typeIndex]}}</view>
     </picker>
   </view>
 
   <view class="card">
-    <view class="section-title">详细内容</view>
+    <view class="section-title">{{i18n.t('详细内容', lang)}}</view>
     <textarea
       class="fb-textarea"
-      placeholder="说说你遇到的问题或建议…"
+      placeholder="{{i18n.t('说说你遇到的问题或建议…', lang)}}"
       value="{{content}}"
       bindinput="onContentInput"
       maxlength="500"
@@ -19,14 +20,14 @@
   </view>
 
   <view class="card">
-    <view class="section-title">联系方式(选填)</view>
+    <view class="section-title">{{i18n.t('联系方式(选填)', lang)}}</view>
     <input
       class="fb-field"
-      placeholder="微信号 / 邮箱,方便回复你"
+      placeholder="{{i18n.t('微信号 / 邮箱,方便回复你', lang)}}"
       value="{{contact}}"
       bindinput="onContactInput"
     />
   </view>
 
-  <button class="btn-primary fb-submit" bindtap="submit" loading="{{submitting}}">提交建议</button>
+  <button class="btn-primary fb-submit" bindtap="submit" loading="{{submitting}}">{{i18n.t('提交建议', lang)}}</button>
 </view>

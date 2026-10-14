@@ -16,6 +16,7 @@
 const { getCanvasNode, toLocalPath, loadImage, roundRect, ellipsis, drawCover } = require('./poster.js')
 const { md, weekday, progress } = require('./group.js')
 const { mix, readableOn, FALLBACK } = require('./theme.js')
+const { t: tr, f: fr } = require('../i18n/index.js')
 
 const DISPLAY = '"HuangYou", sans-serif'
 const display = size => size + 'px ' + DISPLAY
@@ -165,9 +166,9 @@ function priceText(it) {
 
 function badgeText(s) {
   const p = progress(s, true)
-  if (p.open) return '下单就送'
-  if (p.formed) return '已成团'
-  return '还差' + p.gap + '位'
+  if (p.open) return tr('下单就送')
+  if (p.formed) return tr('已成团')
+  return fr('还差{0}位', p.gap)
 }
 
 /**
@@ -227,7 +228,7 @@ function renderCard(selector, component, d) {
       }
 
       // 广告语：第一句用强调色
-      const t = fit(ctx, d.slogan || d.shopName + ' 开团啦', dish ? 250 : 430, 3, 46, 30)
+      const t = fit(ctx, d.slogan || fr('{0} 开团啦', d.shopName), dish ? 250 : 430, 3, 46, 30)
       const lh = Math.round(t.size * 1.22)
       const top = 268 - (t.lines.length - 1) * lh
       t.lines.forEach((l, i) => {
@@ -239,7 +240,7 @@ function renderCard(selector, component, d) {
 
       ctx.font = display(24)
       ctx.fillStyle = p.ink
-      ctx.fillText(md(d.date) + ' ' + weekday(d.date) + ' 送到学校', 32, 354)
+      ctx.fillText(fr('{0} {1} 送到学校', md(d.date), weekday(d.date)), 32, 354)
 
       // 进度：自家强调色的圆章
       ctx.save()
@@ -281,6 +282,7 @@ function renderCard(selector, component, d) {
  *   info: [string]                     取货点、门槛、截单
  *   sections: [{ title, items: [{ image, name, price }] }]
  *   qrFileID, footer
+ *   promo: { banner, how } | null      首页横幅的活动（utils/promo.js），画在小程序码框上面
  * }
  */
 function renderLong(selector, component, d) {
@@ -322,6 +324,9 @@ function renderLong(selector, component, d) {
   const WHEN_H = d.when ? 150 : 0
   const QR = 132
   const INFO_W = W - M * 2 - QR - 22 - 48 - 24
+  // 活动横幅原图 686×300，按内容宽度等比缩，下面一行怎么领
+  const PROMO_IMG_H = d.promo ? Math.round((W - M * 2) * 300 / 686) : 0
+  const PROMO_H = d.promo ? 20 + PROMO_IMG_H + (d.promo.how ? 46 : 0) : 0
 
   // 底部信息框的高度要看折成几行，得先量字——这时候画布还没定尺寸，先借它的 ctx 量
   function layout(measureCtx) {
@@ -336,6 +341,7 @@ function renderLong(selector, component, d) {
       H += sec.rows.length * ROW_H + (sec.rows.length ? 16 : 0)
     })
     if (allCount > total) H += 50
+    H += PROMO_H
     H += 20 + BOX_H + 70
     return { H: H, BOX_H: BOX_H, infoLines: infoLines }
   }
@@ -347,9 +353,9 @@ function renderLong(selector, component, d) {
     const { H, BOX_H, infoLines } = layout(canvas.getContext('2d'))
     const ctx = setup(canvas, W, H)
     const rnd = seeded(Array.from(d.title || '').length * 131 + 17)
-    return loadAll(canvas, [theme.bg, d.logo, d.qrFileID].concat(photoIds)).then(imgs => {
-      const [bg, logo, qr] = imgs
-      const photoImgs = imgs.slice(3)
+    return loadAll(canvas, [theme.bg, d.logo, d.qrFileID, d.promo && d.promo.banner].concat(photoIds)).then(imgs => {
+      const [bg, logo, qr, promoImg] = imgs
+      const photoImgs = imgs.slice(4)
       let photoIndex = 0
 
       // ---- 底 ----
@@ -480,7 +486,7 @@ function renderLong(selector, component, d) {
         ctx.fillText(weekday(d.when.date) + ' ' + d.when.time, M + dw + 20, y + 62)
         ctx.font = body(22, true)
         ctx.fillStyle = rgba(p.ink, 0.7)
-        ctx.fillText(md(d.when.date) + ' 送到学校', M + dw + 22, y + 100)
+        ctx.fillText(fr('{0} 送到学校', md(d.when.date)), M + dw + 22, y + 100)
         if (style === 'chalkboard') wavy(ctx, M, y + WHEN_H - 18, W - M * 2, rgba(p.ink, 0.35), 2)
         else {
           ctx.fillStyle = rgba(p.ink, 0.14)
@@ -607,9 +613,30 @@ function renderLong(selector, component, d) {
         ctx.font = body(22, true)
         ctx.fillStyle = rgba(p.ink, 0.6)
         ctx.textAlign = 'center'
-        ctx.fillText('还有 ' + (allCount - total) + ' 样，扫码看全部', W / 2, y + 30)
+        ctx.fillText(fr('还有 {0} 样，扫码看全部', allCount - total), W / 2, y + 30)
         ctx.textAlign = 'left'
         y += 50
+      }
+
+      // ---- 活动：首页横幅原样贴上来，栗色金色是小程序的，不跟这张海报的配色 ----
+      if (d.promo) {
+        y += 20
+        ctx.save()
+        roundRect(ctx, M, y, W - M * 2, PROMO_IMG_H, 18)
+        ctx.fillStyle = '#7A0019'   // 横幅没下下来就露栗色底，不留白洞
+        ctx.fill()
+        ctx.clip()
+        if (promoImg) ctx.drawImage(promoImg, M, y, W - M * 2, PROMO_IMG_H)
+        ctx.restore()
+        y += PROMO_IMG_H
+        if (d.promo.how) {
+          ctx.font = body(22, true)
+          ctx.fillStyle = p.ink
+          ctx.textAlign = 'center'
+          ctx.fillText(ellipsis(ctx, d.promo.how, W - M * 2), W / 2, y + 34)
+          ctx.textAlign = 'left'
+          y += 46
+        }
       }
 
       // ---- 底：取货 / 门槛 / 截单 + 小程序码 ----
@@ -630,12 +657,12 @@ function renderLong(selector, component, d) {
         ctx.textAlign = 'center'
         ctx.font = display(22)
         ctx.fillStyle = p.accent
-        ctx.fillText('搜明尼助手', qx + QR / 2, qy + QR / 2 + 8)
+        ctx.fillText(tr('搜明尼助手'), qx + QR / 2, qy + QR / 2 + 8)
         ctx.textAlign = 'left'
       }
       ctx.font = display(32)
       ctx.fillStyle = p.accent
-      ctx.fillText(qr ? '长按识别' : '微信搜索', M + 24, y + 56)
+      ctx.fillText(tr(qr ? '长按识别' : '微信搜索'), M + 24, y + 56)
       ctx.font = body(22, true)
       ctx.fillStyle = style === 'chalkboard' ? p.ink : onSurface
       infoLines.forEach((line, i) => ctx.fillText(line, M + 24, y + 98 + i * 32))
@@ -643,9 +670,28 @@ function renderLong(selector, component, d) {
       ctx.font = body(18)
       ctx.fillStyle = rgba(p.ink, 0.5)
       ctx.textAlign = 'center'
-      ctx.fillText(d.footer || '明尼助手', W / 2, H - 26)
+      ctx.fillText(d.footer || tr('明尼助手'), W / 2, H - 26)
       ctx.textAlign = 'left'
 
+      return exportImage(canvas)
+    })
+  })
+}
+
+// ---------- 带活动贴纸的转发封面（5:4） ----------
+
+// 二手的转发封面就是商品照片。活动期间把照片按 5:4 裁好，右上角贴上活动贴纸（utils/promo.js）。
+// src、sticker 都是本地路径。照片读不出来就原样返回，至少还有原图
+function renderPromoCover(selector, component, src, sticker) {
+  const CW = 500
+  const CH = 400
+  return getCanvasNode(selector, component).then(canvas => {
+    const ctx = setup(canvas, CW, CH)
+    return Promise.all([loadImage(canvas, src), loadImage(canvas, sticker)]).then(([photo, tag]) => {
+      if (!photo) return src
+      ctx.clearRect(0, 0, CW, CH)
+      drawCover(ctx, photo, 0, 0, CW, CH)
+      if (tag) ctx.drawImage(tag, CW - 226, 6, 220, 100)
       return exportImage(canvas)
     })
   })
@@ -661,5 +707,6 @@ function showPoster(path) {
 module.exports = {
   renderCard: renderCard,
   renderLong: renderLong,
+  renderPromoCover: renderPromoCover,
   showPoster: showPoster
 }

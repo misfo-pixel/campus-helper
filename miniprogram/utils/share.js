@@ -13,7 +13,9 @@
 
 const { KINDS, isDemand, isClosed, rentText } = require('./kinds.js')
 const { toLocalPath } = require('./poster.js')
+const { currentPromo } = require('./promo.js')
 const { today } = require('./date.js')
+const { t, f } = require('../i18n/index.js')
 
 const TASK_TAG = '有偿'    // 委托只有一面，没有供/求之分，突出「给钱」最能让人点进来
 const TITLE_MAX = 14       // 卡片标题两行就截断，用户标题太长会把价钱和日期挤掉
@@ -31,10 +33,10 @@ const DETAIL = {
 
 // 详情还没加载出来就点了转发，只能先转发列表页
 const FALLBACK = {
-  item: { title: '明尼助手 · 二手市场', path: '/pages/market/market' },
-  sublet: { title: '明尼助手 · 房屋转租', path: '/pages/subletmarket/subletmarket' },
-  task: { title: '明尼助手 · 帮个忙', path: '/pages/taskmarket/taskmarket' },
-  group: { title: '明尼助手 · 兴趣群组', path: '/pages/groupmarket/groupmarket' }
+  item: { title: t('明尼助手 · 二手市场'), path: '/pages/market/market' },
+  sublet: { title: t('明尼助手 · 房屋转租'), path: '/pages/subletmarket/subletmarket' },
+  task: { title: t('明尼助手 · 帮个忙'), path: '/pages/taskmarket/taskmarket' },
+  group: { title: t('明尼助手 · 兴趣群组'), path: '/pages/groupmarket/groupmarket' }
 }
 
 function clip(s, n) {
@@ -51,7 +53,7 @@ function monthDay(date) {
 // 出/收/转/找 直接用 kinds.js 里胶囊上的字，和列表页说法一致
 function tagOf(type, doc) {
   const cfg = KINDS[type]
-  if (!cfg) return TASK_TAG
+  if (!cfg) return t(TASK_TAG)
   const kind = doc.kind || cfg.default
   const tab = cfg.tabs.filter(t => t.key === kind)[0]
   return tab ? tab.label : ''
@@ -60,7 +62,7 @@ function tagOf(type, doc) {
 function shareTitle(type, doc) {
   const name = clip(String(doc.title || '').replace(LEADING_TAG, ''), TITLE_MAX)
   // 已经卖掉/租出/完成/过期的，转发出去不该还在吆喝
-  if (isClosed(doc.status)) return '【已结束】' + name
+  if (isClosed(doc.status)) return f('【已结束】{0}', name)
 
   const tag = '【' + tagOf(type, doc) + '】'
   if (type === 'group') {
@@ -68,15 +70,15 @@ function shareTitle(type, doc) {
     const when = doc.event_date && doc.event_date >= today() ? ' · ' + monthDay(doc.event_date) : ''
     return tag + name + when
   }
-  const money = isDemand(doc.kind) ? ' 预算$' : ' $'
+  const money = isDemand(doc.kind) ? ' ' + t('预算') + '$' : ' $'
 
   if (type === 'sublet') {
     const range = [monthDay(doc.start_date), monthDay(doc.end_date)].filter(Boolean).join('-')
-    return tag + name + money + rentText(doc) + '/月' + (range ? ' · ' + range : '')
+    return tag + name + money + rentText(doc) + t('/月') + (range ? ' · ' + range : '')
   }
   if (type === 'task') {
     // 截止日已过但没人标完成的，不写日期，免得看着像过期帖
-    const due = doc.deadline && doc.deadline >= today() ? ' · ' + monthDay(doc.deadline) + '前' : ''
+    const due = doc.deadline && doc.deadline >= today() ? ' · ' + f('{0}前', monthDay(doc.deadline)) : ''
     return tag + name + money + doc.reward + due
   }
   return tag + name + money + doc.price
@@ -118,10 +120,27 @@ function withCover(msg, fileID, cover) {
   })
 }
 
+// 活动期间（utils/promo.js），二手的转发封面右上角贴上活动贴纸。
+// gs 是页面里的 <group-share>，cover 是封面下到本地的 Promise（prefetchCover / toLocalPath 的返回值），
+// 返回贴好的本地图。没活动、没封面、画失败都退回原来那张。
+// 和下封面一样在页面加载时就做，点转发的时候已经画好了
+let sticker = null   // { id, path: Promise }，贴纸一次启动只下一回
+function withPromo(gs, cover) {
+  const promo = currentPromo()
+  if (!gs || !promo || !promo.sticker) return cover
+  if (!sticker || sticker.id !== promo.sticker) {
+    const path = toLocalPath(promo.sticker)
+    sticker = { id: promo.sticker, path: path }
+    path.then(p => { if (!p && sticker && sticker.path === path) sticker = null })   // 下失败下次再试
+  }
+  return Promise.all([cover, sticker.path]).then(([local, tag]) =>
+    local && tag ? gs.promoCover(local, tag).catch(() => local) : local)
+}
+
 // 转发整个闲置主页：标题就是最可能卖掉的那件的信息（和详情页同一个格式），
 // 后面带一句还有几件。「最可能卖掉」由 getUserStore 的 hot_item 挑：留言问的人最多的
 function storeTitle(doc, count) {
-  return shareTitle('item', doc) + (count > 1 ? ' · 还有 ' + (count - 1) + ' 件' : '')
+  return shareTitle('item', doc) + (count > 1 ? f(' · 还有 {0} 件', count - 1) : '')
 }
 
 module.exports = {
@@ -130,5 +149,6 @@ module.exports = {
   prefetchCover: prefetchCover,
   detailShare: detailShare,
   withCover: withCover,
+  withPromo: withPromo,
   shareTitle: shareTitle
 }

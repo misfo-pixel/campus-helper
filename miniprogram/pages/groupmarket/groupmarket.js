@@ -1,6 +1,8 @@
 const { stashFrom } = require('../../utils/preview.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
 const { KINDS } = require('../../utils/kinds.js')
+const { t } = require('../../i18n/index.js')
+const { filterHidden } = require('../../utils/blocks.js')
 
 const CACHE_KEY = 'groupList.v1.open'   // 先显示上次的，再刷新（见 utils/listCache.js）
 
@@ -10,7 +12,7 @@ const LABEL = {}
 KINDS.group.tabs.forEach(t => { LABEL[t.key] = t.label })
 
 function decorate(list) {
-  return list.map(it => Object.assign({}, it, {
+  return filterHidden('group', list).map(it => Object.assign({}, it, {
     kindLabel: LABEL[it.kind || KINDS.group.default]
   }))
 }
@@ -46,7 +48,7 @@ Page({
   },
 
   onShareAppMessage: function () {
-    return { title: '明尼助手 · 找搭子、组乐队、兴趣群', path: '/pages/groupmarket/groupmarket' }
+    return { title: t('明尼助手 · 找搭子、组乐队、兴趣群'), path: '/pages/groupmarket/groupmarket' }
   },
 
   goToDetail: function (e) {

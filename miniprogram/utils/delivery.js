@@ -9,6 +9,7 @@
 // 没办完的请求，单数是云函数按订单现数刷新过的。
 // 2026-10-10 之前发出的请求没有这些字段，全部返回空串，界面上就不显示这几行。
 
+const { t, f } = require('../i18n/index.js')
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 function money(n) {
@@ -21,13 +22,13 @@ function money(n) {
 function departText(date, depart) {
   if (!date || !depart) return ''
   const d = new Date(date + 'T12:00:00')
-  const week = isNaN(d.getTime()) ? '' : ' ' + WEEK[d.getDay()]
-  return date.slice(5) + week + ' ' + depart + ' 出发'
+  const week = isNaN(d.getTime()) ? '' : ' ' + t(WEEK[d.getDay()])
+  return f('{0} {1} 出发', date.slice(5) + week, depart)
 }
 
 // 一个点一行：「Coffman 门口 · 约 12:15 到 · 3 单」
 function lineText(l) {
-  return l.name + (l.arrive ? ' · 约 ' + l.arrive + ' 到' : '') + ' · ' + l.count + ' 单'
+  return l.name + (l.arrive ? f(' · 约 {0} 到', l.arrive) : '') + f(' · {0} 单', l.count)
 }
 
 function describe(q) {
@@ -38,11 +39,11 @@ function describe(q) {
   // 取货点是默认情况，不标；只有送上门（现在关着）才挂个标签区分
   const exact = q.address_type === 'exact'
   return {
-    tag: exact ? '送上门' : '',
+    tag: exact ? t('送上门') : '',
     detail: exact
-      ? '每单 ' + money(lines[0].fee) + ' × ' + lines[0].count + ' 单'
+      ? f('每单 {0} × {1} 单', money(lines[0].fee), lines[0].count)
       : lines.map(lineText).join('；'),
-    totalText: '合计 ' + money(q.total),
+    totalText: f('合计 {0}', money(q.total)),
     departText: when,
     rows: lines.map(lineText)
   }

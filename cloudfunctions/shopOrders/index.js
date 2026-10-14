@@ -143,7 +143,7 @@ exports.main = async (event) => {
                       ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
                 tip: next === 'cancelled'
                   ? (event.reason || '店长取消了这笔订单')
-                  : '店长微信：' + (shop.contact_wechat || '见订单页')
+                  : (shop.contact_phone ? '店长手机：' + shop.contact_phone : '店长联系方式见订单页')
               }
             }
           })

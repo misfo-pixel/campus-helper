@@ -143,6 +143,12 @@ exports.main = async (event) => {
           postOwner(cfg, event.targetId),
           myRoles(openid)
         ])
+        // 我屏蔽了的人的留言不给我看（见 userBlock）。集合还没建时当没屏蔽过
+        const blocked = openid
+          ? (await db.collection('user_blocks').where({ owner: openid }).limit(1000).get()
+            .then(r => r.data.map(d => d.target)).catch(() => []))
+          : []
+        if (blocked.length) res.data = res.data.filter(m => blocked.indexOf(m.author) === -1)
         const users = await loadUsers(res.data.map(m => m.author).concat([owner]))
         const isAdmin = roles.indexOf(cfg.adminRole) !== -1 || roles.indexOf('super_admin') !== -1
 

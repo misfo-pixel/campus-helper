@@ -18,6 +18,7 @@ const { TEMPLATES, askOrGuide } = require('../../utils/subscribe.js')
 const { md, weekday, cutoffText, progress, shareTitle, ownerTitle, cardData, longData } = require('../../utils/group.js')
 const { cssVars } = require('../../utils/theme.js')
 const { showPoster } = require('../../utils/groupCover.js')
+const { t, f } = require('../../i18n/index.js')
 
 const CART_KEY = 'shopCart'
 
@@ -60,7 +61,7 @@ Page({
     this.setData({ isRootPage: getCurrentPages().length === 1 })
 
     if (!options.id && !options.scene) {
-      wx.showToast({ title: '缺少店铺信息', icon: 'none' })
+      wx.showToast({ title: t('缺少店铺信息'), icon: 'none' })
       return
     }
     this.shopId = options.id || ''
@@ -83,8 +84,8 @@ Page({
       if (!r.success) {
         this.setData({ loading: false })
         wx.showModal({
-          title: '打不开这家店',
-          content: r.message || '店铺不存在',
+          title: t('打不开这家店'),
+          content: t(r.message || '店铺不存在'),
           showCancel: false,
           success: () => wx.navigateBack()
         })
@@ -112,7 +113,7 @@ Page({
     }).catch(err => {
       console.error('读取店铺失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -201,7 +202,7 @@ Page({
     const s = this.data.session
     if (!s || this.data.posterBusy) return
     this.setData({ posterBusy: true })
-    wx.showLoading({ title: '生成中…', mask: true })
+    wx.showLoading({ title: t('生成中…'), mask: true })
     wx.cloud.callFunction({ name: 'getMiniCode', data: { sessionId: s._id } })
       .then(res => ((res && res.result) || {}).fileID || '')
       .catch(() => '')
@@ -213,7 +214,7 @@ Page({
       .catch(err => {
         console.error('生成海报失败：', err)
         wx.hideLoading()
-        wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+        wx.showToast({ title: t('生成失败，请重试'), icon: 'none' })
       })
       .then(() => this.setData({ posterBusy: false }))
   },
@@ -224,7 +225,7 @@ Page({
     if (!item || !item.available) return
 
     if (!this.data.session) {
-      wx.showToast({ title: '暂无拼团，可以订阅开团提醒', icon: 'none' })
+      wx.showToast({ title: t('暂无拼团，可以订阅开团提醒'), icon: 'none' })
       return
     }
 
@@ -259,22 +260,22 @@ Page({
       }).then(res => {
         const r = (res && res.result) || {}
         if (!r.success) {
-          wx.showToast({ title: r.message || '订阅失败', icon: 'none' })
+          wx.showToast({ title: t(r.message || '订阅失败'), icon: 'none' })
           return
         }
         this.setData({ subTickets: r.tickets })
-        wx.showToast({ title: '下次开团会通知你', icon: 'none' })
+        wx.showToast({ title: t('下次开团会通知你'), icon: 'none' })
       })
     }).catch(err => {
       console.error('订阅开团提醒失败：', err)
-      wx.showToast({ title: '订阅失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('订阅失败，请重试'), icon: 'none' })
     }).then(() => this.setData({ subBusy: false }))
   },
 
   unsubscribe: function () {
     wx.showModal({
-      title: '取消开团提醒',
-      content: '之后这家店开团就不再通知你了',
+      title: t('取消开团提醒'),
+      content: t('之后这家店开团就不再通知你了'),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({
@@ -283,10 +284,10 @@ Page({
         }).then(r2 => {
           const r = (r2 && r2.result) || {}
           if (r.success) this.setData({ subTickets: 0 })
-          else wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+          else wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
         }).catch(err => {
           console.error('取消开团提醒失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })
@@ -298,7 +299,7 @@ Page({
     if (!wechat) return
     wx.setClipboardData({
       data: wechat,
-      success: () => wx.showToast({ title: '已复制微信号', icon: 'success' })
+      success: () => wx.showToast({ title: t('已复制微信号'), icon: 'success' })
     })
   },
 
@@ -311,15 +312,15 @@ Page({
 
   checkout: function () {
     if (!this.data.session) {
-      wx.showToast({ title: '暂无拼团', icon: 'none' })
+      wx.showToast({ title: t('暂无拼团'), icon: 'none' })
       return
     }
     if (this.data.cartCount === 0) {
-      wx.showToast({ title: '还没选商品', icon: 'none' })
+      wx.showToast({ title: t('还没选商品'), icon: 'none' })
       return
     }
     if (!this.data.reachMin) {
-      wx.showToast({ title: '还没到起送价 $' + this.data.shop.min_order, icon: 'none' })
+      wx.showToast({ title: f('还没到起送价 ${0}', this.data.shop.min_order), icon: 'none' })
       return
     }
 
@@ -362,11 +363,11 @@ Page({
   onShareAppMessage: function () {
     const shop = this.data.shop
     // 商品还没加载出来就点了转发，只能先转发列表
-    if (!shop) return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
+    if (!shop) return { title: t('一起拼团 · 满单成团，送到学校'), path: '/pages/shoplist/shoplist' }
 
     const s = this.data.session
     // 店长转自己的店是在打广告，标题用他写的广告语；别人转用进度
-    const title = !s ? shop.name + ' · 订阅开团提醒' : (this.data.subMine ? ownerTitle(shop, s) : shareTitle(shop.name, s, false))
+    const title = !s ? f('{0} · 订阅开团提醒', shop.name) : (this.data.subMine ? ownerTitle(shop, s) : shareTitle(shop.name, s, false))
     const path = '/pages/shopdetail/shopdetail?id=' + shop._id + (s ? '&s=' + s._id : '') + '&from=share'
     if (this.cardPath) return { title: title, path: path, imageUrl: this.cardPath }
     return withCover({ title: title, path: path }, this.coverID, this.cover)

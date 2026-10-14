@@ -1,56 +1,57 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
 
   <!-- 页头一句话说清这页是干什么的：以前叫「配送状态」，店长不知道这是找人送货的地方 -->
   <view class="hero ask-hero">
-    <view class="hero-title">找配送队</view>
-    <view class="hero-sub">把这一趟发给校园配送队，队长接单后用微信联系你。按小店设置的配送费付给队伍。</view>
+    <view class="hero-title">{{i18n.t('找配送队', lang)}}</view>
+    <view class="hero-sub">{{i18n.t('把这一趟发给校园配送队，队长接单后用微信联系你。按小店设置的配送费付给队伍。', lang)}}</view>
   </view>
 
   <view wx:if="{{noDelivery}}" class="card ask-off">
-    <view>小店设置的是「无需线下交付」，没有要送的东西。</view>
-    <text class="ask-link" bindtap="goToShopSettings">去小店设置 ›</text>
+    <view>{{i18n.t('小店设置的是「无需线下交付」，没有要送的东西。', lang)}}</view>
+    <text class="ask-link" bindtap="goToShopSettings">{{i18n.t('去小店设置 ›', lang)}}</text>
   </view>
 
   <block wx:elif="{{shopReady}}">
     <!-- ========== 订单详情 ==========
          时间和地点读小店设置，单数按这一场的订单数，店长这里不填 -->
-    <view class="section-title section-title-bar">订单详情</view>
+    <view class="section-title section-title-bar">{{i18n.t('订单详情', lang)}}</view>
 
     <view wx:if="{{expired}}" class="card ask-off">
-      <view>小店现在没有开着的服务时间，先去开一场。</view>
-      <text class="ask-link" bindtap="goToShopSettings">去小店设置 ›</text>
+      <view>{{i18n.t('小店现在没有开着的服务时间，先去开一场。', lang)}}</view>
+      <text class="ask-link" bindtap="goToShopSettings">{{i18n.t('去小店设置 ›', lang)}}</text>
     </view>
 
     <view wx:else class="card lines">
       <view class="line-depart">{{departText}}</view>
-      <view wx:if="{{lines.length === 0}}" class="text-light line-empty">暂无订单</view>
+      <view wx:if="{{lines.length === 0}}" class="text-light line-empty">{{i18n.t('暂无订单', lang)}}</view>
       <view wx:for="{{lines}}" wx:key="name" class="line">
         <view class="line-name">
           {{item.name}}
-          <view class="line-fee">{{item.arrive ? '约 ' + item.arrive + ' 到 · ' : ''}}每单 {{item.feeText}}</view>
+          <view class="line-fee">{{i18n.f('{0}每单 {1}', lang, item.arrive ? i18n.t('约 ', lang) + item.arrive + i18n.t(' 到 · ', lang) : '', item.feeText)}}</view>
         </view>
         <text class="line-count-text">{{item.count}}</text>
-        <text class="line-unit">单</text>
+        <text class="line-unit">{{i18n.t('单', lang)}}</text>
       </view>
 
       <view class="line-foot">
-        <text class="ask-link" bindtap="goToShopSettings">改时间或配送费 ›</text>
-        <text wx:if="{{totalText}}" class="line-total">合计 {{totalText}}</text>
+        <text class="ask-link" bindtap="goToShopSettings">{{i18n.t('改时间或配送费 ›', lang)}}</text>
+        <text wx:if="{{totalText}}" class="line-total">{{i18n.f('合计 {0}', lang, totalText)}}</text>
       </view>
       <view wx:if="{{freeWarn}}" class="line-warn">{{freeWarn}}</view>
     </view>
 
-    <textarea placeholder="其他要求（选填）"
+    <textarea placeholder="{{i18n.t('其他要求（选填）', lang)}}"
               value="{{note}}" bindinput="onNote" maxlength="300"
               class="card note-box"></textarea>
 
     <!-- ========== 2 发给谁 ========== -->
-    <view class="section-title section-title-bar">发给谁</view>
+    <view class="section-title section-title-bar">{{i18n.t('发给谁', lang)}}</view>
 
     <!-- 读失败 ≠ 平台上没有队。分开说，否则店长会以为没人可找 -->
     <loading-spinner wx:if="{{loading}}" />
-    <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
-    <view wx:elif="{{teams.length === 0}}" class="text-light">目前还没有配送队。</view>
+    <view wx:elif="{{teamsError}}" class="text-light" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
+    <view wx:elif="{{teams.length === 0}}" class="text-light">{{i18n.t('目前还没有配送队。', lang)}}</view>
 
     <block wx:else>
       <view wx:if="{{teams.length > 1}}"
@@ -58,8 +59,8 @@
             bindtap="pickTeam" data-index="{{-1}}">
         <view class="pick-emoji"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
         <view class="pick-body">
-          <view class="pick-name">发给所有配送队</view>
-          <view class="pick-desc">{{teams.length}} 支队同时收到，先接先得</view>
+          <view class="pick-name">{{i18n.t('发给所有配送队', lang)}}</view>
+          <view class="pick-desc">{{i18n.f('{0} 支队同时收到，先接先得', lang, teams.length)}}</view>
         </view>
       </view>
 
@@ -75,15 +76,15 @@
       </view>
 
       <button class="btn-primary" bindtap="send" loading="{{sending}}" style="margin-top: 24rpx;">
-        发送请求{{totalText ? ' · ' + totalText : ''}}
+        {{i18n.f('发送请求{0}', lang, totalText ? ' · ' + totalText : '')}}
       </button>
     </block>
   </block>
 
   <!-- ========== 发出的请求 ========== -->
-  <view class="section-title section-title-bar">发出的请求</view>
-  <view wx:if="{{requestsError}}" class="text-light" bindtap="retry">读取失败，点击重试</view>
-  <view wx:elif="{{requests.length === 0}}" class="text-light">还没有发过请求。</view>
+  <view class="section-title section-title-bar">{{i18n.t('发出的请求', lang)}}</view>
+  <view wx:if="{{requestsError}}" class="text-light" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
+  <view wx:elif="{{requests.length === 0}}" class="text-light">{{i18n.t('还没有发过请求。', lang)}}</view>
 
   <view wx:for="{{requests}}" wx:key="_id" class="card req">
     <view class="req-head">
@@ -91,7 +92,7 @@
       <text class="req-status req-status-{{item.status}}">{{item.statusText}}</text>
     </view>
 
-    <view class="text-light req-time">{{item.timeText}} 发出</view>
+    <view class="text-light req-time">{{i18n.f('{0} 发出', lang, item.timeText)}}</view>
     <view wx:if="{{item.totalText}}" class="req-price">
       <text wx:if="{{item.tag}}" class="ask-tag">{{item.tag}}</text>
       <text wx:if="{{item.departText}}" class="req-depart">{{item.departText}}</text>
@@ -103,7 +104,7 @@
     <!-- 送达照片：平台不派单也不结账，出了「说送了其实没送」的争议，
          能拿出来的只有这个 -->
     <block wx:if="{{item.status === 'delivered'}}">
-      <view class="req-done">{{item.deliveredText}} 送达</view>
+      <view class="req-done">{{i18n.f('{0} 送达', lang, item.deliveredText)}}</view>
       <view class="req-photos">
         <image wx:for="{{item.photos}}" wx:for-item="ph" wx:key="*this"
                src="{{ph}}" mode="aspectFill" class="req-photo"
@@ -113,9 +114,9 @@
 
     <!-- 有队接过的单才有对象可标、可举报 -->
     <view wx:if="{{item.team_id}}" class="req-ops">
-      <text class="req-op" bindtap="reportTeam" data-team="{{item.team_id}}">举报</text>
+      <text class="req-op" bindtap="reportTeam" data-team="{{item.team_id}}">{{i18n.t('举报', lang)}}</text>
       <text wx:if="{{item.status === 'accepted'}}" class="req-op req-op-bad"
-            bindtap="markNoShow" data-id="{{item._id}}" data-name="{{item.team_name}}">没来送</text>
+            bindtap="markNoShow" data-id="{{item._id}}" data-name="{{item.team_name}}">{{i18n.t('没来送', lang)}}</text>
     </view>
   </view>
 </view>

@@ -12,6 +12,7 @@
 //
 // 模板 ID 在小程序后台「订阅消息」里申请。云函数那边有一份一模一样的常量，
 // 云函数和小程序不共享代码，只能各存一份，改的时候两边一起改。
+const { t } = require('../i18n/index.js')
 const TEMPLATES = {
   // 新订单通知 —— 发给店长（小店新单 / 委托接单共用）
   newOrder: 'aP1AnsfSnR83eOZdVtMJh6Q0lrO0OuiWzwHEcbzP418',
@@ -87,9 +88,9 @@ function askOrGuide(name) {
           if (!blocked) return resolve(false)
 
           wx.showModal({
-            title: '通知已被关闭',
-            content: '你之前选了「不再询问」，需要在设置里重新打开。',
-            confirmText: '去设置',
+            title: t('通知已被关闭'),
+            content: t('你之前选了「不再询问」，需要在设置里重新打开。'),
+            confirmText: t('去设置'),
             success: r => {
               if (r.confirm) wx.openSetting({ withSubscriptions: true })
               resolve(false)

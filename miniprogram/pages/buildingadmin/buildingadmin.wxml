@@ -1,21 +1,22 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <loading-spinner wx:if="{{loading}}" />
 <view wx:elif="{{loadError}}" class="page-container">
-  <view class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+  <view class="text-light empty" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
 </view>
 
 <view wx:else class="page-container">
-  <view class="field-hint">买家选「送到买家地址」时只能挑启用的楼。范围：明大 Minneapolis 校区 + 周边约 1 mile 的公寓，不含 St Paul。</view>
+  <view class="field-hint">{{i18n.t('买家选「送到买家地址」时只能挑启用的楼。范围：明大 Minneapolis 校区 + 周边约 1 mile 的公寓，不含 St Paul。', lang)}}</view>
 
   <!-- 集合是空的：一键导入初始名单 -->
   <view wx:if="{{total === 0}}" class="card seed">
-    <view class="text-light">名单还是空的，买家现在选不了楼、下不了送上门的单。</view>
-    <button class="btn-primary" bindtap="seed" style="margin-top: 24rpx;">导入初始名单</button>
+    <view class="text-light">{{i18n.t('名单还是空的，买家现在选不了楼、下不了送上门的单。', lang)}}</view>
+    <button class="btn-primary" bindtap="seed" style="margin-top: 24rpx;">{{i18n.t('导入初始名单', lang)}}</button>
   </view>
 
   <!-- ========== 加一栋 ========== -->
-  <view class="section-title section-title-bar">加一栋</view>
+  <view class="section-title section-title-bar">{{i18n.t('加一栋', lang)}}</view>
   <view class="card add">
-    <input class="add-name" placeholder="楼名（如 Radius at 15th）" value="{{newName}}" bindinput="onNewName" maxlength="60" />
+    <input class="add-name" placeholder="{{i18n.t('楼名（如 Radius at 15th）', lang)}}" value="{{newName}}" bindinput="onNewName" maxlength="60" />
     <view class="add-row">
       <picker mode="selector" range="{{areas}}" value="{{newArea}}" bindchange="onNewArea">
         <view class="add-pick">{{areas[newArea]}} ▾</view>
@@ -26,11 +27,11 @@
               bindtap="onNewKind" data-index="{{index}}">{{item.text}}</text>
       </view>
     </view>
-    <button class="btn-primary btn-sm add-btn" bindtap="add" loading="{{adding}}">添加</button>
+    <button class="btn-primary btn-sm add-btn" bindtap="add" loading="{{adding}}">{{i18n.t('添加', lang)}}</button>
   </view>
 
   <!-- ========== 名单 ========== -->
-  <view wx:if="{{total}}" class="section-title section-title-bar">名单（启用 {{activeCount}} / {{total}}）</view>
+  <view wx:if="{{total}}" class="section-title section-title-bar">{{i18n.f('名单（启用 {0} / {1}）', lang, activeCount, total)}}</view>
   <block wx:for="{{groups}}" wx:for-item="g" wx:key="area">
     <view class="area">{{g.area}}</view>
     <view class="card list">

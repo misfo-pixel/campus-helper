@@ -6,6 +6,7 @@
 
 const { ask } = require('../../utils/subscribe.js')
 const { formatTime } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -34,7 +35,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
       this.setData({
@@ -47,24 +48,24 @@ Page({
     }).catch(err => {
       console.error('读取反馈失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
   reply: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '回复反馈',
+      title: t('回复反馈'),
       editable: true,
-      placeholderText: '写一句回复，对方会收到通知',
+      placeholderText: t('写一句回复，对方会收到通知'),
       success: res => {
         if (!res.confirm) return
         const text = (res.content || '').trim()
         if (!text) {
-          wx.showToast({ title: '回复不能为空', icon: 'none' })
+          wx.showToast({ title: t('回复不能为空'), icon: 'none' })
           return
         }
-        wx.showLoading({ title: '提交中', mask: true })
+        wx.showLoading({ title: t('提交中'), mask: true })
         wx.cloud.callFunction({
           name: 'feedbackManage',
           data: { action: 'reply', id: id, reply: text }
@@ -72,15 +73,15 @@ Page({
           wx.hideLoading()
           const r = (r2 && r2.result) || {}
           if (r.success) {
-            wx.showToast({ title: '已回复', icon: 'success' })
+            wx.showToast({ title: t('已回复'), icon: 'success' })
             this.load()
           } else {
-            wx.showToast({ title: r.message || '回复失败', icon: 'none' })
+            wx.showToast({ title: t(r.message || '回复失败'), icon: 'none' })
           }
         }).catch(err => {
           wx.hideLoading()
           console.error('回复反馈失败：', err)
-          wx.showToast({ title: '回复失败', icon: 'none' })
+          wx.showToast({ title: t('回复失败'), icon: 'none' })
         })
       }
     })
@@ -91,7 +92,7 @@ Page({
     if (!text) return
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制', icon: 'success' })
+      success: () => wx.showToast({ title: t('已复制'), icon: 'success' })
     })
   }
 })

@@ -1,11 +1,12 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
 
   <!-- 卖家头部 -->
   <view class="store-head card">
     <image class="store-avatar" src="{{seller.avatarUrl || '/images/avatar.png'}}" mode="aspectFill"></image>
     <view class="store-meta">
-      <view class="store-name">{{seller.nickname || '明大同学'}}</view>
-      <view class="text-light">共 {{total}} 条在架</view>
+      <view class="store-name">{{seller.nickname || i18n.t('明大同学', lang)}}</view>
+      <view class="text-light">{{i18n.f('共 {0} 条在架', lang, total)}}</view>
     </view>
   </view>
 
@@ -21,13 +22,13 @@
   <skeleton wx:if="{{loading}}" type="row" thumb="{{140}}" />
 
   <view wx:elif="{{notFound}}" class="store-empty">
-    <view>这个主页打不开了</view>
-    <view class="text-light" style="margin-top: 12rpx;">链接可能不完整，或者用户已经注销</view>
-    <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">去逛逛市场</button>
+    <view>{{i18n.t('这个主页打不开了', lang)}}</view>
+    <view class="text-light" style="margin-top: 12rpx;">{{i18n.t('链接可能不完整，或者用户已经注销', lang)}}</view>
+    <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">{{i18n.t('去逛逛市场', lang)}}</button>
   </view>
 
   <view wx:elif="{{shown.length === 0}}" class="store-empty">
-    {{isMe ? '这个板块你还没有在架的内容' : 'TA 在这个板块暂时没有内容'}}
+    {{isMe ? i18n.t('这个板块你还没有在架的内容', lang) : i18n.t('TA 在这个板块暂时没有内容', lang)}}
   </view>
 
   <block wx:else>
@@ -49,3 +50,6 @@
   <!-- 分享进来的人多半是第一次用，这条得留着 -->
   <disclaimer-bar wx:if="{{!loading}}" type="trade" />
 </view>
+
+<!-- 画转发封面上的活动贴纸用，见 utils/share.js 的 withPromo -->
+<group-share id="gs" no-font />

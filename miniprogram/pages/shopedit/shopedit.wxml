@@ -1,34 +1,35 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <skeleton wx:if="{{loading}}" type="form" />
 <view wx:if="{{!loading}}" class="page-container">
-  <view class="page-title">小店设置</view>
+  <view class="page-title">{{i18n.t('小店设置', lang)}}</view>
 
   <ban-bar />
 
   <!-- 必填的东西全在「详细信息（选填）」之前，所以只在首尾各标一次，
        中间的分节标题不再重复标注——标多了反而没人看 -->
-  <view class="section-title">基本信息（必填）</view>
+  <view class="section-title">{{i18n.t('基本信息（必填）', lang)}}</view>
 
-  <input placeholder="小店名称" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
+  <input placeholder="{{i18n.t('小店名称', lang)}}" value="{{name}}" bindinput="onInput" data-field="name" class="card form-card" />
 
-  <input placeholder="{{ordering ? '联系微信（买家下单后联系你）' : '联系微信（买家会直接加你）'}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="card form-card" />
+  <input type="number" maxlength="15" placeholder="{{i18n.t('手机号（买家有急事时打给你）', lang)}}" value="{{contact_phone}}" bindinput="onInput" data-field="contact_phone" class="card form-card" />
 
   <!-- 取货点：买家下单时挑一个过来取。开团时再勾这一场去哪几个 -->
   <view wx:if="{{ordering && needsDelivery}}" class="card group">
     <view class="group-head">
-      <view class="group-title">{{exactAddress ? '送到买家地址' : '取货点'}}</view>
+      <view class="group-title">{{exactAddress ? i18n.t('送到买家地址', lang) : i18n.t('取货点', lang)}}</view>
     </view>
 
     <view class="group-body">
       <view class="well">
         <view wx:if="{{exactAddressEnabled}}" class="kind-switch well-switch">
           <view class="kind-switch-item {{exactAddress ? 'kind-switch-on' : ''}}"
-                bindtap="pickExactAddress" data-exact="1">送到买家地址</view>
+                bindtap="pickExactAddress" data-exact="1">{{i18n.t('送到买家地址', lang)}}</view>
           <view class="kind-switch-item {{exactAddress ? '' : 'kind-switch-on'}}"
-                bindtap="pickExactAddress" data-exact="0">送到取货点</view>
+                bindtap="pickExactAddress" data-exact="0">{{i18n.t('送到取货点', lang)}}</view>
         </view>
 
         <block wx:if="{{exactAddress}}">
-          <input placeholder="配送费（美元/单）" type="digit"
+          <input placeholder="{{i18n.t('配送费（美元/单）', lang)}}" type="digit"
                  value="{{flat_delivery_fee}}" bindinput="onInput" data-field="flat_delivery_fee"
                  class="card form-card well-card" />
         </block>
@@ -40,39 +41,39 @@
     </view>
   </view>
 
-  <view class="section-title">详细信息（选填）</view>
+  <view class="section-title">{{i18n.t('详细信息（选填）', lang)}}</view>
 
   <!-- 广告语：海报大标题、店长转发时的卡片标题 -->
-  <input placeholder="广告语（如 麻辣鲜香水煮鱼，周五热乎送到校）" value="{{slogan}}" maxlength="16"
+  <input placeholder="{{i18n.t('广告语（如 麻辣鲜香水煮鱼，周五热乎送到校）', lang)}}" value="{{slogan}}" maxlength="16"
          bindinput="onInput" data-field="slogan" class="card form-card" />
 
   <view class="logo-row card" bindtap="chooseLogo">
     <image wx:if="{{logo}}" src="{{logo}}" mode="aspectFill" class="logo-img" />
     <view wx:else class="logo-img logo-placeholder">+</view>
     <view class="logo-hint">
-      <view>小店 Logo</view>
-      <view class="text-light">点击{{logo ? '更换' : '上传'}}，建议正方形</view>
+      <view>{{i18n.t('小店 Logo', lang)}}</view>
+      <view class="text-light">{{i18n.f('点击{0}，建议正方形', lang, logo ? i18n.t('更换', lang) : i18n.t('上传', lang))}}</view>
     </view>
   </view>
 
   <!-- 原来的「下单须知」并进了简介：它举的三个用途里，取货约定有了服务地点 / 时间，
        备注怎么填有了下面的补充说明，剩下的约定写在简介里就够，简介在小店页是全文展示的 -->
-  <textarea placeholder="{{ordering ? '小店简介（做什么、有什么特色、有什么约定）' : '小店简介（做什么、怎么联系、怎么交付）'}}" value="{{description}}" bindinput="onInput" data-field="description" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
+  <textarea placeholder="{{ordering ? i18n.t('小店简介（做什么、有什么特色、有什么约定）', lang) : i18n.t('小店简介（做什么、怎么联系、怎么交付）', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
-  <input wx:if="{{ordering}}" placeholder="起送价（美元，不填就是不限）" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
+  <input wx:if="{{ordering}}" placeholder="{{i18n.t('起送价（美元，不填就是不限）', lang)}}" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
 
   <!-- 选填，所以不放在上面的基本信息里 -->
   <view wx:if="{{ordering}}" class="card group">
     <view class="group-head">
       <view class="group-head-text">
-        <view class="group-title">下单时要买家补充说明</view>
-        <view class="text-light group-hint">如尺寸、颜色、口味、款式</view>
+        <view class="group-title">{{i18n.t('下单时要买家补充说明', lang)}}</view>
+        <view class="text-light group-hint">{{i18n.t('如尺寸、颜色、口味、款式', lang)}}</view>
       </view>
       <switch checked="{{noteRequired}}" color="#7A0019" bindchange="onNoteRequiredChange" />
     </view>
 
     <view wx:if="{{noteRequired}}" class="group-body">
-      <input placeholder="给买家的提示（如 请说明尺寸和颜色）" value="{{note_hint}}" bindinput="onInput" data-field="note_hint" maxlength="60" class="well well-input" />
+      <input placeholder="{{i18n.t('给买家的提示（如 请说明尺寸和颜色）', lang)}}" value="{{note_hint}}" bindinput="onInput" data-field="note_hint" maxlength="60" class="well well-input" />
     </view>
   </view>
 
@@ -80,18 +81,18 @@
     <image wx:if="{{licenseImage}}" src="{{licenseImage}}" mode="aspectFill" class="license-img" />
     <view wx:else class="license-img license-placeholder">+</view>
     <view class="license-hint">
-      <view>许可证 / 资质凭证</view>
-      <view class="text-light">点击{{licenseImage ? '更换' : '上传'}}。会在小店页公开展示，请遮住证件号等个人信息</view>
+      <view>{{i18n.t('许可证 / 资质凭证', lang)}}</view>
+      <view class="text-light">{{i18n.f('点击{0}。会在小店页公开展示，请遮住证件号等个人信息', lang, licenseImage ? i18n.t('更换', lang) : i18n.t('上传', lang))}}</view>
     </view>
   </view>
 
   <view class="agree-row">
-    <text class="agree-text">开店时已同意</text>
-    <text class="agree-link" catchtap="openAgreement">《店长责任告知书》</text>
+    <text class="agree-text">{{i18n.t('开店时已同意', lang)}}</text>
+    <text class="agree-link" catchtap="openAgreement">{{i18n.t('《店长责任告知书》', lang)}}</text>
   </view>
 
-  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">保存</button>
+  <button class="btn-primary" bindtap="submit" loading="{{saving}}" style="margin-top: 32rpx;">{{i18n.t('保存', lang)}}</button>
 
   <!-- 不常用又不可撤销，放最底下、做成文字，别和「保存」抢 -->
-  <view class="delete-shop" bindtap="removeShop">{{deleting ? '删除中...' : '删除小店'}}</view>
+  <view class="delete-shop" bindtap="removeShop">{{deleting ? i18n.t('删除中...', lang) : i18n.t('删除小店', lang)}}</view>
 </view>

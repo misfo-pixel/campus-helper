@@ -19,10 +19,10 @@ const ALL_TEAMS = -1
 
 // 群发的还没人接时说「等待接单」，都拒了说「没人接」，其余和点名发的一样
 function statusText(q) {
-  if (q.broadcast && q.status === 'open') return '等待接单'
-  if (q.broadcast && q.status === 'declined') return '没人接'
-  if (q.released) return '队伍退单'
-  return STATUS_TEXT[q.status] || q.status
+  if (q.broadcast && q.status === 'open') return t('等待接单')
+  if (q.broadcast && q.status === 'declined') return t('没人接')
+  if (q.released) return t('队伍退单')
+  return t(STATUS_TEXT[q.status] || q.status)
 }
 
 const STATUS_TEXT = {
@@ -39,6 +39,7 @@ const TEAM_REPORT_REASONS = ['接了单没来送', '骚扰 / 态度恶劣', '虚
 const { formatTime } = require('../../utils/date.js')
 const { ask } = require('../../utils/subscribe.js')
 const { money, departText, describe } = require('../../utils/delivery.js')
+const { t, f } = require('../../i18n/index.js')
 
 Page({
   data: {
@@ -81,7 +82,7 @@ Page({
         departText: r.batch ? departText(r.batch.date, r.batch.depart_time) : '',
         lines: lines,
         totalText: lines.length ? money(r.total) : '',
-        freeWarn: free ? ((r.exact ? '配送费' : '「' + free.name + '」的配送费') + '是 $0，配送队拿不到钱，先去小店设置填上') : ''
+        freeWarn: free ? ((r.exact ? t('配送费是 $0，配送队拿不到钱，先去小店设置填上') : f('「{0}」的配送费是 $0，配送队拿不到钱，先去小店设置填上', free.name))) : ''
       })
     }).catch(err => {
       console.error('读取这一场的订单失败：', err)
@@ -116,20 +117,20 @@ Page({
 
       if (!r.success) {
         this.setData({ loading: false, teamsError: true })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
 
-      const teams = (r.teams || []).map(t => Object.assign({}, t, {
-        repText: (t.delivered_count || t.no_show_count)
-          ? '送达 ' + (t.delivered_count || 0) + ' 单' + (t.no_show_count ? ' · 爽约 ' + t.no_show_count + ' 次' : '')
-          : '新队伍，还没送过'
+      const teams = (r.teams || []).map(team => Object.assign({}, team, {
+        repText: (team.delivered_count || team.no_show_count)
+          ? f('送达 {0} 单', team.delivered_count || 0) + (team.no_show_count ? f(' · 爽约 {0} 次', team.no_show_count) : '')
+          : t('新队伍，还没送过')
       }))
       this.setData({ teams: teams, loading: false, teamsError: false })
     }).catch(err => {
       console.error('读取配送队失败：', err)
       this.setData({ loading: false, teamsError: true })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -142,7 +143,7 @@ Page({
 
       if (!r.success) {
         this.setData({ requestsError: true })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         if (done) done()
         return
       }
@@ -151,7 +152,7 @@ Page({
         requestsError: false,
         requests: (r.requests || []).map(q => Object.assign({}, q, describe(q), {
           // 群发的在有队接下之前没有归属
-          teamText: q.team_name || '所有配送队',
+          teamText: q.team_name || t('所有配送队'),
           statusText: statusText(q),
           timeText: formatTime(q.created_at),
           deliveredText: formatTime(q.delivered_at)
@@ -161,7 +162,7 @@ Page({
     }).catch(err => {
       console.error('读取配送记录失败：', err)
       this.setData({ requestsError: true })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
       if (done) done()
     })
   },
@@ -178,9 +179,9 @@ Page({
   markNoShow: function (e) {
     const { id, name } = e.currentTarget.dataset
     wx.showModal({
-      title: '「' + name + '」没来送？',
-      content: '会给这支队记一次爽约，满 3 次自动下架。确认对方确实没来、也没联系你再标。',
-      confirmText: '没来送',
+      title: f('「{0}」没来送？', name),
+      content: t('会给这支队记一次爽约，满 3 次自动下架。确认对方确实没来、也没联系你再标。'),
+      confirmText: t('没来送'),
       confirmColor: '#C8102E',
       success: res => {
         if (!res.confirm) return
@@ -189,12 +190,12 @@ Page({
           data: { action: 'noShow', id: id }
         }).then(r => {
           const result = (r && r.result) || {}
-          wx.showToast({ title: result.success ? '已记录，可以重新发请求' : (result.message || '操作失败'), icon: 'none' })
+          wx.showToast({ title: t(result.success ? '已记录，可以重新发请求' : (result.message || '操作失败')), icon: 'none' })
           this.loadRequests()
           this.loadTeams()
         }).catch(err => {
           console.error('标记没来送失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })
@@ -203,7 +204,7 @@ Page({
   reportTeam: function (e) {
     const teamId = e.currentTarget.dataset.team
     wx.showActionSheet({
-      itemList: TEAM_REPORT_REASONS,
+      itemList: TEAM_REPORT_REASONS.map(r => t(r)),
       success: res => {
         // 举报的人最想知道后续，这一刻要授权成功率最高
         ask('reportResult')
@@ -212,10 +213,10 @@ Page({
           data: { targetType: 'team', targetId: teamId, reason: TEAM_REPORT_REASONS[res.tapIndex] }
         }).then(r => {
           const result = (r && r.result) || {}
-          wx.showToast({ title: result.success ? '举报已提交，我们会尽快核实' : (result.message || '提交失败'), icon: 'none' })
+          wx.showToast({ title: t(result.success ? '举报已提交，我们会尽快核实' : (result.message || '提交失败')), icon: 'none' })
         }).catch(err => {
           console.error('举报配送队失败：', err)
-          wx.showToast({ title: '提交失败', icon: 'none' })
+          wx.showToast({ title: t('提交失败'), icon: 'none' })
         })
       },
       fail: () => { /* 取消 */ }
@@ -234,20 +235,20 @@ Page({
     if (d.sending) return
 
     if (!d.lines.length) {
-      wx.showToast({ title: '这一场还没有订单', icon: 'none' })
+      wx.showToast({ title: t('这一场还没有订单'), icon: 'none' })
       return
     }
     if (d.freeWarn) {
-      wx.showToast({ title: d.freeWarn, icon: 'none' })
+      wx.showToast({ title: t(d.freeWarn), icon: 'none' })
       return
     }
     if (d.teamIndex === null) {
-      wx.showToast({ title: '选一支配送队，或者发给所有队', icon: 'none' })
+      wx.showToast({ title: t('选一支配送队，或者发给所有队'), icon: 'none' })
       return
     }
 
     this.setData({ sending: true })
-    wx.showLoading({ title: '发送中', mask: true })
+    wx.showLoading({ title: t('发送中'), mask: true })
 
     wx.cloud.callFunction({
       name: 'deliveryRequest',
@@ -260,19 +261,19 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '发送失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '发送失败'), icon: 'none' })
         return
       }
       this.setData({ note: '', teamIndex: null })
       this.loadRequests()
       wx.showToast({
-        title: r.teamCount > 1 ? '已发给 ' + r.teamCount + ' 支队' : '已发出',
+        title: t(r.teamCount > 1 ? '已发给 ' + r.teamCount + ' 支队' : '已发出'),
         icon: 'success'
       })
     }).catch(err => {
       wx.hideLoading()
       console.error('发送配送请求失败：', err)
-      wx.showToast({ title: '发送失败', icon: 'none' })
+      wx.showToast({ title: t('发送失败'), icon: 'none' })
     }).then(() => {
       this.setData({ sending: false })
     })

@@ -1,25 +1,26 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/market/market.wxml-->
 <view class="page-container with-kind-pill">
   <view class="page-head">
     <view class="icon-box tint-gold"><image src="/images/modules/market.svg"></image></view>
     <view class="page-head-text">
-      <view class="page-head-title">二手市场</view>
-      <view class="page-head-sub">闲置省心挂，低价轻松淘</view>
+      <view class="page-head-title">{{i18n.t('二手市场', lang)}}</view>
+      <view class="page-head-sub">{{i18n.t('闲置省心挂，低价轻松淘', lang)}}</view>
     </view>
-    <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
+    <button class="btn-primary btn-sm" bindtap="goToPublish">{{i18n.t('+ 发布', lang)}}</button>
   </view>
 
   <view class="search-bar">
     <image src="/images/ui/search.svg"></image>
-    <input placeholder="搜索名称" value="{{keyword}}" bindinput="onSearchInput" confirm-type="search" />
+    <input placeholder="{{i18n.t('搜索名称', lang)}}" value="{{keyword}}" bindinput="onSearchInput" confirm-type="search" />
   </view>
 
   <skeleton wx:if="{{loading}}" type="{{demand ? 'text' : 'grid'}}" />
 
   <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box tint-gold"><image src="/images/modules/market.svg"></image></view>
-    <view class="empty-state-text">{{keyword ? '没有匹配的结果' : emptyText}}</view>
-    <button wx:if="{{!keyword}}" class="btn-primary" bindtap="goToPublish">{{demand ? '发一条求购' : '挂一件闲置'}}</button>
+    <view class="empty-state-text">{{keyword ? i18n.t('没有匹配的结果', lang) : emptyText}}</view>
+    <button wx:if="{{!keyword}}" class="btn-primary" bindtap="goToPublish">{{demand ? i18n.t('发一条求购', lang) : i18n.t('挂一件闲置', lang)}}</button>
   </view>
 
   <!-- 在卖：有实拍图，两列网格最好看 -->
@@ -39,7 +40,7 @@
     <view wx:for="{{items}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" class="card card-tap">
       <view class="text-card-head">
         <view class="text-card-title">{{item.title}}</view>
-        <view class="price text-card-price">预算 ${{item.price}}</view>
+        <view class="price text-card-price">{{i18n.f('预算 ${0}', lang, item.price)}}</view>
       </view>
       <view wx:if="{{item.description}}" class="text-card-desc">{{item.description}}</view>
       <view wx:if="{{item.pickup_spot}}" class="text-card-meta">{{item.pickup_spot}}</view>
@@ -48,7 +49,7 @@
 
   <!-- 触底加载的反馈。没有这个的话，滑到底会有一秒不知道在发生什么 -->
   <loading-spinner wx:if="{{loadingMore}}" />
-  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">没有更多了</view>
+  <view wx:elif="{{noMore && items.length >= 20}}" class="list-foot">{{i18n.t('没有更多了', lang)}}</view>
 </view>
 
 <!-- 供/求切换。悬浮在内容之上，不挤压上面的布局。 -->

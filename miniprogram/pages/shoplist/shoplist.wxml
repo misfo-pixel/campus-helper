@@ -1,11 +1,12 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="page-head">
     <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
     <view class="page-head-text">
-      <view class="page-head-title">一起拼团</view>
-      <view class="page-head-sub">满单成团，送到学校</view>
+      <view class="page-head-title">{{i18n.t('一起拼团', lang)}}</view>
+      <view class="page-head-sub">{{i18n.t('满单成团，送到学校', lang)}}</view>
     </view>
-    <button wx:if="{{ordering}}" class="btn-outline btn-sm" bindtap="goToMyOrders">我的订单</button>
+    <button wx:if="{{ordering}}" class="btn-outline btn-sm" bindtap="goToMyOrders">{{i18n.t('我的订单', lang)}}</button>
   </view>
 
   <skeleton wx:if="{{loading}}" type="row" thumb="{{130}}" />
@@ -15,11 +16,11 @@
     <view wx:for="{{mine}}" wx:key="_id" class="mine mine-{{item.status}}">
       <view class="mine-main" bindtap="{{item.status === 'confirming' ? 'goToMyOrders' : 'goToSession'}}"
             data-shop="{{item.shop_id}}" data-session="{{item.session._id}}">
-        <view class="mine-title">{{item.status === 'confirming' ? '待确认' : '拼团中'}} · {{item.shop_name}}</view>
-        <view class="mine-sub">{{item.status === 'confirming' ? item.confirmText + ' 前联系店长' : item.p.text}}</view>
+        <view class="mine-title">{{item.status === 'confirming' ? i18n.t('待确认', lang) : i18n.t('拼团中', lang)}} · {{item.shop_name}}</view>
+        <view class="mine-sub">{{item.status === 'confirming' ? item.confirmText + i18n.t(' 前联系店长', lang) : item.p.text}}</view>
       </view>
-      <button wx:if="{{item.status === 'forming'}}" class="mine-btn" open-type="share" data-index="{{index}}">喊人上车</button>
-      <view wx:else class="mine-go" bindtap="goToMyOrders">去确认 ›</view>
+      <button wx:if="{{item.status === 'forming'}}" class="mine-btn" open-type="share" data-index="{{index}}">{{i18n.t('喊人上车', lang)}}</button>
+      <view wx:else class="mine-go" bindtap="goToMyOrders">{{i18n.t('去确认 ›', lang)}}</view>
     </view>
 
     <!-- 按送达日分组 -->
@@ -30,7 +31,7 @@
           <view class="day-week">{{day.week}}</view>
           <view class="day-month">{{day.monthText}}</view>
         </view>
-        <text wx:if="{{day.rel}}" class="day-rel">{{day.rel}}送达</text>
+        <text wx:if="{{day.rel}}" class="day-rel">{{i18n.f('{0}送达', lang, day.rel)}}</text>
       </view>
 
       <view wx:for="{{day.sessions}}" wx:key="_id" class="card card-tap session"
@@ -41,7 +42,7 @@
           <view class="session-meta">
             <view class="session-name-row">
               <text class="session-name">{{item.shop_name}}</text>
-              <text wx:if="{{item.p.formed && !item.p.open}}" class="gb-sticker">已成团</text>
+              <text wx:if="{{item.p.formed && !item.p.open}}" class="gb-sticker">{{i18n.t('已成团', lang)}}</text>
               <text wx:if="{{item.repeatText}}" class="chip session-repeat">{{item.repeatText}}</text>
             </view>
             <view class="session-points">{{item.pointsText}}</view>
@@ -58,18 +59,18 @@
       </view>
     </view>
 
-    <view wx:if="{{days.length === 0 && shops.length > 0}}" class="text-light none">暂无拼团，订阅店铺开团提醒</view>
+    <view wx:if="{{days.length === 0 && shops.length > 0}}" class="text-light none">{{i18n.t('暂无拼团，订阅店铺开团提醒', lang)}}</view>
 
     <view wx:if="{{days.length === 0 && shops.length === 0}}" class="empty-state">
       <view class="icon-box tint-cream"><image src="/images/modules/shop.svg"></image></view>
-      <view class="empty-state-text">暂无拼团</view>
+      <view class="empty-state-text">{{i18n.t('暂无拼团', lang)}}</view>
     </view>
 
     <!-- 眼下没场次的店 -->
     <block wx:if="{{shops.length > 0}}">
       <view class="others-head" bindtap="toggleShops">
-        <text>其他小店 · {{shops.length}}</text>
-        <text class="others-arrow">{{showShops ? '收起' : '展开'}}</text>
+        <text>{{i18n.f('其他小店 · {0}', lang, shops.length)}}</text>
+        <text class="others-arrow">{{showShops ? i18n.t('收起', lang) : i18n.t('展开', lang)}}</text>
       </view>
       <block wx:if="{{showShops}}">
         <view wx:for="{{shops}}" wx:key="_id" class="card card-tap other"

@@ -4,13 +4,14 @@
 // 权限在 deliveryManage 的 isTeamAdmin 里服务端校验，前端这层只是入口。
 
 const { formatTime } = require('../../utils/date.js')
+const { t, f } = require('../../i18n/index.js')
 
 const TAKEDOWN_TEXT = { report: '被举报', no_show: '爽约过多', admin: '手动' }
 
 function codeState(c) {
-  if (c.used) return c.team_name ? '已用于「' + c.team_name + '」' : '已使用'
-  if (new Date(c.expires_at) < new Date()) return '已过期'
-  return '未使用 · ' + formatTime(c.expires_at) + ' 过期'
+  if (c.used) return c.team_name ? f('已用于「{0}」', c.team_name) : t('已使用')
+  if (new Date(c.expires_at) < new Date()) return t('已过期')
+  return f('未使用 · {0} 过期', formatTime(c.expires_at))
 }
 
 Page({
@@ -39,7 +40,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false, loadError: true })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
       this.setData({
@@ -49,15 +50,15 @@ Page({
           stateText: codeState(c),
           live: !c.used && new Date(c.expires_at) >= new Date()
         })),
-        teams: (r.teams || []).map(t => Object.assign({}, t, {
-          downText: t.takedown ? '已下架 · ' + (TAKEDOWN_TEXT[t.takedown_reason] || '手动') : ''
+        teams: (r.teams || []).map(team => Object.assign({}, team, {
+          downText: team.takedown ? f('已下架 · {0}', t(TAKEDOWN_TEXT[team.takedown_reason] || '手动')) : ''
         }))
       })
     }).catch(err => {
       if (done) done()
       console.error('读取配送队管理失败：', err)
       this.setData({ loading: false, loadError: true })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -69,9 +70,9 @@ Page({
   makeCode: function () {
     if (this.data.busy) return
     wx.showModal({
-      title: '生成开队码',
+      title: t('生成开队码'),
       editable: true,
-      placeholderText: '给谁的（选填）',
+      placeholderText: t('给谁的（选填）'),
       success: res => {
         if (!res.confirm) return
         this.setData({ busy: true })
@@ -81,20 +82,20 @@ Page({
         }).then(r => {
           const result = (r && r.result) || {}
           if (!result.success) {
-            wx.showToast({ title: result.message || '生成失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '生成失败'), icon: 'none' })
             return
           }
           this.load()
           wx.showModal({
-            title: result.code,
-            content: '一码建一支队，7 天内有效。发给对方，在「我的配送 → 创建配送队」里填。',
-            confirmText: '复制',
+            title: t(result.code),
+            content: t('一码建一支队，7 天内有效。发给对方，在「我的配送 → 创建配送队」里填。'),
+            confirmText: t('复制'),
             showCancel: false,
             success: () => this.copy(result.code)
           })
         }).catch(err => {
           console.error('生成开队码失败：', err)
-          wx.showToast({ title: '生成失败', icon: 'none' })
+          wx.showToast({ title: t('生成失败'), icon: 'none' })
         }).then(() => {
           this.setData({ busy: false })
         })
@@ -115,11 +116,11 @@ Page({
     const { id, name, down } = e.currentTarget.dataset
     const takedown = !down
     wx.showModal({
-      title: (takedown ? '下架' : '恢复') + '「' + name + '」？',
-      content: takedown
+      title: f(takedown ? '下架「{0}」？' : '恢复「{0}」？', name),
+      content: t(takedown
         ? '下架后不出现在挑队列表、收不到群发、接不了新单，手上已接的单还能送完。'
-        : '恢复后爽约次数清零，重新出现在挑队列表里。',
-      confirmText: takedown ? '下架' : '恢复',
+        : '恢复后爽约次数清零，重新出现在挑队列表里。'),
+      confirmText: t(takedown ? '下架' : '恢复'),
       confirmColor: takedown ? '#C8102E' : '#7A0019',
       success: res => {
         if (!res.confirm) return
@@ -128,11 +129,11 @@ Page({
           data: { action: 'setTakedown', teamId: id, takedown: takedown }
         }).then(r => {
           const result = (r && r.result) || {}
-          wx.showToast({ title: result.success ? '已' + (takedown ? '下架' : '恢复') : (result.message || '操作失败'), icon: 'none' })
+          wx.showToast({ title: t(result.success ? '已' + (takedown ? '下架' : '恢复') : (result.message || '操作失败')), icon: 'none' })
           if (result.success) this.load()
         }).catch(err => {
           console.error('下架 / 恢复失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })

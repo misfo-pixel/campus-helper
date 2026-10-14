@@ -2,9 +2,10 @@ const { markStale } = require('../../utils/refresh.js')
 const { takePreview } = require('../../utils/preview.js')
 
 const { timedCall } = require('../../utils/timing.js')
-const { prefetchCover, detailShare } = require('../../utils/share.js')
+const { prefetchCover, detailShare, withPromo } = require('../../utils/share.js')
 const { closedLabel, reviewHint } = require('../../utils/kinds.js')
 const { today } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 const app = getApp()
 
@@ -26,8 +27,8 @@ Page({
 
   deleteItem: function () {
     wx.showModal({
-      title: '确认删除',
-      content: '删除后无法恢复，确定吗？',
+      title: t('确认删除'),
+      content: t('删除后无法恢复，确定吗？'),
       success: (res) => {
         if (res.confirm) {
           wx.cloud.callFunction({
@@ -36,14 +37,14 @@ Page({
           }).then(res => {
             if (res.result.success) {
               markStale('item')   // 返回列表时要看到这次改动
-              wx.showToast({ title: '已删除', icon: 'success' })
+              wx.showToast({ title: t('已删除'), icon: 'success' })
               setTimeout(() => wx.navigateBack(), 1000)
             } else {
-              wx.showToast({ title: res.result.message || '删除失败', icon: 'none' })
+              wx.showToast({ title: t(res.result.message || '删除失败'), icon: 'none' })
             }
           }).catch(err => {
             console.error('删除失败：', err)
-            wx.showToast({ title: '删除失败', icon: 'none' })
+            wx.showToast({ title: t('删除失败'), icon: 'none' })
           })
         }
       }
@@ -52,8 +53,8 @@ Page({
 
   markSold: function () {
     wx.showModal({
-      title: '确认已售',
-      content: '标记后商品将从市场下架，确定吗？',
+      title: t('确认已售'),
+      content: t('标记后商品将从市场下架，确定吗？'),
       success: (res) => {
         if (res.confirm) {
           const db = wx.cloud.database()
@@ -64,11 +65,11 @@ Page({
             // 从分享卡片冷启动进来时 navigateBack 退不回去，页面会留在这儿，得当场换成已结束的样子
             const item = Object.assign({}, this.data.item, { status: 'sold' })
             this.setData({ item: item, closed: closedLabel('item', item), canEditExpire: false })
-            wx.showToast({ title: '已标记售出', icon: 'success' })
+            wx.showToast({ title: t('已标记售出'), icon: 'success' })
             setTimeout(() => wx.navigateBack(), 1000)
           }).catch(err => {
             console.error('标记失败：', err)
-            wx.showToast({ title: '操作失败', icon: 'none' })
+            wx.showToast({ title: t('操作失败'), icon: 'none' })
           })
         }
       }
@@ -97,11 +98,11 @@ Page({
         markStale('item')   // 返回列表时要看到这次改动
         const next = Object.assign({}, item, data)
         this.setData({ item: next, closed: closedLabel('item', next) })
-        wx.showToast({ title: relist ? '已重新上架' : (date ? '已修改' : '不再自动下架'), icon: 'success' })
+        wx.showToast({ title: t(relist ? '已重新上架' : (date ? '已修改' : '不再自动下架')), icon: 'success' })
       })
       .catch(err => {
         console.error('修改下架日期失败：', err)
-        wx.showToast({ title: '修改失败', icon: 'none' })
+        wx.showToast({ title: t('修改失败'), icon: 'none' })
       })
   },
 
@@ -158,7 +159,8 @@ Page({
           partial: false,
           loading: false
         })
-        this.cover = prefetchCover(r.item, r.isOwner)   // 趁用户还在看，先把转发封面下好
+        // 趁用户还在看，先把转发封面下好；活动期间顺手贴上活动贴纸
+        this.cover = withPromo(this.selectComponent('#gs'), prefetchCover(r.item, r.isOwner))
       })
       .catch(err => {
         console.error('加载详情失败：', err)

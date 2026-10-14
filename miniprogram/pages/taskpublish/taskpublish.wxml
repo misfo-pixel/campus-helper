@@ -1,28 +1,29 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/taskpublish/taskpublish.wxml-->
 <view class="page-container with-submit-bar">
   <view class="page-head">
     <view class="icon-box tint-maroon"><image src="/images/modules/task.svg"></image></view>
-    <view class="page-head-text"><view class="page-head-title">发布委托</view></view>
+    <view class="page-head-text"><view class="page-head-title">{{i18n.t('发布委托', lang)}}</view></view>
   </view>
 
-  <view class="section-title">任务信息（必填）</view>
+  <view class="section-title">{{i18n.t('任务信息（必填）', lang)}}</view>
   <view class="form-group">
-    <input placeholder="任务标题（如 上门保洁、接机送机）" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
-    <input placeholder="报酬（美元）" type="digit" value="{{reward}}" bindinput="onInput" data-field="reward" class="form-input" />
-    <textarea placeholder="任务描述（具体做什么、有什么要求）" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
-    <input placeholder="你的微信号（接单人联系用）" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
+    <input placeholder="{{i18n.t('任务标题（如 上门保洁、接机送机）', lang)}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <input placeholder="{{i18n.t('报酬（美元）', lang)}}" type="digit" value="{{reward}}" bindinput="onInput" data-field="reward" class="form-input" />
+    <textarea placeholder="{{i18n.t('任务描述（具体做什么、有什么要求）', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <input placeholder="{{i18n.t('你的微信号（接单人联系用）', lang)}}" value="{{contact_wechat}}" bindinput="onInput" data-field="contact_wechat" class="form-input" />
   </view>
 
-  <view class="section-title">补充信息（选填）</view>
+  <view class="section-title">{{i18n.t('补充信息（选填）', lang)}}</view>
   <view class="form-group">
     <picker mode="date" value="{{deadline}}" bindchange="onDeadlineChange">
       <view class="form-row">
-        <text class="form-row-label">截止时间</text>
-        <text class="form-row-value {{deadline ? '' : 'form-row-empty'}}">{{deadline || '请选择'}}</text>
+        <text class="form-row-label">{{i18n.t('截止时间', lang)}}</text>
+        <text class="form-row-value {{deadline ? '' : 'form-row-empty'}}">{{deadline || i18n.t('请选择', lang)}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
-    <input placeholder="地点（如 在哪取 / 送到哪）" value="{{location}}" bindinput="onInput" data-field="location" class="form-input" />
+    <input placeholder="{{i18n.t('地点（如 在哪取 / 送到哪）', lang)}}" value="{{location}}" bindinput="onInput" data-field="location" class="form-input" />
     <view class="uploader">
       <view class="uploader-inner">
         <view wx:for="{{images}}" wx:key="*this" class="uploader-cell">
@@ -42,5 +43,7 @@
 
 <!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
 <view class="submit-bar">
-  <button class="btn-primary" bindtap="submitPublish">发布</button>
+  <button class="btn-primary" bindtap="submitPublish">{{i18n.t('发布', lang)}}</button>
 </view>
+
+<share-guide show="{{guide.show}}" status="{{guide.status}}" headline="{{guide.headline}}" title="{{guide.title}}" cover="{{guide.cover}}" bind:close="onGuideClose" />

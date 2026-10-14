@@ -21,6 +21,7 @@
 // 父页面提交时直接用最后一次拿到的值。
 
 const { today, addMinutes } = require('../../utils/date.js')
+const { f } = require('../../i18n/index.js')
 
 // 服务时间填的是「几点出发」，不是几点送到：出发是店长自己定得了的，
 // 送到几点要看去哪个点。所以每个取货点各填一个「出发后多久到」，
@@ -53,7 +54,7 @@ Component({
   data: {
     points: [],
     batch: Object.assign({}, DEFAULT_BATCH),
-    etaLabels: ETA_OPTIONS.map(m => m + ' 分钟'),
+    etaLabels: ETA_OPTIONS.map(m => f('{0} 分钟', m)),
     today: '',
     expired: false,
     seeded: false

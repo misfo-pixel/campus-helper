@@ -10,6 +10,10 @@
 
 const { ORDERING_ENABLED } = require('../../config.js')
 const { weekday, relDay, cutoffText, progress, shareTitle, pointsText, atText, cardData } = require('../../utils/group.js')
+const { t, f, getLang } = require('../../i18n/index.js')
+const { filterHidden } = require('../../utils/blocks.js')
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 function decorate(s, now) {
   const p = progress(s, false)
@@ -18,7 +22,7 @@ function decorate(s, now) {
     cutText: cutoffText(s, now),
     cutHot: s.minutes_left != null && s.minutes_left < 180,
     pointsText: pointsText(s.points),
-    repeatText: s.repeat_weekly ? '每' + weekday(s.date) : ''
+    repeatText: s.repeat_weekly ? f('每{0}', weekday(s.date)) : ''
   })
 }
 
@@ -51,14 +55,14 @@ Page({
       if (done) done()
       if (!r.success) {
         this.setData({ loading: false })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
 
       const now = r.now
       const byDate = {}
       const order = []
-      ;(r.sessions || []).forEach(raw => {
+      ;filterHidden('shop', r.sessions || [], 'shop_id').forEach(raw => {
         const s = decorate(raw, now)
         if (!byDate[s.date]) {
           byDate[s.date] = []
@@ -70,9 +74,9 @@ Page({
       const days = order.map(date => ({
         date: date,
         dayNum: Number(date.slice(8)),
-        monthText: Number(date.slice(5, 7)) + '月',
+        monthText: getLang() === 'en' ? MONTHS[Number(date.slice(5, 7)) - 1] : Number(date.slice(5, 7)) + '月',
         week: weekday(date),
-        rel: relDay(date, now),
+        rel: t(relDay(date, now)),
         sessions: byDate[date].sort((a, b) => rank(a) - rank(b))
       }))
 
@@ -84,7 +88,7 @@ Page({
       this.setData({
         loading: false,
         days: days,
-        shops: r.shops || [],
+        shops: filterHidden('shop', r.shops || []),
         // 一场都没有的时候，其他小店直接展开，别让页面空着
         showShops: this.data.showShops || days.length === 0,
         mine: mine
@@ -93,7 +97,7 @@ Page({
       if (done) done()
       console.error('读取拼团列表失败：', err)
       this.setData({ loading: false })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -129,6 +133,6 @@ Page({
         .catch(() => share)
       return share
     }
-    return { title: '一起拼团 · 满单成团，送到学校', path: '/pages/shoplist/shoplist' }
+    return { title: t('一起拼团 · 满单成团，送到学校'), path: '/pages/shoplist/shoplist' }
   }
 })

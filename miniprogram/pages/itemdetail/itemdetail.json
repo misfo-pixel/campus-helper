@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "物品详情",
   "usingComponents": {
+    "group-share": "/components/groupShare/index",
     "contact-card": "/components/contactCard/index",
     "report-bar": "/components/reportBar/index",
     "disclaimer-bar": "/components/disclaimerBar/index",

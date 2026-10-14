@@ -1,3 +1,9 @@
+.report-row {
+  display: flex;
+  justify-content: center;
+  gap: 24rpx;
+}
+
 .report-bar {
   display: flex;
   align-items: center;

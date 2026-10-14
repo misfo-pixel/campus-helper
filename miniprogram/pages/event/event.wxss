@@ -1,0 +1,94 @@
+page { background: var(--color-bg); }
+
+.ev { padding-bottom: calc(180rpx + env(safe-area-inset-bottom)); }
+.ev-missing { text-align: center; padding-top: 200rpx; }
+
+.ev-banner { width: 100%; display: block; }
+
+.ev-body { padding: 0 32rpx; }
+
+.ev-head { margin-top: 36rpx; }
+.ev-title {
+  font-family: "HuangYou", -apple-system, "PingFang SC", sans-serif;
+  font-size: 60rpx;
+  line-height: 1.2;
+  color: var(--color-primary);
+}
+.ev-period { margin-top: 8rpx; font-size: 26rpx; color: var(--color-text-light); }
+
+/* 金色贴纸、微微歪一点，和首页 New 角标同一套 */
+.ev-amount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10rpx;
+  margin: 32rpx 0 12rpx;
+  padding: 14rpx 36rpx 18rpx;
+  background: var(--color-accent);
+  border: 4rpx solid #22141a;
+  border-radius: 24rpx;
+  box-shadow: 8rpx 8rpx 0 #22141a;
+  transform: rotate(-2deg);
+}
+.ev-amount-num {
+  font-family: "HuangYou", -apple-system, "PingFang SC", sans-serif;
+  font-size: 120rpx;
+  line-height: 1;
+  color: var(--color-primary);
+}
+.ev-amount-unit { font-size: 40rpx; font-weight: 700; color: var(--color-primary); }
+
+.ev-proof {
+  margin: 28rpx 0 8rpx;
+  padding: 20rpx 24rpx;
+  background: var(--color-card);
+  border-left: 8rpx solid var(--color-primary);
+  border-radius: 12rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.ev-steps { padding: 12rpx 28rpx; }
+.ev-step { display: flex; align-items: flex-start; gap: 20rpx; padding: 18rpx 0; }
+.ev-step + .ev-step { border-top: 1rpx solid var(--color-border); }
+.ev-step-no {
+  flex-shrink: 0;
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 44rpx;
+  text-align: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+.ev-step-text { flex: 1; font-size: 30rpx; line-height: 44rpx; color: var(--color-text); overflow-wrap: anywhere; }
+
+.ev-notes { margin-top: 20rpx; }
+.ev-note { font-size: 26rpx; color: var(--color-text-light); line-height: 1.7; }
+
+.ev-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--color-card);
+  border-top: 1rpx solid var(--color-border);
+}
+.ev-btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.ev-btn-ghost { color: var(--color-primary); border: 2rpx solid var(--color-primary); }
+.ev-btn-main { color: #fff; background: var(--color-primary); }
+.ev-btn:active { opacity: .85; }

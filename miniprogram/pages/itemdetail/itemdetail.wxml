@@ -1,10 +1,11 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/itemdetail/itemdetail.wxml-->
 <view wx:if="{{item}}">
   <!-- 分享卡片会在群里躺很久，点开时东西可能早就卖了。不放这一条的话，
        页面跟还开着时一模一样，就会有人白白去加发布者微信。放在最顶上，进来第一眼就看到。 -->
   <view wx:if="{{closed}}" class="closed-banner">
     <view class="closed-banner-label">{{closed}}</view>
-    <view class="closed-banner-hint">{{reviewHint || (isOwner ? '别人点开时也会先看到这一条' : '不用再联系发布者了')}}</view>
+    <view class="closed-banner-hint">{{reviewHint || (isOwner ? i18n.t('别人点开时也会先看到这一条', lang) : i18n.t('不用再联系发布者了', lang))}}</view>
   </view>
 
   <!-- 图片轮播（多张图可滑动） -->
@@ -30,13 +31,13 @@
 
     <!-- 描述和下架日期都是选填，没填就整行不显示，免得留一个空标题 -->
     <view wx:if="{{item.description}}">
-      <view class="section-title">物品描述</view>
+      <view class="section-title">{{i18n.t('物品描述', lang)}}</view>
       <view class="detail-text">{{item.description}}</view>
     </view>
 
     <!-- 取货地点：买家先看离自己近不近，再决定要不要加微信 -->
     <view wx:if="{{item.pickup_spot}}" class="kv-list">
-      <view class="kv-row"><text class="kv-label">{{item.kind === 'want' ? '交易地点' : '取货地点'}}</text><text class="kv-value">{{item.pickup_spot}}</text></view>
+      <view class="kv-row"><text class="kv-label">{{item.kind === 'want' ? i18n.t('交易地点', lang) : i18n.t('取货地点', lang)}}</text><text class="kv-value">{{item.pickup_spot}}</text></view>
     </view>
 
     <!-- 发布者自己看时这一行是入口：到期提醒叫人来这儿改日期，过期的改到以后就重新上架 -->
@@ -45,16 +46,16 @@
       <view class="kv-row expire-row">
         <picker class="expire-picker" mode="date" value="{{item.expire_date}}" start="{{today}}" bindchange="onExpireChange">
           <view class="expire-picker-inner">
-            <text class="kv-label">下架日期</text>
-            <text class="kv-value {{item.expire_date ? '' : 'form-row-empty'}}">{{item.expire_date || '不自动下架'}}</text>
+            <text class="kv-label">{{i18n.t('下架日期', lang)}}</text>
+            <text class="kv-value {{item.expire_date ? '' : 'form-row-empty'}}">{{item.expire_date || i18n.t('不自动下架', lang)}}</text>
             <text class="form-row-arrow">›</text>
           </view>
         </picker>
-        <text wx:if="{{item.expire_date}}" class="expire-clear" bindtap="clearExpire">不自动下架</text>
+        <text wx:if="{{item.expire_date}}" class="expire-clear" bindtap="clearExpire">{{i18n.t('不自动下架', lang)}}</text>
       </view>
     </view>
     <view wx:elif="{{item.expire_date}}" class="kv-list">
-      <view class="kv-row"><text class="kv-label">下架日期</text><text class="kv-value">{{item.expire_date}}</text></view>
+      <view class="kv-row"><text class="kv-label">{{i18n.t('下架日期', lang)}}</text><text class="kv-value">{{item.expire_date}}</text></view>
     </view>
 
     <!-- 卖家名片。已结束的帖子不给别人亮联系方式：横幅写着结束了，底下还摆着「复制微信号」，照样有人去加。
@@ -64,22 +65,22 @@
 
     <!-- 已经结束的（包括过期下架的）不用再标 -->
     <view wx:if="{{(isOwner && !closed) || canDelete}}" class="owner-actions">
-      <button wx:if="{{isOwner && !closed}}" bindtap="markSold" class="btn-outline">标记已售</button>
-      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">删除</button>
+      <button wx:if="{{isOwner && !closed}}" bindtap="markSold" class="btn-outline">{{i18n.t('标记已售', lang)}}</button>
+      <button wx:if="{{canDelete}}" bindtap="deleteItem" class="btn-danger">{{i18n.t('删除', lang)}}</button>
     </view>
 
     <!-- 从分享卡片冷启动进来的，页面栈里只有这一页，退无可退。
          给一个往下逛的出口，别让人看完就退出小程序。 -->
-    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">逛逛更多闲置 ›</view>
+    <view wx:if="{{isRootPage}}" class="detail-more" bindtap="goToMarket">{{i18n.t('逛逛更多闲置 ›', lang)}}</view>
 
-    <message-board target-type="item" target-id="{{item._id}}" />
+    <message-board target-type="item" target-id="{{item._id}}" owner="{{isOwner}}" />
 
-    <report-bar target-type="item" target-id="{{item._id}}" />
+    <report-bar target-type="item" target-id="{{item._id}}" owner="{{isOwner}}" />
 
     <!-- 免责一行放在最底下 -->
     <disclaimer-bar type="trade" />
     </block>
-    <view wx:else class="text-light" style="margin-top: 32rpx;">加载详情…</view>
+    <view wx:else class="text-light" style="margin-top: 32rpx;">{{i18n.t('加载详情…', lang)}}</view>
   </view>
 </view>
 
@@ -89,7 +90,10 @@
 <!-- 分享卡片会在群里躺很久，点开时商品可能已删或已售。
      这里必须给出口，否则就是白屏——落地页不能假设数据一定还在。 -->
 <view wx:else class="detail-state">
-  <view class="detail-state-title">这件闲置已经下架了</view>
-  <view class="text-light" style="margin-top: 12rpx;">可能已经卖出，或者被发布者删掉了</view>
-  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">去看看别的闲置</button>
+  <view class="detail-state-title">{{i18n.t('这件闲置已经下架了', lang)}}</view>
+  <view class="text-light" style="margin-top: 12rpx;">{{i18n.t('可能已经卖出，或者被发布者删掉了', lang)}}</view>
+  <button class="btn-primary" style="margin-top: 40rpx;" bindtap="goToMarket">{{i18n.t('去看看别的闲置', lang)}}</button>
 </view>
+
+<!-- 画转发封面上的活动贴纸用，见 utils/share.js 的 withPromo -->
+<group-share id="gs" no-font />

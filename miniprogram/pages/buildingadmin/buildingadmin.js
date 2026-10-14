@@ -2,13 +2,14 @@
 //
 // 只增、改名、启用停用，不删：停用就够了，误删了还得重新录。
 // 权限在 buildings 云函数里服务端校验，前端这层只是入口。
+const { t } = require('../../i18n/index.js')
 
 const KINDS = [
-  { key: 'apartment', text: '公寓' },
-  { key: 'dorm', text: '宿舍' },
-  { key: 'campus', text: '教学楼' }
+  { key: 'apartment', text: t('公寓') },
+  { key: 'dorm', text: t('宿舍') },
+  { key: 'campus', text: t('教学楼') }
 ]
-const KIND_TEXT = { campus: '教学楼', dorm: '宿舍', apartment: '公寓' }
+const KIND_TEXT = { campus: t('教学楼'), dorm: t('宿舍'), apartment: t('公寓') }
 
 Page({
   data: {
@@ -40,7 +41,7 @@ Page({
       const r = (res && res.result) || {}
       if (!r.success) {
         this.setData({ loading: false, loadError: true })
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || t('读取失败')), icon: 'none' })
         return
       }
       const areas = r.areas || []
@@ -60,7 +61,7 @@ Page({
       if (done) done()
       console.error('读取楼栋失败：', err)
       this.setData({ loading: false, loadError: true })
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -72,40 +73,40 @@ Page({
   call: function (data, okText) {
     return wx.cloud.callFunction({ name: 'buildings', data: data }).then(res => {
       const r = (res && res.result) || {}
-      wx.showToast({ title: r.success ? okText : (r.message || '操作失败'), icon: 'none' })
+      wx.showToast({ title: t(r.success ? okText : (r.message || t('操作失败'))), icon: 'none' })
       if (r.success) this.load()
       return r.success
     }).catch(err => {
       console.error('楼栋操作失败：', err)
-      wx.showToast({ title: '操作失败', icon: 'none' })
+      wx.showToast({ title: t('操作失败'), icon: 'none' })
       return false
     })
   },
 
   seed: function () {
     wx.showModal({
-      title: '导入初始名单',
-      content: '导入一版明大 Minneapolis 校区和周边公寓的名单。不确定的几栋默认停用，核实后再打开。',
+      title: t('导入初始名单'),
+      content: t('导入一版明大 Minneapolis 校区和周边公寓的名单。不确定的几栋默认停用，核实后再打开。'),
       success: res => {
-        if (res.confirm) this.call({ action: 'seed' }, '已导入')
+        if (res.confirm) this.call({ action: 'seed' }, t('已导入'))
       }
     })
   },
 
   toggle: function (e) {
     const { id } = e.currentTarget.dataset
-    this.call({ action: 'update', id: id, active: e.detail.value }, e.detail.value ? '已启用' : '已停用')
+    this.call({ action: 'update', id: id, active: e.detail.value }, e.detail.value ? t('已启用') : t('已停用'))
   },
 
   rename: function (e) {
     const { id, name } = e.currentTarget.dataset
     wx.showModal({
-      title: '改名',
+      title: t('改名'),
       editable: true,
-      content: name,
+      content: t(name),
       success: res => {
         if (res.confirm && res.content && res.content.trim() !== name) {
-          this.call({ action: 'update', id: id, name: res.content }, '已改名')
+          this.call({ action: 'update', id: id, name: res.content }, t('已改名'))
         }
       }
     })
@@ -127,7 +128,7 @@ Page({
     const d = this.data
     if (d.adding) return
     if (!d.newName.trim()) {
-      wx.showToast({ title: '请填写楼名', icon: 'none' })
+      wx.showToast({ title: t('请填写楼名'), icon: 'none' })
       return
     }
     this.setData({ adding: true })
@@ -136,7 +137,7 @@ Page({
       name: d.newName,
       area: d.areas[d.newArea],
       kind: KINDS[d.newKind].key
-    }, '已添加').then(ok => {
+    }, t('已添加')).then(ok => {
       this.setData({ adding: false })
       if (ok) this.setData({ newName: '' })
     })

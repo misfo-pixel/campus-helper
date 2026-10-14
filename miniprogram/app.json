@@ -72,7 +72,9 @@
     "pages/teamadmin/teamadmin",
     "pages/buildingadmin/buildingadmin",
     "pages/teammanifest/teammanifest",
-    "pages/settlement/settlement"
+    "pages/settlement/settlement",
+    "pages/blocklist/blocklist",
+    "pages/event/event"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",

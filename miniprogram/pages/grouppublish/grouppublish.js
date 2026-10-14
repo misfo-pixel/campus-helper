@@ -1,9 +1,10 @@
 const { markStale } = require('../../utils/refresh.js')
 const { myProfile, checkEmailVerified } = require('../../utils/user.js')
-const { createUploader, requestReview } = require('../../utils/publish.js')
+const { createUploader, guideShare, guideShareMessage } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS } = require('../../utils/kinds.js')
 const { today } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 const CFG = KINDS.group
 const MAX_IMAGES = 3   // 群组靠文字说清楚，图只是封面或活动海报，用不着 6 张
@@ -75,10 +76,19 @@ Page({
     })
   },
 
+  // 面板上的「完成」
+  onGuideClose: function () {
+    wx.navigateBack()
+  },
+
+  onShareAppMessage: function () {
+    return guideShareMessage(this, 'group')
+  },
+
   submitPublish: async function () {
     const d = this.data
     if (!d.title || !d.description || !d.contact_wechat) {
-      wx.showToast({ title: '请填完必填项', icon: 'none' })
+      wx.showToast({ title: t('请填完必填项'), icon: 'none' })
       return
     }
     const buddy = d.kind === 'buddy'
@@ -87,40 +97,37 @@ Page({
     if (!checkEmailVerified()) return
     ask('inquiry')
 
-    wx.showLoading({ title: '发布中...', mask: true })
+    wx.showLoading({ title: t('发布中...'), mask: true })
 
     try {
       const up = await this.uploader.collect(d.images)
 
       // 以「审核中」写库，审核通过之前列表里看不到
       const db = wx.cloud.database()
-      const added = await db.collection('group_items').add({
-        data: {
-          kind: d.kind,
-          title: d.title,
-          description: d.description,
-          contact_wechat: d.contact_wechat,
-          // 长期群没有日期和地点。切过面再切回来，输入框里的字还留在 data 上，这里不能照抄
-          event_date: buddy ? d.event_date : '',   // autoExpire 过了这天就下架，空串不下架
-          location: buddy ? d.location : '',
-          images: up.images,
-          thumb: up.thumb,
-          status: 'reviewing',
-          created_at: new Date()
-        }
-      })
+      const doc = {
+        kind: d.kind,
+        title: d.title,
+        description: d.description,
+        contact_wechat: d.contact_wechat,
+        // 长期群没有日期和地点。切过面再切回来，输入框里的字还留在 data 上，这里不能照抄
+        event_date: buddy ? d.event_date : '',   // autoExpire 过了这天就下架，空串不下架
+        location: buddy ? d.location : '',
+        images: up.images,
+        thumb: up.thumb,
+        status: 'reviewing',
+        created_at: new Date()
+      }
+      const added = await db.collection('group_items').add({ data: doc })
       this.uploader.commit()
-
-      requestReview('group', added._id, d.title)
 
       wx.hideLoading()
       markStale('group')
-      wx.showToast({ title: '已提交，审核中', icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 1500)
+      // 送审，弹「转发到微信群」面板，审核通过了面板上的转发按钮才亮（见 utils/publish.js）
+      guideShare(this, 'group', Object.assign({ _id: added._id }, doc), d.images[0])
     } catch (err) {
       wx.hideLoading()
       console.error('发布失败：', err)
-      wx.showToast({ title: '发布失败', icon: 'none' })
+      wx.showToast({ title: t('发布失败'), icon: 'none' })
     }
   }
 })

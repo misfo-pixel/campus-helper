@@ -1,9 +1,10 @@
 const { markStale } = require('../../utils/refresh.js')
 const { myProfile, checkEmailVerified } = require('../../utils/user.js')
-const { createUploader, requestReview } = require('../../utils/publish.js')
+const { createUploader, guideShare, guideShareMessage } = require('../../utils/publish.js')
 const { ask } = require('../../utils/subscribe.js')
 const { KINDS, isDemand } = require('../../utils/kinds.js')
 const { today } = require('../../utils/date.js')
+const { t } = require('../../i18n/index.js')
 
 const CFG = KINDS.sublet
 const BEDROOMS = ['Studio', '1', '2', '3', '4', '5+']
@@ -53,8 +54,8 @@ Page({
     description: '',
     bedrooms: BEDROOMS,
     bathrooms: BATHROOMS,
-    bedroomsAny: [ANY].concat(BEDROOMS),     // 求租用
-    bathroomsAny: [ANY].concat(BATHROOMS)
+    bedroomsAny: [t(ANY)].concat(BEDROOMS),     // 求租用
+    bathroomsAny: [t(ANY)].concat(BATHROOMS)
   },
 
   // 微信号自动填个人资料里存的那个，没存过就留空手填
@@ -127,6 +128,15 @@ Page({
     this.setData({ kind: kind, demand: isDemand(kind) })
   },
 
+  // 面板上的「完成」
+  onGuideClose: function () {
+    wx.navigateBack()
+  },
+
+  onShareAppMessage: function () {
+    return guideShareMessage(this, 'sublet')
+  },
+
   submitPublish: async function () {
     const d = this.data
     // 必填：标题、微信号、起止日期两边都要。
@@ -135,17 +145,17 @@ Page({
       ? !d.rent_min || !d.rent_max
       : !d.rent || !d.address || d.bedroomIndex === null || d.bathroomIndex === null
     if (!d.title || !d.contact_wechat || !d.start_date || !d.end_date || missing) {
-      wx.showToast({ title: '请填完必填项', icon: 'none' })
+      wx.showToast({ title: t('请填完必填项'), icon: 'none' })
       return
     }
     if (d.demand && Number(d.rent_min) > Number(d.rent_max)) {
-      wx.showToast({ title: '最低预算不能高于最高预算', icon: 'none' })
+      wx.showToast({ title: t('最低预算不能高于最高预算'), icon: 'none' })
       return
     }
     // 日期是 YYYY-MM-DD，直接按字符串比就是按时间比
     if (d.end_date < d.start_date) {
       wx.showToast({
-        title: d.demand ? '希望租到的日期不能早于入住日期' : '租期结束日期不能早于起租日期',
+        title: t(d.demand ? '希望租到的日期不能早于入住日期' : '租期结束日期不能早于起租日期'),
         icon: 'none'
       })
       return
@@ -154,7 +164,7 @@ Page({
     // 发布者只会看到帖子凭空消失。起租日期不拦：转租常常是「已经住进去了，转剩下的租期」
     if (d.end_date < today()) {
       wx.showToast({
-        title: d.demand ? '希望租到的日期不能早于今天' : '租期结束日期不能早于今天',
+        title: t(d.demand ? '希望租到的日期不能早于今天' : '租期结束日期不能早于今天'),
         icon: 'none'
       })
       return
@@ -168,7 +178,7 @@ Page({
     if (!checkEmailVerified()) return
     ask(['expiring', 'inquiry'])
 
-    wx.showLoading({ title: '发布中...', mask: true })   // 挡住连点和发布途中删图
+    wx.showLoading({ title: t('发布中...'), mask: true })   // 挡住连点和发布途中删图
 
     try {
       // 拿图片的 fileID。选图时就开始在后台传了，这里多半直接拿到
@@ -176,42 +186,39 @@ Page({
 
       // 以「审核中」写库。找房页只查 on_sale，审核通过之前别人看不到
       const db = wx.cloud.database()
-      const added = await db.collection('sublet_items').add({
-        data: {
-          title: d.title,
-          // 转租存单个月租，求租存区间。读的时候统一走 utils/kinds.js 的 rentText
-          rent: d.demand ? null : Number(d.rent),
-          rent_min: d.demand ? Number(d.rent_min) : null,
-          rent_max: d.demand ? Number(d.rent_max) : null,
-          address: d.address,
-          contact_wechat: d.contact_wechat,
-          start_date: d.start_date,
-          end_date: d.end_date,
-          room_type: room_type,
-          furnished: d.furnished,
-          utilities: d.utilities ? Number(d.utilities) : null,
-          deposit: d.deposit ? Number(d.deposit) : null,
-          roommate_info: d.roommate_info,
-          description: d.description,
-          images: up.images,
-          thumb: up.thumb,          // 列表页只下载这张小图
-          kind: this.data.kind,     // offer / seek，决定它出现在找房页的哪一面
-          status: 'reviewing',
-          created_at: new Date()
-        }
-      })
+      const doc = {
+        title: d.title,
+        // 转租存单个月租，求租存区间。读的时候统一走 utils/kinds.js 的 rentText
+        rent: d.demand ? null : Number(d.rent),
+        rent_min: d.demand ? Number(d.rent_min) : null,
+        rent_max: d.demand ? Number(d.rent_max) : null,
+        address: d.address,
+        contact_wechat: d.contact_wechat,
+        start_date: d.start_date,
+        end_date: d.end_date,
+        room_type: room_type,
+        furnished: d.furnished,
+        utilities: d.utilities ? Number(d.utilities) : null,
+        deposit: d.deposit ? Number(d.deposit) : null,
+        roommate_info: d.roommate_info,
+        description: d.description,
+        images: up.images,
+        thumb: up.thumb,          // 列表页只下载这张小图
+        kind: this.data.kind,     // offer / seek，决定它出现在找房页的哪一面
+        status: 'reviewing',
+        created_at: new Date()
+      }
+      const added = await db.collection('sublet_items').add({ data: doc })
       this.uploader.commit()   // 图已经归这条帖子了，离开页面时别当成没用的删掉
 
-      // 送审，不等结果。审核在服务端跑，没通过会弹窗告诉用户
-      requestReview('sublet', added._id, d.title)
       wx.hideLoading()
       markStale('sublet')   // 列表页返回时会看到这条新发布的
-      wx.showToast({ title: '已提交，审核中', icon: 'success' })
-      setTimeout(() => wx.navigateBack(), 1500)
+      // 送审，弹「转发到微信群」面板，审核通过了面板上的转发按钮才亮（见 utils/publish.js）
+      guideShare(this, 'sublet', Object.assign({ _id: added._id }, doc), d.images[0])
     } catch (err) {
       wx.hideLoading()
       console.error('发布失败：', err)
-      wx.showToast({ title: '发布失败', icon: 'none' })
+      wx.showToast({ title: t('发布失败'), icon: 'none' })
     }
   }
 })

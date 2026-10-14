@@ -1,3 +1,4 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <!-- 潜鸟 + 广告语整条是图：广告语用的展示字体小程序加载不了。源文件 posters/home/header.html -->
   <image src="/images/home-header.png" mode="widthFix" class="home-header"></image>
@@ -22,7 +23,7 @@
   <block wx:if="{{sponsorsEnabled}}">
     <!-- 「赞助」小标签别删：收了钱的展示要让人看得出是商业推广（《互联网广告管理办法》），
          光写「特别感谢」看不出来 -->
-    <view class="sponsor-title">特别感谢<text class="sponsor-tag">赞助</text></view>
+    <view class="sponsor-title">{{i18n.t('特别感谢', lang)}}<text class="sponsor-tag">{{i18n.t('赞助', lang)}}</text></view>
     <scroll-view scroll-x enhanced show-scrollbar="{{false}}" class="sponsor-row">
       <view wx:for="{{sponsors}}" wx:key="_id" bindtap="onTapSponsor" data-link="{{item.link}}" class="sponsor">
         <image src="{{item.logo}}" mode="aspectFill" class="sponsor-logo"></image>
@@ -30,7 +31,7 @@
       </view>
       <view bindtap="onTapSponsorSlot" class="sponsor">
         <view class="sponsor-logo sponsor-slot">+</view>
-        <view class="sponsor-name">等你加入</view>
+        <view class="sponsor-name">{{i18n.t('等你加入', lang)}}</view>
       </view>
     </scroll-view>
   </block>

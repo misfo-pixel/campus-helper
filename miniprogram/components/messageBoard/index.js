@@ -9,6 +9,8 @@
 
 const { ensureContentOk } = require('../../utils/contentCheck.js')
 const { ask } = require('../../utils/subscribe.js')
+const { t } = require('../../i18n/index.js')
+const { blockUser } = require('../../utils/blocks.js')
 
 // 和 components/reportBar 里的那份保持一致
 const REASONS = ['虚假信息 / 诈骗', '色情低俗', '广告骚扰', '违法违规', '侵犯我的权益', '其他']
@@ -87,7 +89,7 @@ Component({
 
       const content = (d.draft || '').trim()
       if (!content) {
-        wx.showToast({ title: '说点什么吧', icon: 'none' })
+        wx.showToast({ title: t('说点什么吧'), icon: 'none' })
         return
       }
 
@@ -100,7 +102,7 @@ Component({
       ask('inquiry')
 
       this.setData({ sending: true })
-      wx.showLoading({ title: '发送中', mask: true })
+      wx.showLoading({ title: t('发送中'), mask: true })
 
       try {
         // 公开可见的内容，一律先过机检
@@ -121,7 +123,7 @@ Component({
         wx.hideLoading()
         const r = (res && res.result) || {}
         if (!r.success) {
-          wx.showToast({ title: r.message || '发送失败', icon: 'none' })
+          wx.showToast({ title: t(r.message || '发送失败'), icon: 'none' })
           return
         }
 
@@ -130,7 +132,7 @@ Component({
       } catch (err) {
         wx.hideLoading()
         console.error('发送留言失败：', err)
-        wx.showToast({ title: '发送失败，请重试', icon: 'none' })
+        wx.showToast({ title: t('发送失败，请重试'), icon: 'none' })
       } finally {
         this.setData({ sending: false })
       }
@@ -141,7 +143,7 @@ Component({
     report: function (e) {
       const id = e.currentTarget.dataset.id
       wx.showActionSheet({
-        itemList: REASONS,
+        itemList: REASONS.map(r => t(r)),
         success: res => {
           ask('reportResult')
           wx.cloud.callFunction({
@@ -150,23 +152,30 @@ Component({
           }).then(r2 => {
             const r = (r2 && r2.result) || {}
             wx.showToast({
-              title: r.success ? '已提交，我们会尽快核实' : (r.message || '提交失败'),
+              title: t(r.success ? '已提交，我们会尽快核实' : (r.message || '提交失败')),
               icon: 'none'
             })
           }).catch(err => {
             console.error('举报留言失败：', err)
-            wx.showToast({ title: '提交失败', icon: 'none' })
+            wx.showToast({ title: t('提交失败'), icon: 'none' })
           })
         },
         fail: () => { /* 用户点了取消 */ }
       })
     },
 
+    // 屏蔽留言的人：之后他的留言在我这儿都不显示（messages 云函数按屏蔽名单过滤）
+    block: function (e) {
+      blockUser({ targetType: 'message', targetId: e.currentTarget.dataset.id }).then(ok => {
+        if (ok) this.load()
+      })
+    },
+
     remove: function (e) {
       const id = e.currentTarget.dataset.id
       wx.showModal({
-        title: '删除留言',
-        content: '删除后无法恢复，确定吗？',
+        title: t('删除留言'),
+        content: t('删除后无法恢复，确定吗？'),
         success: res => {
           if (!res.confirm) return
           wx.cloud.callFunction({
@@ -177,11 +186,11 @@ Component({
             if (r.success) {
               this.load()
             } else {
-              wx.showToast({ title: r.message || '删除失败', icon: 'none' })
+              wx.showToast({ title: t(r.message || '删除失败'), icon: 'none' })
             }
           }).catch(err => {
             console.error('删除留言失败：', err)
-            wx.showToast({ title: '删除失败', icon: 'none' })
+            wx.showToast({ title: t('删除失败'), icon: 'none' })
           })
         }
       })

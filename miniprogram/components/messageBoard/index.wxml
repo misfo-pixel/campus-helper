@@ -1,11 +1,12 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="board">
   <view class="board-head">
-    <text class="board-title">留言</text>
+    <text class="board-title">{{i18n.t('留言', lang)}}</text>
     <text wx:if="{{messages.length > 0}}" class="board-count">{{messages.length}}</text>
   </view>
 
   <loading-spinner wx:if="{{loading}}" />
-  <view wx:elif="{{messages.length === 0}}" class="board-empty">还没有留言</view>
+  <view wx:elif="{{messages.length === 0}}" class="board-empty">{{i18n.t('还没有留言', lang)}}</view>
 
   <view wx:for="{{messages}}" wx:key="_id" class="msg">
     <image wx:if="{{item.avatarUrl}}" src="{{item.avatarUrl}}" mode="aspectFill" class="msg-avatar" />
@@ -14,16 +15,17 @@
     <view class="msg-body">
       <view class="msg-head">
         <text class="msg-name">{{item.nickname}}</text>
-        <text wx:if="{{item.isPoster}}" class="msg-badge">楼主</text>
+        <text wx:if="{{item.isPoster}}" class="msg-badge">{{i18n.t('楼主', lang)}}</text>
         <text class="msg-time">{{item.timeText}}</text>
       </view>
       <view class="msg-text">
-        <text wx:if="{{item.reply_to_name}}" class="msg-reply">回复 {{item.reply_to_name}}：</text>{{item.content}}
+        <text wx:if="{{item.reply_to_name}}" class="msg-reply">{{i18n.f('回复 {0}：', lang, item.reply_to_name)}}</text>{{item.content}}
       </view>
       <view class="msg-ops">
-        <text class="msg-op" bindtap="replyTo" data-name="{{item.nickname}}" data-id="{{item._id}}">回复</text>
-        <text wx:if="{{item.canDelete}}" class="msg-op msg-op-danger" bindtap="remove" data-id="{{item._id}}">删除</text>
-        <text wx:if="{{!item.isMine}}" class="msg-op" bindtap="report" data-id="{{item._id}}">举报</text>
+        <text class="msg-op" bindtap="replyTo" data-name="{{item.nickname}}" data-id="{{item._id}}">{{i18n.t('回复', lang)}}</text>
+        <text wx:if="{{item.canDelete}}" class="msg-op msg-op-danger" bindtap="remove" data-id="{{item._id}}">{{i18n.t('删除', lang)}}</text>
+        <text wx:if="{{!item.isMine}}" class="msg-op" bindtap="report" data-id="{{item._id}}">{{i18n.t('举报', lang)}}</text>
+        <text wx:if="{{!item.isMine}}" class="msg-op" bindtap="block" data-id="{{item._id}}">{{i18n.t('屏蔽', lang)}}</text>
       </view>
     </view>
   </view>
@@ -33,16 +35,16 @@
        全局的 btn-primary 进不来，那个按钮其实是微信默认的灰按钮 -->
   <view class="composer">
     <view wx:if="{{replyToName}}" class="reply-tag">
-      <text>回复 {{replyToName}}</text>
+      <text>{{i18n.f('回复 {0}', lang, replyToName)}}</text>
       <text class="reply-cancel" bindtap="cancelReply">×</text>
     </view>
     <view class="composer-box">
       <textarea value="{{draft}}" bindinput="onInput" bindblur="onBlur" maxlength="200"
                 auto-height focus="{{focus}}" show-confirm-bar="{{false}}" cursor-spacing="24"
-                placeholder="{{isOwner ? '回复大家的提问' : '公开留言，所有人可见'}}"
+                placeholder="{{isOwner ? i18n.t('回复大家的提问', lang) : i18n.t('公开留言，所有人可见', lang)}}"
                 placeholder-class="composer-ph" class="composer-input"></textarea>
       <view class="composer-send {{canSend && !sending ? 'composer-send-on' : ''}}" bindtap="send">
-        {{sending ? '发送中' : '发送'}}
+        {{sending ? i18n.t('发送中', lang) : i18n.t('发送', lang)}}
       </view>
     </view>
   </view>

@@ -1,5 +1,6 @@
 // 二手和转租都有「供」和「求」两面：卖/收、转/找。
 // 差异全收敛在这张表里——加新板块或改文案只动这里，四个列表页、两个发布页、三个详情页都不用碰。
+const { t, f } = require('../i18n/index.js')
 const KINDS = {
   item: {
     field: 'kind',
@@ -8,18 +9,18 @@ const KINDS = {
     // closed 是发布者标了「已售/已租出」之后详情页顶部横幅和「我的发布」列表上的字，
     // open 是帖子还开着时「我的发布」列表上的字
     tabs: [
-      { key: 'sell', label: '出', action: '我要出售', empty: '还没有商品，来发布第一个吧', closed: '已售出', open: '在售' },
+      { key: 'sell', label: t('出'), action: t('我要出售'), empty: t('还没有商品，来发布第一个吧'), closed: t('已售出'), open: t('在售') },
       // 求购帖点的也是那个「标记已售」，但写「已售出」会让人以为发帖人在卖东西，所以只说结束了；
       // 开着的时候同理不能写「在售」，用和「已结束」成对的中性说法
-      { key: 'want', label: '收', action: '我要求购', empty: '还没有人发求购，来发第一条吧', closed: '已结束', open: '进行中' }
+      { key: 'want', label: t('收'), action: t('我要求购'), empty: t('还没有人发求购，来发第一条吧'), closed: t('已结束'), open: t('进行中') }
     ]
   },
   sublet: {
     field: 'kind',
     default: 'offer',
     tabs: [
-      { key: 'offer', label: '转', action: '我要转租', empty: '还没有房源，来发布第一个吧', closed: '已租出', open: '出租中' },
-      { key: 'seek', label: '找', action: '我要找房', empty: '还没有人发求租，来发第一条吧', closed: '已结束', open: '进行中' }
+      { key: 'offer', label: t('转'), action: t('我要转租'), empty: t('还没有房源，来发布第一个吧'), closed: t('已租出'), open: t('出租中') },
+      { key: 'seek', label: t('找'), action: t('我要找房'), empty: t('还没有人发求租，来发第一条吧'), closed: t('已结束'), open: t('进行中') }
     ]
   },
   // 群组没有供求，两面是「一次性」和「长期」：找搭子凑齐人就散，长期群一直招新。
@@ -28,8 +29,8 @@ const KINDS = {
     field: 'kind',
     default: 'buddy',
     tabs: [
-      { key: 'buddy', label: '搭子', action: '找搭子', closed: '已凑齐', open: '找人中' },
-      { key: 'club', label: '群组', action: '长期群招新', closed: '已停止招新', open: '招新中' }
+      { key: 'buddy', label: t('搭子'), action: t('找搭子'), closed: t('已凑齐'), open: t('找人中') },
+      { key: 'club', label: t('群组'), action: t('长期群招新'), closed: t('已停止招新'), open: t('招新中') }
     ]
   }
 }
@@ -54,9 +55,9 @@ function rentText(doc) {
 // 帖子已经关掉的几种状态：卖掉 / 租出 / 完成（委托、群组共用 done）是发布者自己标的，过期是 autoExpire 按日期下的架。
 // 列表页只查 on_sale / open，所以这些帖子只会从群里的旧转发卡片、「我的发布」点进详情页。
 const CLOSED_STATUS = ['sold', 'rented', 'done', 'expired']
-const EXPIRED_LABEL = '已过期'   // 系统按日期下的架，不分供求，也不代表东西真的出手了
-const TASK_CLOSED_LABEL = '已完成'   // 委托只有一面，没有供/求，不在上面那张表里
-const TASK_OPEN_LABEL = '进行中'
+const EXPIRED_LABEL = t('已过期')   // 系统按日期下的架，不分供求，也不代表东西真的出手了
+const TASK_CLOSED_LABEL = t('已完成')   // 委托只有一面，没有供/求，不在上面那张表里
+const TASK_OPEN_LABEL = t('进行中')
 
 function isClosed(status) {
   return CLOSED_STATUS.indexOf(status) !== -1
@@ -69,13 +70,13 @@ function tabOf(cfg, doc) {
 
 // 先发后审（utils/publish.js）多出来的两个状态。它们不算「关掉」（isClosed 仍是 false，
 // 转发标题不会写【已结束】），但同样不在列表里公开，详情页也只有发布者自己能打开。
-const REVIEW_LABEL = { reviewing: '审核中', rejected: '未通过审核' }
+const REVIEW_LABEL = { reviewing: t('审核中'), rejected: t('未通过审核') }
 
 // 横幅下面那行小字。审核中的帖子别人看不到，原来那句「别人点开时也会先看到这一条」就不对了
 function reviewHint(doc) {
   if (!doc) return ''
-  if (doc.status === 'reviewing') return '通常几秒内自动公开，审核通过前只有你自己看得到'
-  if (doc.status === 'rejected') return (doc.reject_reason || '内容可能违规') + '，只有你自己看得到'
+  if (doc.status === 'reviewing') return t('通常几秒内自动公开，审核通过前只有你自己看得到')
+  if (doc.status === 'rejected') return f('{0}，只有你自己看得到', t(doc.reject_reason || '内容可能违规'))
   return ''
 }
 
@@ -87,7 +88,7 @@ function closedLabel(type, doc) {
   const cfg = KINDS[type]
   if (!cfg) return TASK_CLOSED_LABEL
   const tab = tabOf(cfg, doc)
-  return tab ? tab.closed : '已结束'
+  return tab ? tab.closed : t('已结束')
 }
 
 // 「我的发布」列表上还开着的帖子显示的字。这里不看 status——
@@ -96,7 +97,7 @@ function openLabel(type, doc) {
   const cfg = KINDS[type]
   if (!cfg) return TASK_OPEN_LABEL
   const tab = tabOf(cfg, doc || {})
-  return tab ? tab.open : '进行中'
+  return tab ? tab.open : t('进行中')
 }
 
 module.exports = {

@@ -1,16 +1,17 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <loading-spinner wx:if="{{loading}}" />
 <view wx:elif="{{loadError}}" class="page-container">
-  <view class="text-light empty" bindtap="retry">读取失败，点击重试</view>
+  <view class="text-light empty" bindtap="retry">{{i18n.t('读取失败，点击重试', lang)}}</view>
 </view>
 
 <view wx:else class="page-container">
   <!-- ========== 开队码 ========== -->
   <view class="section-head">
-    <view class="section-title section-title-bar">开队码</view>
-    <button class="btn-primary btn-sm" bindtap="makeCode" loading="{{busy}}">+ 生成</button>
+    <view class="section-title section-title-bar">{{i18n.t('开队码', lang)}}</view>
+    <button class="btn-primary btn-sm" bindtap="makeCode" loading="{{busy}}">{{i18n.t('+ 生成', lang)}}</button>
   </view>
 
-  <view wx:if="{{codes.length === 0}}" class="card text-light block-empty">还没发过开队码</view>
+  <view wx:if="{{codes.length === 0}}" class="card text-light block-empty">{{i18n.t('还没发过开队码', lang)}}</view>
   <view wx:else class="card list">
     <view wx:for="{{codes}}" wx:key="_id" class="code-row">
       <view class="code-main">
@@ -19,29 +20,29 @@
       </view>
       <view class="code-sub">
         <text class="text-light">{{item.stateText}}</text>
-        <text wx:if="{{item.live}}" class="code-copy" bindtap="copyCode" data-code="{{item.code}}">复制</text>
+        <text wx:if="{{item.live}}" class="code-copy" bindtap="copyCode" data-code="{{item.code}}">{{i18n.t('复制', lang)}}</text>
       </view>
     </view>
   </view>
 
   <!-- ========== 配送队 ========== -->
-  <view class="section-title section-title-bar">配送队（{{teams.length}}）</view>
+  <view class="section-title section-title-bar">{{i18n.f('配送队（{0}）', lang, teams.length)}}</view>
 
-  <view wx:if="{{teams.length === 0}}" class="card text-light block-empty">还没有配送队</view>
+  <view wx:if="{{teams.length === 0}}" class="card text-light block-empty">{{i18n.t('还没有配送队', lang)}}</view>
   <view wx:for="{{teams}}" wx:key="_id" class="card team {{item.takedown ? 'team-down' : ''}}">
     <view class="team-head">
       <text class="team-name">{{item.name}}</text>
       <text wx:if="{{item.takedown}}" class="team-pill">{{item.downText}}</text>
     </view>
-    <view class="text-light team-line">队长 {{item.admin_nickname || '未设昵称'}} · 微信 {{item.contact_wechat || '没填'}}</view>
+    <view class="text-light team-line">{{i18n.f('队长 {0} · 微信 {1}', lang, item.admin_nickname || i18n.t('未设昵称', lang), item.contact_wechat || i18n.t('没填', lang))}}</view>
     <view class="team-stats">
-      送达 {{item.delivered_count}} 单
-      <text class="{{item.no_show_count ? 'team-bad' : ''}}"> · 爽约 {{item.no_show_count}} 次</text>
+      {{i18n.f('送达 {0} 单', lang, item.delivered_count)}}
+      <text class="{{item.no_show_count ? 'team-bad' : ''}}"> {{i18n.f('· 爽约 {0} 次', lang, item.no_show_count)}}</text>
     </view>
     <view class="team-actions">
       <button class="{{item.takedown ? 'btn-outline' : 'btn-danger'}} btn-sm"
               bindtap="toggleTakedown" data-id="{{item._id}}" data-name="{{item.name}}"
-              data-down="{{item.takedown}}">{{item.takedown ? '恢复' : '下架'}}</button>
+              data-down="{{item.takedown}}">{{item.takedown ? i18n.t('恢复', lang) : i18n.t('下架', lang)}}</button>
     </view>
   </view>
 </view>

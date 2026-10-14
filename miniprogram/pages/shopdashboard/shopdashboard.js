@@ -25,6 +25,7 @@ const { ORDERING_ENABLED } = require('../../config.js')
 const { askOrGuide } = require('../../utils/subscribe.js')
 const { today, formatTime } = require('../../utils/date.js')
 const { addDays, md, weekday, minutesBetween, cutoffText, progress, sessionTitle, atText } = require('../../utils/group.js')
+const { t, f, getLang } = require('../../i18n/index.js')
 
 const CALENDAR_DAYS = 14
 
@@ -36,14 +37,14 @@ function decorateSession(s, now) {
     title: sessionTitle(s),
     open: open,
     p: p,
-    countText: s.min_orders ? c.total + ' / ' + s.min_orders + ' 单' : c.total + ' 单',
+    countText: s.min_orders ? f('{0} / {1} 单', c.total, s.min_orders) : f('{0} 单', c.total),
     cutText: cutoffText({ cutoff_at: s.cutoff_at, minutes_left: minutesBetween(now, s.cutoff_at) }, now),
-    stateText: SESSION_STATE_TEXT[s.state] || '',
+    stateText: t(SESSION_STATE_TEXT[s.state] || ''),
     confirmLine: s.state === 'formed'
-      ? '待确认 ' + c.confirming + ' · 已确认 ' + c.confirmed + ' · ' + atText(s.confirm_at, now) + ' 截止'
+      ? f('待确认 {0} · 已确认 {1} · {2} 截止', c.confirming, c.confirmed, atText(s.confirm_at, now))
       : '',
     canForce: open && !p.open && !p.formed && !s.forced,
-    repeatText: s.repeat_weekly ? '每' + weekday(s.date) : ''
+    repeatText: s.repeat_weekly ? f('每{0}', weekday(s.date)) : ''
   })
 }
 
@@ -88,7 +89,7 @@ Page({
     loading: true,
     shop: null,
     sessions: [],
-    week: ['一', '二', '三', '四', '五', '六', '日'],
+    week: getLang() === 'en' ? ['M', 'T', 'W', 'T', 'F', 'S', 'S'] : ['一', '二', '三', '四', '五', '六', '日'],
     cells: [],
     summary: { todayCount: 0, pendingCount: 0, revenue: 0 },
     tab: 'forming',
@@ -129,7 +130,7 @@ Page({
     return wx.cloud.callFunction({ name: 'shopManage', data: { action: 'sessions' } }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '读取场次失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取场次失败'), icon: 'none' })
         return
       }
       const mine = r.sessions || []
@@ -139,7 +140,7 @@ Page({
       })
     }).catch(err => {
       console.error('读取场次失败：', err)
-      wx.showToast({ title: '读取场次失败', icon: 'none' })
+      wx.showToast({ title: t('读取场次失败'), icon: 'none' })
     })
   },
 
@@ -158,11 +159,11 @@ Page({
     }).then(res => {
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '读取失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '读取失败'), icon: 'none' })
         return
       }
       const orders = (r.orders || []).map(o => Object.assign({}, o, {
-        statusText: ORDER_STATUS_TEXT[o.status] || o.status,
+        statusText: t(ORDER_STATUS_TEXT[o.status] || o.status),
         timeText: formatTime(o.created_at),
         dayText: o.batch_date ? md(o.batch_date) + ' ' + weekday(o.batch_date) : '',
         shortId: (o._id || '').slice(-6).toUpperCase()
@@ -170,7 +171,7 @@ Page({
       this.setData({ orders: orders })
     }).catch(err => {
       console.error('读取订单失败：', err)
-      wx.showToast({ title: '读取失败', icon: 'none' })
+      wx.showToast({ title: t('读取失败'), icon: 'none' })
     })
   },
 
@@ -191,7 +192,7 @@ Page({
       return
     }
     if (cell.today) {
-      wx.showToast({ title: '截单在前一天，最早开明天的团', icon: 'none' })
+      wx.showToast({ title: t('截单在前一天，最早开明天的团'), icon: 'none' })
       return
     }
     if (cell.off) return
@@ -230,22 +231,22 @@ Page({
   forceSession: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '照常送',
-      content: '截单时不够门槛也按成团算。',
-      confirmText: '照常送',
+      title: t('照常送'),
+      content: t('截单时不够门槛也按成团算。'),
+      confirmText: t('照常送'),
       success: res => {
         if (!res.confirm) return
         wx.cloud.callFunction({ name: 'shopManage', data: { action: 'forceSession', sessionId: id } }).then(r => {
           const result = (r && r.result) || {}
           if (!result.success) {
-            wx.showToast({ title: result.message || '操作失败', icon: 'none' })
+            wx.showToast({ title: t(result.message || '操作失败'), icon: 'none' })
             return
           }
-          wx.showToast({ title: '已设为照常送', icon: 'none' })
+          wx.showToast({ title: t('已设为照常送'), icon: 'none' })
           this.loadSessions()
         }).catch(err => {
           console.error('照常送失败：', err)
-          wx.showToast({ title: '操作失败', icon: 'none' })
+          wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }
     })
@@ -268,9 +269,9 @@ Page({
   cancelOrder: function (e) {
     const id = e.currentTarget.dataset.id
     wx.showModal({
-      title: '取消订单',
+      title: t('取消订单'),
       editable: true,
-      placeholderText: '告诉买家原因（选填）',
+      placeholderText: t('告诉买家原因（选填）'),
       success: res => {
         if (res.confirm) this.updateStatus(id, 'cancelled', res.content || '')
       }
@@ -278,7 +279,7 @@ Page({
   },
 
   updateStatus: function (orderId, status, reason) {
-    wx.showLoading({ title: '处理中', mask: true })
+    wx.showLoading({ title: t('处理中'), mask: true })
     wx.cloud.callFunction({
       name: 'shopOrders',
       data: { action: 'updateStatus', orderId: orderId, status: status, reason: reason || '' }
@@ -286,17 +287,17 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (r.success) {
-        wx.showToast({ title: '已更新', icon: 'success' })
+        wx.showToast({ title: t('已更新'), icon: 'success' })
         this.loadOrders()
         this.loadSummary()
         this.loadSessions()
       } else {
-        wx.showToast({ title: r.message || '操作失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
       }
     }).catch(err => {
       wx.hideLoading()
       console.error('更新订单状态失败：', err)
-      wx.showToast({ title: '操作失败', icon: 'none' })
+      wx.showToast({ title: t('操作失败'), icon: 'none' })
     })
   },
 
@@ -312,7 +313,7 @@ Page({
     if (!text) return
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: '已复制', icon: 'success' })
+      success: () => wx.showToast({ title: t('已复制'), icon: 'success' })
     })
   },
 
@@ -327,7 +328,7 @@ Page({
   // 只有被永久拒绝时 askOrGuide 会自己引导去设置，那是唯一点了也没反应的情况。
   enableOrderAlert: function () {
     askOrGuide('newOrder').then(ok => {
-      if (ok) wx.showToast({ title: '已开启', icon: 'success' })
+      if (ok) wx.showToast({ title: t('已开启'), icon: 'success' })
     })
   },
 

@@ -1,8 +1,9 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <!--pages/publish/publish.wxml-->
 <view class="page-container with-submit-bar">
   <view class="page-head">
     <view class="icon-box tint-gold"><image src="/images/modules/market.svg"></image></view>
-    <view class="page-head-text"><view class="page-head-title">{{demand ? '发布求购' : '发布你的闲置'}}</view></view>
+    <view class="page-head-text"><view class="page-head-title">{{demand ? i18n.t('发布求购', lang) : i18n.t('发布你的闲置', lang)}}</view></view>
   </view>
 
   <!-- 这是表单的第一个决定，会改变下面填什么，所以放最上面 -->
@@ -14,7 +15,7 @@
     </view>
   </view>
 
-  <view class="section-title">基本信息（必填）</view>
+  <view class="section-title">{{i18n.t('基本信息（必填）', lang)}}</view>
   <view class="form-group">
     <!-- 图片上传区。求购没有实物可拍，整块收起来 -->
     <block wx:if="{{!demand}}">
@@ -31,20 +32,20 @@
         </view>
       </view>
     </block>
-    <input placeholder="{{demand ? '想要什么（如 二手显示器）' : '商品名称（如 宜家台灯）'}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
-    <input placeholder="{{demand ? '预算（美元）' : '价格（美元）'}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="form-input" />
-    <input placeholder="{{demand ? '你的微信号（卖家联系用）' : '你的微信号（买家联系用）'}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="form-input" />
+    <input placeholder="{{demand ? i18n.t('想要什么（如 二手显示器）', lang) : i18n.t('商品名称（如 宜家台灯）', lang)}}" value="{{title}}" bindinput="onInput" data-field="title" class="form-input" />
+    <input placeholder="{{demand ? i18n.t('预算（美元）', lang) : i18n.t('价格（美元）', lang)}}" type="digit" value="{{price}}" bindinput="onInput" data-field="price" class="form-input" />
+    <input placeholder="{{demand ? i18n.t('你的微信号（卖家联系用）', lang) : i18n.t('你的微信号（买家联系用）', lang)}}" value="{{seller_wechat}}" bindinput="onInput" data-field="seller_wechat" class="form-input" />
   </view>
 
-  <view class="section-title">详细信息（选填）</view>
+  <view class="section-title">{{i18n.t('详细信息（选填）', lang)}}</view>
   <view class="form-group">
-    <textarea placeholder="{{demand ? '补充说明（想要的成色、型号等）' : '描述（成色、转手原因等）'}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
-    <input placeholder="{{demand ? '方便交易的地点（如 Dinkytown 附近）' : '取货地点（如 Dinkytown 附近）'}}" value="{{pickup_spot}}" maxlength="30" bindinput="onInput" data-field="pickup_spot" class="form-input" />
+    <textarea placeholder="{{demand ? i18n.t('补充说明（想要的成色、型号等）', lang) : i18n.t('描述（成色、转手原因等）', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" class="form-textarea"></textarea>
+    <input placeholder="{{demand ? i18n.t('方便交易的地点（如 Dinkytown 附近）', lang) : i18n.t('取货地点（如 Dinkytown 附近）', lang)}}" value="{{pickup_spot}}" maxlength="30" bindinput="onInput" data-field="pickup_spot" class="form-input" />
     <!-- 不填就一直挂着，直到自己标已售 -->
     <picker mode="date" value="{{expire_date}}" bindchange="onDateChange">
       <view class="form-row">
-        <text class="form-row-label">自动下架</text>
-        <text class="form-row-value {{expire_date ? '' : 'form-row-empty'}}">{{expire_date || '如离美日期'}}</text>
+        <text class="form-row-label">{{i18n.t('自动下架', lang)}}</text>
+        <text class="form-row-value {{expire_date ? '' : 'form-row-empty'}}">{{expire_date || i18n.t('如离美日期', lang)}}</text>
         <text class="form-row-arrow">›</text>
       </view>
     </picker>
@@ -55,5 +56,8 @@
 
 <!-- 发布按钮钉在底部（app.wxss 的 .submit-bar），长表单不用滑到底才找得到 -->
 <view class="submit-bar">
-  <button class="btn-primary" bindtap="submitPublish">发布</button>
+  <button class="btn-primary" bindtap="submitPublish">{{i18n.t('发布', lang)}}</button>
 </view>
+
+<share-guide show="{{guide.show}}" status="{{guide.status}}" headline="{{guide.headline}}" title="{{guide.title}}" cover="{{guide.cover}}" more-text="{{demand ? i18n.t('再发一条', lang) : i18n.t('再发一件', lang)}}" bind:close="onGuideClose" bind:more="onGuideMore" />
+<group-share id="gs" no-font />

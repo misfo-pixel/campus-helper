@@ -10,6 +10,7 @@
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { ORDERING_ENABLED } = require('../../config.js')
 const { uploadShopImage, validatePoints } = require('../../utils/shopForm.js')
+const { t } = require('../../i18n/index.js')
 
 const LAST_STEP = 3
 
@@ -31,7 +32,7 @@ Page({
     planPoints: [],
 
     // 第 3 步：怎么找到你
-    contact_wechat: '',
+    contact_phone: '',
     logo: '',
     tempLogo: '',
     min_order: '',
@@ -90,11 +91,11 @@ Page({
 
     if (d.step === 1) {
       if (d.create_code.length !== 8) {
-        wx.showToast({ title: '请填写 8 位开店码', icon: 'none' })
+        wx.showToast({ title: t('请填写 8 位开店码'), icon: 'none' })
         return
       }
       if (!d.name.trim()) {
-        wx.showToast({ title: '给小店起个名字', icon: 'none' })
+        wx.showToast({ title: t('给小店起个名字'), icon: 'none' })
         return
       }
     }
@@ -102,7 +103,7 @@ Page({
     if (d.step === 2) {
       const bad = validatePoints(d.planPoints)
       if (bad) {
-        wx.showToast({ title: bad, icon: 'none' })
+        wx.showToast({ title: t(bad), icon: 'none' })
         return
       }
     }
@@ -119,21 +120,22 @@ Page({
     const d = this.data
     if (d.saving) return
 
-    if (!d.contact_wechat.trim()) {
-      wx.showToast({ title: '请填写联系微信', icon: 'none' })
+    const phoneDigits = d.contact_phone.replace(/\D/g, '')
+    if (phoneDigits.length < 10 || phoneDigits.length > 15) {
+      wx.showToast({ title: t('请填写正确的手机号'), icon: 'none' })
       return
     }
     if (!d.agreed) {
-      wx.showToast({ title: '请先阅读并同意店长责任告知书', icon: 'none' })
+      wx.showToast({ title: t('请先阅读并同意店长责任告知书'), icon: 'none' })
       return
     }
 
     this.setData({ saving: true })
-    wx.showLoading({ title: '开店中...', mask: true })
+    wx.showLoading({ title: t('开店中...'), mask: true })
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description, d.contact_wechat]
+        texts: [d.name, d.description]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -156,7 +158,7 @@ Page({
           logo: logo,
           description: d.description,
           min_order: d.min_order,
-          contact_wechat: d.contact_wechat,
+          contact_phone: d.contact_phone,
           license_image: licenseImage,
           pickup_points: d.planPoints
         }
@@ -165,21 +167,21 @@ Page({
       wx.hideLoading()
       const r = (res && res.result) || {}
       if (!r.success) {
-        wx.showToast({ title: r.message || '开店失败', icon: 'none' })
+        wx.showToast({ title: t(r.message || '开店失败'), icon: 'none' })
         return
       }
 
       wx.showModal({
-        title: '小店开好了',
-        content: '先上架商品，再回「我的小店」开团。',
+        title: t('小店开好了'),
+        content: t('先上架商品，再回「我的小店」开团。'),
         showCancel: false,
-        confirmText: '去上架',
+        confirmText: t('去上架'),
         success: () => wx.redirectTo({ url: '/pages/shopmenu/shopmenu' })
       })
     } catch (err) {
       wx.hideLoading()
       console.error('开店失败：', err)
-      wx.showToast({ title: '开店失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('开店失败，请重试'), icon: 'none' })
     } finally {
       this.setData({ saving: false })
     }

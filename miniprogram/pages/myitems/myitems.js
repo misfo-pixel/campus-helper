@@ -5,7 +5,9 @@ const { shouldReload } = require('../../utils/refresh.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
 const { toLocalPath } = require('../../utils/poster.js')
 const { showPoster } = require('../../utils/groupCover.js')
-const { withCover, storeTitle } = require('../../utils/share.js')
+const { currentPromo } = require('../../utils/promo.js')
+const { withCover, withPromo, storeTitle } = require('../../utils/share.js')
+const { t, f } = require('../../i18n/index.js')
 
 const CFG = KINDS.item
 const PAGE_SIZE = 20
@@ -147,12 +149,12 @@ Page({
     if (this.data.posterBusy) return
     const uid = this.data.uid
     if (!uid) {
-      wx.showToast({ title: '还没加载完，稍等再点', icon: 'none' })
+      wx.showToast({ title: t('还没加载完，稍等再点'), icon: 'none' })
       return
     }
 
     this.setData({ posterBusy: true })
-    wx.showLoading({ title: '生成中…', mask: true })
+    wx.showLoading({ title: t('生成中…'), mask: true })
     const gs = this.selectComponent('#gs')
 
     Promise.all([
@@ -168,21 +170,22 @@ Page({
       if (!onSale.length) {
         wx.hideLoading()
         this.setData({ posterBusy: false })
-        wx.showToast({ title: '还没有在售的闲置', icon: 'none' })
+        wx.showToast({ title: t('还没有在售的闲置'), icon: 'none' })
         return
       }
       const pic = it => it.thumb || (it.images && it.images[0]) || ''
       return gs.themeFromPhotos([this.data.avatarUrl].concat(onSale.slice(0, 4).map(pic))).then(theme => gs.long({
         theme: theme,
-        title: (this.data.nickname || '明大同学') + '的闲置',
-        subtitle: '在售 ' + onSale.length + ' 件，看中直接聊',
+        title: f('{0}的闲置', this.data.nickname || t('明大同学')),
+        subtitle: f('在售 {0} 件，看中直接聊', onSale.length),
         logo: this.data.avatarUrl,
-        tag: onSale.length + ' 件',
+        tag: f('{0} 件', onSale.length),
         when: null,
-        info: ['扫码看详情、加卖家微信'],
+        info: [t('扫码看详情、加卖家微信')],
         sections: [{ title: '', items: onSale.map(it => ({ image: pic(it), name: it.title, price: it.price })) }],
         qrFileID: qr,
-        footer: '二手市场 · 明尼助手'
+        promo: currentPromo(),
+        footer: t('二手市场 · 明尼助手')
       })).then(path => {
         wx.hideLoading()
         this.setData({ posterBusy: false })
@@ -192,7 +195,7 @@ Page({
       console.error('生成海报失败：', err)
       wx.hideLoading()
       this.setData({ posterBusy: false })
-      wx.showToast({ title: '生成失败，请重试', icon: 'none' })
+      wx.showToast({ title: t('生成失败，请重试'), icon: 'none' })
     })
   },
 
@@ -213,7 +216,7 @@ Page({
         url: '/pages/userstore/userstore?uid=' + uid + '&tab=item',
         fail: err => {
           console.error('打开主页失败：', err)
-          wx.showToast({ title: '打开失败，请重试', icon: 'none' })
+          wx.showToast({ title: t('打开失败，请重试'), icon: 'none' })
         }
       })
     }
@@ -228,14 +231,14 @@ Page({
 
     // profileReady 可能直接 resolve 出本地缓存，而上个版本写的缓存里没有 uid。
     // 所以缓存那份没 uid 时，再等一次走网络的 profileFresh。
-    wx.showLoading({ title: '加载中' })
+    wx.showLoading({ title: t('加载中') })
     app.globalData.profileReady
       .then(profile => (profile && profile.uid) ? profile : app.globalData.profileFresh)
       .then(profile => {
         wx.hideLoading()
         const uid = (profile && profile.uid) || ''
         if (!uid) {
-          wx.showToast({ title: '资料还没加载好，请稍后再试', icon: 'none' })
+          wx.showToast({ title: t('资料还没加载好，请稍后再试'), icon: 'none' })
           return
         }
         this.setData({ uid: uid })
@@ -243,7 +246,7 @@ Page({
       }).catch(err => {
         wx.hideLoading()
         console.error('获取用户资料失败：', err)
-        wx.showToast({ title: '网络异常，请重试', icon: 'none' })
+        wx.showToast({ title: t('网络异常，请重试'), icon: 'none' })
       })
   },
 
@@ -265,7 +268,7 @@ Page({
     const fileID = (first && first.images && first.images[0]) || ''
     if (fileID !== this.coverID) {
       this.coverID = fileID
-      this.cover = toLocalPath(fileID)
+      this.cover = withPromo(this.selectComponent('#gs'), toLocalPath(fileID))
     }
     return fileID
   },
@@ -275,7 +278,7 @@ Page({
     // 老缓存里没有 uid（缓存是上个版本写的），拿不到就退回市场页，
     // 不要退回到带 openid 的旧链接
     if (!this.data.uid) {
-      return { title: '明尼助手 · 二手市场', path: '/pages/market/market' }
+      return { title: t('明尼助手 · 二手市场'), path: '/pages/market/market' }
     }
     // 有最可能卖掉的那件：标题就是它的信息，封面是它的图。没有就退回第一件在售的
     if (this.hot) {
@@ -288,7 +291,7 @@ Page({
     const fileID = this.coverOf(this.data.items)
     const n = this.data.onSaleCount
     return withCover({
-      title: n > 0 ? '我发布了 ' + n + ' 条闲置，来看看吧' : '我在明尼助手上架的闲置，来看看',
+      title: n > 0 ? f('我发布了 {0} 条闲置，来看看吧', n) : t('我在明尼助手上架的闲置，来看看'),
       path: '/pages/userstore/userstore?uid=' + this.data.uid + '&tab=item'
     }, fileID, this.cover)
   }

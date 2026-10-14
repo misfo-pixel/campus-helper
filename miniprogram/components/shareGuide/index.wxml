@@ -1,0 +1,24 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view wx:if="{{show}}" class="sg-mask" catchtouchmove="noop">
+  <view class="sg-panel">
+    <view class="sg-badge">{{i18n.t('发布成功', lang)}}</view>
+    <image src="/images/ui/share-plane.svg" class="sg-art"></image>
+    <view class="sg-headline">{{headline}}</view>
+
+    <!-- 群友收到的就是这张卡片：标题和封面跟真转发出去的一样 -->
+    <view class="sg-card">
+      <view class="sg-card-title">{{title}}</view>
+      <image wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" class="sg-card-img"></image>
+      <view class="sg-card-foot"><image src="/images/loon.png" class="sg-card-logo"></image>{{i18n.t('明尼助手', lang)}}</view>
+    </view>
+
+    <button wx:if="{{status === 'live'}}" open-type="share" class="sg-share">{{i18n.t('转发到微信群', lang)}}</button>
+    <view wx:elif="{{status === 'reviewing'}}" class="sg-share sg-share-wait">{{i18n.t('审核中，马上就好…', lang)}}</view>
+    <view wx:else class="sg-note">{{i18n.t('审核还要一会儿，通过后打开帖子点右上角 ··· 就能转发', lang)}}</view>
+
+    <view class="sg-links">
+      <view wx:if="{{moreText}}" bindtap="onMore" class="sg-link">{{moreText}}</view>
+      <view bindtap="onClose" class="sg-link">{{i18n.t('完成', lang)}}</view>
+    </view>
+  </view>
+</view>

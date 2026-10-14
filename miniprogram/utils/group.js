@@ -7,6 +7,8 @@
 // 门槛按单数算，对外说「再来 N 位」：再来 N 个人各下一单就一定成团，这句话总成立。
 // 但不说「已有 N 人参团」——一个人下两单，N 就对不上了。
 
+const { t, f } = require('../i18n/index.js')
+
 const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
 function pad(n) {
@@ -22,7 +24,7 @@ function addDays(date, n) {
 
 function weekday(date) {
   const d = new Date(date + 'T12:00:00Z')
-  return isNaN(d.getTime()) ? '' : WEEK[d.getUTCDay()]
+  return isNaN(d.getTime()) ? '' : t(WEEK[d.getUTCDay()])
 }
 
 // '2026-10-16' → '10/16'
@@ -38,7 +40,7 @@ function minutesBetween(from, to) {
   return Math.round((b - a) / 60000)
 }
 
-// 今天 / 明天 / 后天，别的日子返回空串
+// 今天 / 明天 / 后天，别的日子返回空串。返回的是中文原文（cutoffText 要拿它比较），显示时再 t()
 function relDay(date, now) {
   const today = String(now || '').slice(0, 10)
   if (!today) return ''
@@ -52,36 +54,36 @@ function relDay(date, now) {
 function atText(at, now) {
   const date = String(at || '').slice(0, 10)
   const time = String(at || '').slice(11, 16)
-  return (relDay(date, now) || md(date)) + ' ' + time
+  return (t(relDay(date, now)) || md(date)) + ' ' + time
 }
 
 // 「明晚 22:00 截单」「还剩 2 小时截单」「周三 22:00 截单」
 function cutoffText(s, now) {
   const left = s.minutes_left
-  if (left != null && left < 60) return Math.max(1, left) + ' 分钟后截单'
-  if (left != null && left < 180) return '还剩 ' + Math.floor(left / 60) + ' 小时截单'
+  if (left != null && left < 60) return f('{0} 分钟后截单', Math.max(1, left))
+  if (left != null && left < 180) return f('还剩 {0} 小时截单', Math.floor(left / 60))
 
   const date = String(s.cutoff_at || '').slice(0, 10)
   const time = String(s.cutoff_at || '').slice(11, 16)
   const night = Number(time.slice(0, 2)) >= 18
   const rel = relDay(date, now)
-  if (rel === '今天') return (night ? '今晚 ' : '今天 ') + time + ' 截单'
-  if (rel === '明天') return (night ? '明晚 ' : '明天 ') + time + ' 截单'
-  return weekday(date) + ' ' + time + ' 截单'
+  if (rel === '今天') return f(night ? '今晚 {0} 截单' : '今天 {0} 截单', time)
+  if (rel === '明天') return f(night ? '明晚 {0} 截单' : '明天 {0} 截单', time)
+  return f('{0} {1} 截单', weekday(date), time)
 }
 
 // 进度条和那一句话。joined = 我已经在这一团里了（「就差你了」不对我说）
 function progress(s, joined) {
   const min = Number(s.min_orders) || 0
   const count = Number(s.count) || 0
-  if (!min) return { pct: 100, open: true, formed: true, gap: 0, text: '下单就送' }
+  if (!min) return { pct: 100, open: true, formed: true, gap: 0, text: t('下单就送') }
   const gap = Math.max(0, min - count)
   return {
     pct: Math.min(100, Math.round(count / min * 100)),
     open: false,
     formed: gap === 0,
     gap: gap,
-    text: gap === 0 ? '已成团，还能上车' : (gap === 1 && !joined ? '就差你了' : '再来 ' + gap + ' 位就开团')
+    text: gap === 0 ? t('已成团，还能上车') : (gap === 1 && !joined ? t('就差你了') : f('再来 {0} 位就开团', gap))
   }
 }
 
@@ -95,11 +97,11 @@ function shareTitle(shopName, s, joined) {
   const name = clip(shopName, 10)
   const p = progress(s, joined)
   const day = md(s.date) + ' ' + weekday(s.date)
-  if (p.open) return name + ' · ' + day + '送到学校'
-  if (p.formed) return name + '已成团，' + day + '送到学校'
-  if (joined) return '我拼了' + name + '，再来 ' + p.gap + ' 位就开团'
-  if (p.gap === 1) return '只差 1 位！' + name + ' ' + day + '开团'
-  return '还差 ' + p.gap + ' 位！' + name + ' ' + day + '拼团中'
+  if (p.open) return f('{0} · {1}送到学校', name, day)
+  if (p.formed) return f('{0}已成团，{1}送到学校', name, day)
+  if (joined) return f('我拼了{0}，再来 {1} 位就开团', name, p.gap)
+  if (p.gap === 1) return f('只差 1 位！{0} {1}开团', name, day)
+  return f('还差 {0} 位！{1} {2}拼团中', p.gap, name, day)
 }
 
 // 店长自己转发：用他写的广告语，后面跟进度（「麻辣鲜香水煮鱼 · 还差 3 位」）。
@@ -107,7 +109,7 @@ function shareTitle(shopName, s, joined) {
 function ownerTitle(shop, s) {
   if (!shop.slogan) return shareTitle(shop.name, s, false)
   const p = progress(s, false)
-  const tail = p.open ? md(s.date) + ' ' + weekday(s.date) + '送到学校' : (p.formed ? '已成团，还能上车' : '还差 ' + p.gap + ' 位')
+  const tail = p.open ? f('{0} {1}送到学校', md(s.date), weekday(s.date)) : (p.formed ? t('已成团，还能上车') : f('还差 {0} 位', p.gap))
   return shop.slogan + ' · ' + tail
 }
 
@@ -147,35 +149,35 @@ function longData(shop, s, items, theme, qrFileID) {
       map[c].push(i)
     })
     order.sort((a, b) => (a === '其他' ? 1 : b === '其他' ? -1 : 0))
-    sections = order.map(c => ({ title: c, items: map[c] }))
+    sections = order.map(c => ({ title: c === '其他' ? t('其他') : c, items: map[c] }))
   } else {
     sections = [{ title: '', items: live }]
   }
-  const points = (s.points || []).map(p => p.name + ' ' + p.arrive + ' 取')
+  const points = (s.points || []).map(p => f('{0} {1} 取', p.name, p.arrive))
   const cut = String(s.cutoff_at || '')
   return {
     theme: theme,
     title: shop.name || '',
     subtitle: shop.slogan || '',
     logo: shop.logo || '',
-    tag: s.min_orders ? '满' + s.min_orders + '单' : '下单就送',
+    tag: s.min_orders ? f('满{0}单', s.min_orders) : t('下单就送'),
     when: { date: s.date, time: s.depart_time },
     info: points.concat([
-      s.min_orders ? '满 ' + s.min_orders + ' 单成团' : '不设门槛，下单就送',
-      md(cut) + ' ' + weekday(cut.slice(0, 10)) + ' ' + cut.slice(11, 16) + ' 截单'
+      s.min_orders ? f('满 {0} 单成团', s.min_orders) : t('不设门槛，下单就送'),
+      f('{0} {1} {2} 截单', md(cut), weekday(cut.slice(0, 10)), cut.slice(11, 16))
     ]),
     sections: sections.map(sec => ({
       title: sec.title,
       items: sec.items.map(i => ({ image: i.image || '', name: i.name, price: i.price }))
     })),
     qrFileID: qrFileID || '',
-    footer: '一起拼团 · 明尼助手'
+    footer: t('一起拼团 · 明尼助手')
   }
 }
 
 // 一场的标题行：「10/16 周四 · 17:00 出发」
 function sessionTitle(s) {
-  return md(s.date) + ' ' + weekday(s.date) + ' · ' + s.depart_time + ' 出发'
+  return f('{0} {1} · {2} 出发', md(s.date), weekday(s.date), s.depart_time)
 }
 
 // 取货点摘要：「Coffman 门口 17:15」，多个点再加「等 3 处」
@@ -183,7 +185,7 @@ function pointsText(points) {
   const list = points || []
   if (!list.length) return ''
   const first = list[0].name + ' ' + (list[0].arrive || '')
-  return list.length > 1 ? first + ' 等 ' + list.length + ' 处' : first
+  return list.length > 1 ? f('{0} 等 {1} 处', first, list.length) : first
 }
 
 module.exports = {

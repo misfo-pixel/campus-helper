@@ -11,6 +11,8 @@
 const { uploadThumb } = require('./thumb.js')
 const { markStale } = require('./refresh.js')
 const { deleteCloudFiles } = require('./contentCheck.js')
+const { shareTitle, detailShare, withPromo } = require('./share.js')
+const { t, f } = require('../i18n/index.js')
 
 // 选图即上传。每个发布页 onLoad 时建一个：
 //   选图 / 删图之后 → uploader.sync(当前的图片列表)
@@ -95,13 +97,13 @@ function requestReview(type, id, title, quiet) {
       if (r.status === 'rejected') {
         // 这时用户多半已经离开发布页了，showModal 是全局的，在哪一页都能弹出来
         wx.showModal({
-          title: '内容未通过审核',
-          content: '「' + title + '」' + (r.reason || '可能包含违规信息') + '，没有公开。请修改后重新发布。',
+          title: t('内容未通过审核'),
+          content: f('「{0}」{1}，没有公开。请修改后重新发布。', title, t(r.reason || '可能包含违规信息')),
           showCancel: false,
-          confirmText: '我知道了'
+          confirmText: t('我知道了')
         })
       } else if (!quiet) {
-        wx.showToast({ title: '审核通过，已公开', icon: 'none' })
+        wx.showToast({ title: t('审核通过，已公开'), icon: 'none' })
       }
       return r
     })
@@ -124,8 +126,54 @@ function retryStuckReviews(type, docs) {
     .forEach(d => requestReview(type, d._id, d.title, true))
 }
 
+// ── 发布成功后引导转发到微信群（components/shareGuide） ──
+//
+// 帖子刚写进库是 reviewing，这时转发出去，群友点开只会看到「内容审核中」。
+// 所以面板先亮「审核中」，送审这一趟回来、确认公开了才亮转发按钮——审核一般两三秒。
+// 没通过：requestReview 已经弹了原因，面板直接关掉，当作点了「完成」。
+const GUIDE_HEADLINES = {
+  item: '发到群里，出得更快',
+  sublet: '发到群里，租得更快',
+  task: '发到群里，更快有人接',
+  group: '发到群里，更快凑齐人'
+}
+const LIVE_STATUS = { item: 'on_sale', sublet: 'on_sale', task: 'open', group: 'open' }
+
+// page 要有：WXML 里的 <share-guide>（数据绑 guide.*），二手页还要 <group-share id="gs" no-font />，
+// 以及 onGuideClose（「完成」）。doc 是刚写进库的那条（带 _id），localImage 是刚选的第一张本地图
+function guideShare(page, type, doc, localImage) {
+  const live = Object.assign({}, doc, { status: LIVE_STATUS[type] })
+  // 封面直接用刚选的本地图，不用再从云上下回来；二手活动期间贴上活动贴纸
+  const local = Promise.resolve(localImage || '')
+  const cover = type === 'item' ? withPromo(page.selectComponent('#gs'), local) : local
+  page.shareGuide = { type: type, doc: live, cover: cover }
+  page.setData({
+    guide: { show: true, status: 'reviewing', headline: t(GUIDE_HEADLINES[type]), title: shareTitle(type, live), cover: localImage || '' }
+  })
+  cover.then(p => { if (p && page.data.guide.show) page.setData({ 'guide.cover': p }) })
+
+  // 面板上已经写着审核结果了，不用再弹「审核通过」的 toast
+  requestReview(type, doc._id, doc.title, true).then(r => {
+    if (!page.data.guide.show) return
+    if (r.status === 'rejected') {
+      page.setData({ 'guide.show': false })
+      page.onGuideClose()
+      return
+    }
+    page.setData({ 'guide.status': r.status === LIVE_STATUS[type] ? 'live' : 'pending' })
+  })
+}
+
+// 发布页的 onShareAppMessage 直接 return 这个。还没发布（右上角 ··· 转发）就退回列表页
+function guideShareMessage(page, type) {
+  const g = page.shareGuide
+  return g ? detailShare(g.type, g.doc, g.cover) : detailShare(type, null)
+}
+
 module.exports = {
   createUploader: createUploader,
   requestReview: requestReview,
+  guideShare: guideShare,
+  guideShareMessage: guideShareMessage,
   retryStuckReviews: retryStuckReviews
 }

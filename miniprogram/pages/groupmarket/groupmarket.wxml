@@ -1,18 +1,19 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
   <view class="page-head">
     <view class="icon-box"><image src="/images/modules/group.svg"></image></view>
     <view class="page-head-text">
-      <view class="page-head-title">兴趣群组</view>
-      <view class="page-head-sub">找搭子、组乐队、兴趣群</view>
+      <view class="page-head-title">{{i18n.t('兴趣群组', lang)}}</view>
+      <view class="page-head-sub">{{i18n.t('找搭子、组乐队、兴趣群', lang)}}</view>
     </view>
-    <button class="btn-primary btn-sm" bindtap="goToPublish">+ 发布</button>
+    <button class="btn-primary btn-sm" bindtap="goToPublish">{{i18n.t('+ 发布', lang)}}</button>
   </view>
 
   <skeleton wx:if="{{loading}}" type="text" />
   <view wx:elif="{{items.length === 0}}" class="empty-state">
     <view class="icon-box"><image src="/images/modules/group.svg"></image></view>
-    <view class="empty-state-text">还没有人发起，来当第一个吧</view>
-    <button class="btn-primary" bindtap="goToPublish">发布群组</button>
+    <view class="empty-state-text">{{i18n.t('还没有人发起，来当第一个吧', lang)}}</view>
+    <button class="btn-primary" bindtap="goToPublish">{{i18n.t('发布群组', lang)}}</button>
   </view>
 
   <view>

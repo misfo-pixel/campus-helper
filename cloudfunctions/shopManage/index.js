@@ -127,7 +127,9 @@ function pickShopFields(event, needsDelivery) {
     // 店长自己写给买家看的一段话（取货约定、备注怎么填、多久回复…）。
     // 平台不替店长生成这段，也不审它——写什么、写不写都由店长决定。
     order_notice: (event.order_notice || '').trim().slice(0, 300),
-    contact_wechat: (event.contact_wechat || '').trim(),
+    // 2026-10-13 起店长联系方式从微信号换成手机号：收款走邮件，买家有急事打电话。
+    // 老店的 contact_wechat 留在库里不动，买家订单页在店长没填手机时还显示它
+    contact_phone: String(event.contact_phone || '').trim().slice(0, 30),
 
     // 广告语：海报大标题、店长自己转发时的卡片标题。小程序端保存前过内容检测
     slogan: Array.from((event.slogan || '').trim()).slice(0, 16).join(''),
@@ -153,7 +155,8 @@ function pickShopFields(event, needsDelivery) {
 
 function validateShop(fields, needsDelivery) {
   if (!fields.name) return '请填写小店名称'
-  if (!fields.contact_wechat) return '请填写联系微信'
+  const phoneDigits = fields.contact_phone.replace(/\D/g, '')
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) return '请填写正确的手机号'
   if (needsDelivery && !fields.exact_address && !fields.pickup_points.length) {
     return '至少设一个取货点'
   }
