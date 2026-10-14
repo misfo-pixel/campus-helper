@@ -65,6 +65,7 @@
     "pages/shopposter/shopposter",
     "pages/shopcodes/shopcodes",
     "pages/shopmenu/shopmenu",
+    "pages/menuimport/menuimport",
     "pages/shopitem/shopitem",
     "pages/deliveryask/deliveryask",
     "pages/teamdashboard/teamdashboard",

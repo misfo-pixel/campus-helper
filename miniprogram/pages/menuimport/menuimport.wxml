@@ -1,0 +1,47 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="page-container">
+  <skeleton wx:if="{{stage === 'starting'}}" type="text" />
+
+  <block wx:elif="{{stage === 'waiting' || stage === 'expired'}}">
+    <view class="card step">
+      <view class="step-row"><text class="step-num">1</text><text>{{i18n.t('用电脑或手机浏览器打开', lang)}}</text></view>
+      <view class="url-row" bindtap="copyUrl">
+        <text class="url">{{url}}</text>
+        <text class="copy">{{i18n.t('复制网址', lang)}}</text>
+      </view>
+      <view class="step-row"><text class="step-num">2</text><text>{{i18n.t('输入导入码', lang)}}</text></view>
+      <view class="code {{stage === 'expired' ? 'code-dead' : ''}}" bindtap="copyCode">{{codeText}}</view>
+      <view class="step-row"><text class="step-num">3</text><text>{{i18n.t('贴菜单链接、文字或照片，整理好后回到这里确认', lang)}}</text></view>
+    </view>
+
+    <view wx:if="{{stage === 'waiting'}}" class="text-light waiting">{{i18n.t('等待网页提交… 30 分钟内有效', lang)}}</view>
+    <button wx:else class="btn-primary" bindtap="start">{{i18n.t('导入码已过期，重新生成', lang)}}</button>
+  </block>
+
+  <block wx:else>
+    <view class="list-head">
+      <text>{{i18n.f('收到 {0} 件，已选 {1} 件', lang, items.length, pickedCount)}}</text>
+      <text class="pick-all" bindtap="togglePickAll">{{i18n.t('全选', lang)}}</text>
+    </view>
+
+    <view class="card list">
+      <view wx:for="{{items}}" wx:key="index" class="row {{item.restricted ? 'row-off' : ''}}">
+        <view class="check {{item.picked ? 'check-on' : ''}}" bindtap="togglePick" data-index="{{index}}">{{item.picked ? '✓' : ''}}</view>
+        <view class="meta" bindtap="togglePick" data-index="{{index}}">
+          <view class="name">{{item.name}}</view>
+          <view wx:if="{{item.restricted}}" class="restricted">{{i18n.t('酒类等禁售品，不能上架', lang)}}</view>
+          <view wx:elif="{{item.description}}" class="text-light desc">{{item.description}}</view>
+          <text wx:if="{{item.category}}" class="chip">{{item.category}}</text>
+        </view>
+        <view wx:if="{{!item.restricted}}" class="price">
+          <text>$</text>
+          <input type="digit" value="{{item.priceText}}" placeholder="{{i18n.t('价格', lang)}}" bindinput="onPriceInput" data-index="{{index}}" />
+        </view>
+      </view>
+    </view>
+
+    <view class="footer">
+      <button class="btn-primary" bindtap="commit" loading="{{saving}}" disabled="{{saving}}">{{i18n.f('上架 {0} 件', lang, pickedCount)}}</button>
+    </view>
+  </block>
+</view>

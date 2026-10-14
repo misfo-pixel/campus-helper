@@ -133,3 +133,5 @@
   font-size: 26rpx;
   color: #999;
 }
+
+.import-link { margin-top: 24rpx; text-align: center; font-size: 26rpx; color: var(--color-primary); }

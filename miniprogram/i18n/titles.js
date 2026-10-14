@@ -16,6 +16,7 @@ module.exports = {
   "pages/home/home": "明尼助手",
   "pages/itemdetail/itemdetail": "物品详情",
   "pages/market/market": "二手市场",
+  "pages/menuimport/menuimport": "从网页导入",
   "pages/mygroups/mygroups": "我的群组",
   "pages/myitems/myitems": "我的闲置",
   "pages/myshoporders/myshoporders": "我的订单",

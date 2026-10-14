@@ -41,4 +41,6 @@
     <view class="product-add-icon">＋</view>
     <view class="product-add-text">{{i18n.t('添加商品', lang)}}</view>
   </view>
+  <!-- 菜品多的店一件件录太累：贴菜单链接、文字或拍照，在网页上整理好一次导进来 -->
+  <view wx:if="{{!loading}}" class="import-link" bindtap="importMenu">{{i18n.t('从网页导入菜单', lang)}} ›</view>
 </view>

@@ -137,6 +137,10 @@ Page({
     wx.navigateTo({ url: '/pages/shopitem/shopitem?id=' + e.currentTarget.dataset.id + (this.data.useCategory ? '&cat=1' : '') })
   },
 
+  importMenu: function () {
+    wx.navigateTo({ url: '/pages/menuimport/menuimport' })
+  },
+
   // cat=1 让商品编辑页显示「分类」输入框；关着就别让店长填一个不展示的字段
   addItem: function () {
     wx.navigateTo({ url: '/pages/shopitem/shopitem' + (this.data.useCategory ? '?cat=1' : '') })
