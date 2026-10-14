@@ -2,9 +2,10 @@
 // 这页先拿一个导入码，商家在浏览器里打开 minnepal.com/import 输入，AI 整理好交回来以后，
 // 这页轮询到了就列出来，商家勾选、改价，过内容审核后一次上架。
 const { checkContent } = require('../../utils/contentCheck.js')
-const { t, f } = require('../../i18n/index.js')
+const { t, f, getLang } = require('../../i18n/index.js')
 
-const IMPORT_URL = 'minnepal.com/import'
+// 网页有中英两版，按小程序当前语言给对应的网址
+const importUrl = () => (getLang() === 'en' ? 'minnepal.com/en/import' : 'minnepal.com/import')
 const POLL_MS = 3000
 // 审核接口一次最多 2500 字，留点余量
 const CHECK_CHUNK = 2000
@@ -49,7 +50,7 @@ Page({
     stage: 'starting',     // starting / waiting / expired / ready
     code: '',
     codeText: '',          // 'K7M 4QX'，分两段好念
-    url: IMPORT_URL,
+    url: importUrl(),
     items: [],             // [{ name, price, priceText, unit, description, category, restricted, picked }]
     pickedCount: 0,
     saving: false
@@ -131,7 +132,7 @@ Page({
   },
 
   copyUrl: function () {
-    wx.setClipboardData({ data: 'https://' + IMPORT_URL })
+    wx.setClipboardData({ data: 'https://' + this.data.url })
   },
 
   copyCode: function () {
