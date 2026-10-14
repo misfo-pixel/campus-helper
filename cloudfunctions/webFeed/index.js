@@ -3,7 +3,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-// 网页版（minni-web，部署在 Vercel）的唯一数据源。走「HTTP 访问服务」，不经过小程序。
+// 网页版（仓库 minne-web，部署在 Vercel）的唯一数据源。走「HTTP 访问服务」，不经过小程序。
 //
 // 网页版只能浏览：下单、发布、留言、联系人都要回小程序。所以这里只读、只给公开字段，
 // 而且是白名单——每个板块下发哪些字段在 FIELDS 里一个个列出来，新加的字段默认不出去。
