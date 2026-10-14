@@ -300,10 +300,17 @@ exports.main = async (event) => {
 
         // 开店码：先占住（带 used: false 的条件更新，两个人拿同一个码同时提交
         // 只有一个改得动），开店失败再还回去
-        await ensureCollections()
+        //
+        // 这里不调 ensureCollections：手里有码，说明管理员生成过，集合早就在了。
+        // 冷启动时多两趟 createCollection 很容易把开店顶过云函数默认的 3 秒超时，
+        // 前端只能看到调用失败。集合真不存在（-502005）就当码不对
         const code = String(event.create_code || '').trim().toUpperCase()
         if (!code) return { success: false, message: '请填写开店码' }
         const found = await db.collection('shop_create_codes').where({ code: code }).limit(1).get()
+          .catch(e => {
+            if (e && e.errCode === -502005) return { data: [] }
+            throw e
+          })
         const ticket = found.data[0]
         if (!ticket || ticket.used) return { success: false, message: '开店码不对或已用过' }
         if (new Date(ticket.expires_at) < new Date()) return { success: false, message: '开店码已过期' }

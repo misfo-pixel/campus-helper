@@ -133,11 +133,16 @@ Page({
     this.setData({ saving: true })
     wx.showLoading({ title: t('开店中...'), mask: true })
 
+    // 走到 catch 时用来说清楚是哪一步挂的。只写一句「开店失败，请重试」的话，
+    // 店长和我们都不知道该重传图片、等一会儿，还是去查云函数
+    let stage = 'check'
+
     try {
       if (!(await ensureContentOk({
         texts: [d.name, d.description]
       }))) return
 
+      stage = 'upload'
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
       const licenseImage = await uploadShopImage(d.tempLicense, d.licenseImage, 'licenses')
 
@@ -148,6 +153,7 @@ Page({
         }
       }
 
+      stage = 'call'
       const res = await wx.cloud.callFunction({
         name: 'shopManage',
         data: {
@@ -180,8 +186,22 @@ Page({
       })
     } catch (err) {
       wx.hideLoading()
-      console.error('开店失败：', err)
-      wx.showToast({ title: t('开店失败，请重试'), icon: 'none' })
+      console.error('开店失败：', stage, err)
+      const detail = (err && (err.errMsg || err.message)) || ''
+      let reason = t('开店失败，请重试')
+      if (stage === 'upload') {
+        reason = t('图片上传失败。可以先不传 logo 和资质图，开店后在小店设置里补')
+      } else if (stage === 'call' && /time\s?out/i.test(detail)) {
+        // 超时时云函数可能已经跑完了，店其实开好了；直接重试会撞上「开店码已用过」
+        reason = t('服务器响应超时。店可能已经开好了，先去「我的小店」看看，没有再重试')
+      }
+      // 原始报错一起显示，截图发过来就能定位
+      wx.showModal({
+        title: t('开店失败'),
+        content: detail ? reason + '\n\n' + detail : reason,
+        showCancel: false,
+        confirmText: t('我知道了')
+      })
     } finally {
       this.setData({ saving: false })
     }
