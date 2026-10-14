@@ -942,6 +942,8 @@ var en = {
  "先上架商品，再回「我的小店」开团。": "List some products first, then come back to My Shop to open a session.",
  "去上架": "List products",
  "开店失败，请重试": "Couldn't open shop, please retry",
+ "图片上传失败。可以先不传 logo 和资质图，开店后在小店设置里补": "Image upload failed. You can skip the logo and license for now and add them later in Shop Settings.",
+ "服务器响应超时。店可能已经开好了，先去「我的小店」看看，没有再重试": "The server timed out. Your shop may already be open — check My Shop first, and retry only if it isn't there.",
  "未成团": "Minimum not met",
  "待确认 {0} · 已确认 {1} · {2} 截止": "To confirm {0} · Confirmed {1} · Due {2}",
  "每{0}": "Every {0}",
