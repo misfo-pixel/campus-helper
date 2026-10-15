@@ -256,13 +256,15 @@ Page({
           const notified = result.notified || 0
           wx.showModal({
             title: t('已设为照常送'),
-            content: !buyers
-              ? t('这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。')
-              : result.pending
-                ? t('照常送通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。')
-                : (notified >= buyers
-                ? f('已通知 {0} 位买家：这一场一定开团。', buyers)
-                : f('{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。', buyers, notified)),
+            content: result.already
+              ? t('买家之前已经收到过拼团成功的通知，这次不再重复发。')
+              : !buyers
+                ? t('这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。')
+                : result.pending
+                  ? t('拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。')
+                  : notified >= buyers
+                    ? f('已通知 {0} 位买家：这一场一定开团。', buyers)
+                    : f('{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。', buyers, notified),
             showCancel: false,
             confirmText: t('知道了')
           })

@@ -8,6 +8,7 @@ const _ = db.command
 // 一场拼团（shop_sessions 一条）的一生：
 //   open      拼团中。买家下单，订单是 forming
 //             截单前 2 小时还没到门槛：给已下单的买家各发一条拼团进度通知，喊人（只发一次）
+//             凑够门槛或店长点「照常送」的那一刻：发一条拼团成功通知（buyerOrders / shopManage 发，只发一次）
 //   ↓ 截单（cutoff_at）
 //   formed    成团：订单 forming → confirming（「待确认」），买家在 confirm_at 前联系店长确认
 //   failed    没成团：订单全部取消，原因「未成团」

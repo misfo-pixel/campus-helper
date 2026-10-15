@@ -271,10 +271,18 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
-// 照常送：告诉这一场已经下单的人一定开团。一个人下了几单只发一条。
+// 拼团成功通知：这一场确定开团了，告诉已经下单的人。一个人下了几单只发一条。
+// 一场只发一次：先抢 success_notified，抢不到说明发过了（人数凑满时 buyerOrders 发过，
+// 或者照常送过、撤销、又照常送）——票已经用掉，再发也收不到。
+// 这一段和 buyerOrders 里的是同一份，改的时候两处一起改。
 // 发不出去是常态（下单时没授权），返回发出去几条，店长心里有数。
 // pending = 模板还没申请下来，一条都不会发
-async function notifyForced(s) {
+async function notifyGroupSuccess(s, tip) {
+  const claim = await db.collection('shop_sessions')
+    .where({ _id: s._id, success_notified: _.neq(true) })
+    .update({ data: { success_notified: true } })
+  if (!claim.stats || claim.stats.updated !== 1) return { buyers: 0, notified: 0, already: true }
+
   const orders = await db.collection('shop_orders')
     .where({ session_id: s._id, status: 'forming' })
     .field({ buyer: true })
@@ -288,17 +296,17 @@ async function notifyForced(s) {
     const r = await cloud.callFunction({
       name: 'sendSubscribe',
       data: {
-        tpl: 'groupGo',
+        tpl: 'groupSuccess',
         toUsers: buyers,
         page: 'pages/myshoporders/myshoporders',
-        data: { name: name, tip: '店长照常送，一定开团', time: s.cutoff_at }
+        data: { name: name, tip: tip, time: nowAt() }
       }
     })
     const result = (r && r.result) || {}
     if (result.pending) return { buyers: buyers.length, notified: 0, pending: true }
     return { buyers: buyers.length, notified: (result.results || []).filter(x => x.success).length }
   } catch (e) {
-    console.warn('照常送通知发送失败：', e)
+    console.warn('拼团成功通知发送失败：', e)
     return { buyers: buyers.length, notified: 0 }
   }
 }
@@ -564,7 +572,7 @@ exports.main = async (event) => {
 
       // 照常送：差几单没到门槛，店长愿意送，截单时就按成团算。
       // 设上之后马上告诉已下单的人「一定开团」，不用等到截单——他们也就不用再去拉人了。
-      // 用的是下单时单独要的照常送票（groupGo），不占截单前 2 小时提醒和成团通知那两张
+      // 发的是拼团成功通知（和人数凑满时发的是同一条），不占截单前 2 小时提醒和截单结果那两张票
       case 'forceSession': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
@@ -575,8 +583,8 @@ exports.main = async (event) => {
           .update({ data: { forced: true, updated_at: new Date() } })
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         const s = (await db.collection('shop_sessions').doc(id).get()).data
-        const sent = await notifyForced(s)
-        return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending }
+        const sent = await notifyGroupSuccess(s, '店长照常送，截单后联系店长确认')
+        return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending, already: sent.already }
       }
 
       // 撤销照常送：截单前都能撤，撤了就回到满门槛才成团。

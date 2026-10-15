@@ -66,6 +66,35 @@ async function countSession(sessionId) {
 
 // 金额一律用数据库里的当前价重算，绝不采信前端传来的价格和总价。
 // 不然改一下请求就能一分钱买走整份商品列表。
+// 拼团成功通知：这一场确定开团了，告诉已经下单的人。一个人下了几单只发一条。
+// 一场只发一次：先抢 success_notified，两单前后脚凑满、或者店长已经照常送过，都只有一次发得出去。
+// 这一段和 shopManage 里的是同一份，改的时候两处一起改
+async function notifyGroupSuccess(s, tip) {
+  const claim = await db.collection('shop_sessions')
+    .where({ _id: s._id, success_notified: _.neq(true) })
+    .update({ data: { success_notified: true } })
+  if (!claim.stats || claim.stats.updated !== 1) return
+
+  const orders = await db.collection('shop_orders')
+    .where({ session_id: s._id, status: 'forming' })
+    .field({ buyer: true })
+    .limit(500)
+    .get()
+  const buyers = [...new Set(orders.data.map(o => o.buyer))]
+  if (!buyers.length) return
+  const name = Array.from(s.shop_name || '').slice(0, 10).join('') + ' ' +
+    Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' 拼团'
+  await cloud.callFunction({
+    name: 'sendSubscribe',
+    data: {
+      tpl: 'groupSuccess',
+      toUsers: buyers,
+      page: 'pages/myshoporders/myshoporders',
+      data: { name: name, tip: tip, time: nowAt() }
+    }
+  })
+}
+
 async function buildOrderItems(shopId, rawItems) {
   if (!Array.isArray(rawItems) || rawItems.length === 0) {
     return { error: '购物车是空的' }
@@ -366,6 +395,15 @@ exports.main = async (event) => {
           count = await countSession(session._id)
         } catch (e) {
           console.warn('数单数失败：', e)
+        }
+
+        // 这一单让这一场凑够了门槛：告诉这一场所有下了单的人拼团成功（包括自己）
+        if (session.min_orders && count >= session.min_orders) {
+          try {
+            await notifyGroupSuccess(session, '人满成团，截单后联系店长确认')
+          } catch (e) {
+            console.warn('拼团成功通知发送失败（不影响下单）：', e)
+          }
         }
 
         return {

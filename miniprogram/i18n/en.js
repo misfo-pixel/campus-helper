@@ -1409,5 +1409,6 @@ module.exports = {
   "撤销": "Undo",
   "撤销照常送": "Undo Go Anyway",
   "已撤销照常送": "Go anyway undone",
-  "照常送通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Go-anyway notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders."
+  "拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Group-success notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders.",
+  "买家之前已经收到过拼团成功的通知，这次不再重复发。": "Buyers were already notified that this group is on, so no new notice was sent."
 }
