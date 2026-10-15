@@ -61,7 +61,7 @@
   <textarea placeholder="{{ordering ? i18n.t('小店简介（做什么、有什么特色、有什么约定）', lang) : i18n.t('小店简介（做什么、怎么联系、怎么交付）', lang)}}" value="{{description}}" bindinput="onInput" data-field="description" maxlength="300" class="card form-card" style="width: auto; height: 160rpx;"></textarea>
 
   <input wx:if="{{ordering}}" placeholder="{{i18n.t('起送价（美元，不填就是不限）', lang)}}" type="digit" value="{{min_order}}" bindinput="onInput" data-field="min_order" class="card form-card" />
-  <input wx:if="{{ordering}}" placeholder="{{i18n.t('送到取货点后等买家几分钟（不填就是 10 分钟）', lang)}}" type="number" maxlength="2" value="{{wait_minutes}}" bindinput="onInput" data-field="wait_minutes" class="card form-card" />
+  <input wx:if="{{ordering}}" placeholder="{{i18n.t('等待时间（分钟，默认 10）', lang)}}" type="number" maxlength="2" value="{{wait_minutes}}" bindinput="onInput" data-field="wait_minutes" class="card form-card" />
 
   <!-- 选填，所以不放在上面的基本信息里 -->
   <view wx:if="{{ordering}}" class="card group">

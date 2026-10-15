@@ -1406,7 +1406,7 @@ var en = {
  "送达照片": "Delivery photo",
  "已送到 {0}": "Delivered to {0}",
  "店长等到 {0}，过时请先打电话": "The seller waits until {0}. After that, call first.",
- "送到取货点后等买家几分钟（不填就是 10 分钟）": "Minutes you wait at the pickup point (default 10)"
+ "等待时间（分钟，默认 10）": "Wait time (minutes, default 10)"
 };
 
 function t(s, lang) {
