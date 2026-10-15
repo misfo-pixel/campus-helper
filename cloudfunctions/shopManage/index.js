@@ -271,51 +271,54 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
-// 照常送：当场给这一场已经下单的人发拼团成功通知。一个人下了几单只发一条。
+// 照常送：当场给这一场已经下单的人发拼团成功通知。每一单一条（每单下单时各要了一张票，价格也各是各的）。
 // 发出去的单记上 success_notified，截单时 groupSettle 就不再发（票用掉了）。
-// 照常送过、撤销、又照常送：已经收到过的人跳过，只发后来下单的（already = 全都收到过了）。
-// 发不出去是常态（下单时没授权），返回发出去几条，店长心里有数。
-// pending = 模板还没申请下来，一条都没发，也不记——截单时 groupSettle 会退回订单进度通知
+// 照常送过、撤销、又照常送：已经收到过的单跳过，只发后来下的（already = 全都收到过了）。
+// 发不出去是常态（下单时没授权），返回通知到几位买家，店长心里有数。
+// pending = 模板还没配，一条都没发，也不记——截单时 groupSettle 会退回订单进度通知
 async function notifyForced(s) {
   const orders = await db.collection('shop_orders')
     .where({ session_id: s._id, status: 'forming' })
-    .field({ buyer: true, success_notified: true })
+    .field({ buyer: true, items: true, total: true, success_notified: true })
     .limit(500)
     .get()
   const todo = orders.data.filter(o => !o.success_notified)
-  const buyers = [...new Set(todo.map(o => o.buyer))]
-  if (!buyers.length) return { buyers: 0, notified: 0, already: orders.data.length > 0 }
+  const buyers = new Set(todo.map(o => o.buyer)).size
+  if (!todo.length) return { buyers: 0, notified: 0, already: orders.data.length > 0 }
 
-  const name = Array.from(s.shop_name || '').slice(0, 10).join('') + ' ' +
-    Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' 拼团'
-  let results = []
-  try {
-    const r = await cloud.callFunction({
-      name: 'sendSubscribe',
-      data: {
-        tpl: 'groupSuccess',
-        toUsers: buyers,
-        page: 'pages/myshoporders/myshoporders',
-        data: { name: name, tip: '店长照常送，截单后联系店长确认', time: nowAt() }
-      }
-    })
-    const result = (r && r.result) || {}
-    if (result.pending) return { buyers: buyers.length, notified: 0, pending: true }
-    results = result.results || []
-  } catch (e) {
-    console.warn('照常送通知发送失败：', e)
-    return { buyers: buyers.length, notified: 0 }
+  const shopTag = Array.from(s.shop_name || '').slice(0, 6).join('')
+  const sent = []
+  let pending = false
+  for (let i = 0; i < todo.length; i += 20) {
+    await Promise.all(todo.slice(i, i + 20).map(o => {
+      const items = o.items || []
+      return cloud.callFunction({
+        name: 'sendSubscribe',
+        data: {
+          tpl: 'groupSuccess',
+          toUser: o.buyer,
+          page: 'pages/myshoporders/myshoporders',
+          data: {
+            item: shopTag + ' ' + ((items[0] || {}).name || '你的订单') + (items.length > 1 ? ' 等 ' + items.length + ' 件' : ''),
+            amount: o.total,
+            time: nowAt()
+          }
+        }
+      }).then(r => {
+        const result = (r && r.result) || {}
+        if (result.pending) pending = true
+        else if (result.success) sent.push(o)
+      }).catch(e => console.warn('照常送通知发送失败：', e))
+    }))
+    if (pending) return { buyers: buyers, notified: 0, pending: true }
   }
 
-  // 只记发出去了的人：没发出去的（多半是没授权），截单时还能再试一次
-  const sent = results.filter(x => x.success).map(x => x.toUser)
-  const ids = todo.filter(o => sent.indexOf(o.buyer) !== -1).map(o => o._id)
-  if (ids.length) {
+  if (sent.length) {
     await db.collection('shop_orders')
-      .where({ _id: _.in(ids), status: 'forming' })
+      .where({ _id: _.in(sent.map(o => o._id)), status: 'forming' })
       .update({ data: { success_notified: true } })
   }
-  return { buyers: buyers.length, notified: sent.length }
+  return { buyers: buyers, notified: new Set(sent.map(o => o.buyer)).size }
 }
 
 exports.main = async (event) => {

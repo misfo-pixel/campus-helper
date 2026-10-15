@@ -95,15 +95,17 @@ function notifyBuyer(order, status, tip) {
 // 模板还没申请下来（pending）时也一样——这两种退回订单进度通知，至少让买家知道要去确认
 function notifySuccess(order, s, tip) {
   if (!s.min_orders) return notifyBuyer(order, '待确认', tip)
-  const name = Array.from(s.shop_name || '').slice(0, 10).join('') + ' ' +
-    Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' 拼团'
   return cloud.callFunction({
     name: 'sendSubscribe',
     data: {
       tpl: 'groupSuccess',
       toUser: order.buyer,
       page: 'pages/myshoporders/myshoporders',
-      data: { name: name, tip: tip, time: s.cutoff_at }
+      data: {
+        item: Array.from(s.shop_name || '').slice(0, 6).join('') + ' ' + itemText(order),
+        amount: order.total,
+        time: s.cutoff_at
+      }
     }
   }).then(r => {
     if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', tip)
