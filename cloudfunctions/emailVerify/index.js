@@ -6,22 +6,33 @@
 // 等于公开。单独存 user_emails（_id = openid），只有云函数读得到；users 上只留
 // email_verified / is_student 两个布尔量。
 //
-// 发信走 SMTP，配置在云函数的环境变量里（控制台 → 云函数 → emailVerify → 版本与配置）：
-//   SMTP_HOST  SMTP_PORT（465 走 SSL）  SMTP_USER  SMTP_PASS  SMTP_FROM（如 "明尼助手 <no-reply@xxx.com>"）
-// 发件域名要配好 SPF / DKIM，不然 umn.edu（Google Workspace）会直接进垃圾箱。
+// 发信走腾讯云邮件推送（SES，中国香港地域）的模板 API，不走 SMTP：SMTP 发的是没审核过的内容，
+// 会被分到共享的兜底 IP，进垃圾箱的多。发信域名 mail.minnepal.com 的 MX / SPF / DKIM / DMARC
+// 记录在 Vercel DNS 里，删了就发不出去。
+// 密钥放云函数环境变量（控制台 → 云函数 → emailVerify → 版本与配置）：
+//   SES_SECRET_ID  SES_SECRET_KEY —— 访问管理里只给邮件推送权限的子用户的 API 密钥
 const cloud = require('wx-server-sdk')
 const crypto = require('crypto')
-const nodemailer = require('nodemailer')
+const ses = require('tencentcloud-sdk-nodejs-ses')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const STUDENT_RE = /@(?:[a-z0-9-]+\.)+edu(?:\.[a-z]{2})?$/i
+// 提审开关：微信审核员没有 .edu 邮箱，过不了验证就体验不到下单和发布，会被以「功能无法体验」打回。
+// 提审前在云函数环境变量里加 ALLOW_ANY_EMAIL=1：任何邮箱都能验证通过，只是不标「学生」；审核通过后删掉这个变量。
+// 开着期间用普通邮箱验证过的账号会一直保持已验证，这是有意的——审核员复审时不用再验一遍
+const ALLOW_ANY_EMAIL = process.env.ALLOW_ANY_EMAIL === '1'
 const CODE_TTL_MS = 10 * 60 * 1000
 const RESEND_GAP_MS = 60 * 1000
 const DAILY_LIMIT = 10
 const MAX_ATTEMPTS = 5
+
+const SES_REGION = 'ap-hongkong'
+const SES_FROM = '明尼助手 <no-reply@mail.minnepal.com>'
+// 控制台「发信模板」里的「邮箱验证码」，正文变量 {{code}}；改模板要重新审核，ID 不变
+const SES_TEMPLATE_ID = 224892
 
 // 两个集合都是新的，第一次用时自动建；建好后控制台把权限改成「所有用户不可读写」
 let collectionsReady = false
@@ -49,27 +60,25 @@ async function takenByOther(email, openid) {
   return res.data.some(d => d._id !== openid)
 }
 
-let transporter = null
-function getTransporter() {
-  if (transporter) return transporter
+let sesClient = null
+function getMailer() {
+  if (sesClient) return sesClient
   const env = process.env
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null
-  const port = Number(env.SMTP_PORT) || 465
-  transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: port,
-    secure: port === 465,
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS }
+  if (!env.SES_SECRET_ID || !env.SES_SECRET_KEY) return null
+  sesClient = new ses.ses.v20201002.Client({
+    credential: { secretId: env.SES_SECRET_ID.trim(), secretKey: env.SES_SECRET_KEY.trim() },
+    region: SES_REGION,
+    profile: { httpProfile: { reqTimeout: 8 } }
   })
-  return transporter
+  return sesClient
 }
 
 async function send(openid, email) {
   if (!EMAIL_RE.test(email) || email.length > 100) return { success: false, message: '请填写正确的邮箱' }
-  if (!STUDENT_RE.test(email)) return { success: false, message: '请使用学校邮箱（.edu）' }
+  if (!ALLOW_ANY_EMAIL && !STUDENT_RE.test(email)) return { success: false, message: '请使用学校邮箱（.edu）' }
   if (await takenByOther(email, openid)) return { success: false, message: '这个邮箱已经验证过别的账号' }
 
-  const mailer = getTransporter()
+  const mailer = getMailer()
   if (!mailer) return { success: false, message: '邮件服务还没配置好' }
 
   const now = Date.now()
@@ -81,15 +90,18 @@ async function send(openid, email) {
 
   const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0')
   try {
-    await mailer.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
-      to: email,
-      subject: '明尼助手邮箱验证码：' + code,
-      text: '你的验证码是 ' + code + '，10 分钟内有效。\n\n如果不是你本人操作，忽略这封邮件即可。'
+    await mailer.SendEmail({
+      FromEmailAddress: SES_FROM,
+      Destination: [email],
+      Subject: '明尼助手邮箱验证码：' + code,
+      Template: { TemplateID: SES_TEMPLATE_ID, TemplateData: JSON.stringify({ code: code }) },
+      TriggerType: 1 // 触发类：验证码走即时通道
     })
   } catch (e) {
-    console.error('发信失败：', e)
-    return { success: false, message: '邮件发送失败，检查一下邮箱地址' }
+    console.error('发信失败：', e.code, e.message)
+    // 控制台「日志」页经常查不到记录，错误码直接带回前端，用户截图就能定位
+    if (/Receiver|EmailAddr|Blacklist/i.test(e.code || '')) return { success: false, message: '邮件发送失败，检查一下邮箱地址' }
+    return { success: false, message: '发送失败 ' + (e.code || e.message || '未知错误') }
   }
 
   // 存的是哈希，库里看不到明文验证码

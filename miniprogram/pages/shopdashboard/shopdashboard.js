@@ -223,6 +223,37 @@ Page({
     })
   },
 
+  // 成团的场次：把这一场所有买家的邮箱复制下来，逗号隔开，直接贴进收件人栏群发
+  copySessionEmails: function (e) {
+    wx.showLoading({ title: t('加载中'), mask: true })
+    wx.cloud.callFunction({
+      name: 'shopOrders',
+      data: { action: 'emails', sessionId: e.currentTarget.dataset.id }
+    }).then(res => {
+      wx.hideLoading()
+      const r = (res && res.result) || {}
+      if (!r.success) {
+        wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
+        return
+      }
+      if (!r.emails.length) {
+        wx.showToast({ title: t('这一场没有买家邮箱'), icon: 'none' })
+        return
+      }
+      wx.setClipboardData({
+        data: r.emails.join(', '),
+        success: () => {
+          // setClipboardData 自己会弹「内容已复制」，这里盖掉它，告诉店长复制了几个
+          wx.showToast({ title: f('已复制 {0} 个邮箱', r.emails.length), icon: 'none' })
+        }
+      })
+    }).catch(err => {
+      wx.hideLoading()
+      console.error('复制邮箱失败：', err)
+      wx.showToast({ title: t('操作失败'), icon: 'none' })
+    })
+  },
+
   clearFilter: function () {
     this.setData({ filter: null, orders: [] }, () => this.loadOrders())
   },

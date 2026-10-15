@@ -1398,5 +1398,8 @@ module.exports = {
   "导入记录不存在": "Import not found",
   "这批商品已经导入过了": "These items were already imported",
   "没有选中商品": "No items selected",
-  "服务出错了，请重试": "Something went wrong, please try again"
+  "服务出错了，请重试": "Something went wrong, please try again",
+  "复制邮箱": "Copy Emails",
+  "这一场没有买家邮箱": "No buyer emails for this run",
+  "已复制 {0} 个邮箱": "Copied {0} emails"
 }
