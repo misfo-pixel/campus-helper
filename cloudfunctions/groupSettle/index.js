@@ -91,7 +91,7 @@ function notifyBuyer(order, status, tip) {
   }).catch(e => console.warn('拼团通知发送失败：', e))
 }
 
-// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的邮箱或微信号，
+// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的联系方式（微信号或邮箱），
 // 温馨提示让买家留意这个联系方式发来的消息。模板字段最多 20 个字，放不下的退到手机号。
 // 这一段和 shopManage 里的是同一份，改的时候两处一起改
 function shopContact(shop) {
@@ -99,11 +99,9 @@ function shopContact(shop) {
   return fit(shop.contact_handle) || fit(shop.contact_wechat) || fit(shop.contact_phone)
 }
 
-function successData(order, shop, forced) {
+function successData(order, shop) {
   const contact = shopContact(shop || {})
-  let tip
-  if (!contact) tip = forced ? '店长照常送，会联系你，请留意消息' : '店长会联系你，请留意消息'
-  else tip = forced ? '店长照常送，请留意上面联系方式的消息' : '请留意上面的联系方式给你发的消息'
+  const tip = contact ? '请留意上面的联系方式给你发的消息' : '店长会联系你，请留意消息'
   return {
     item: itemText(order),
     time: order.batch_date + ' ' + order.deliver_time,
@@ -123,7 +121,7 @@ function notifySuccess(order, s, shop, fallbackTip) {
       tpl: 'groupSuccess',
       toUser: order.buyer,
       page: 'pages/myshoporders/myshoporders',
-      data: successData(order, shop, false)
+      data: successData(order, shop)
     }
   }).then(r => {
     if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', fallbackTip)
@@ -146,7 +144,6 @@ async function countOrders(sessionId) {
 // 第零遍：截单前 2 小时还没成团的场次，提醒已经下单的人去拉人。
 // 用的是下单时单独要的那张拼团进度票，不占订单进度那张（成团通知要用）。
 // 先把场次标成 reminded 再发，同一场只发一次；够门槛的、照常送的也标上，下一轮不再看
-// （店长撤销照常送时 shopManage 会把 reminded 清掉，让这条照常发）
 async function remindSessions(now) {
   const res = await db.collection('shop_sessions')
     .where({

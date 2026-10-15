@@ -436,7 +436,7 @@ exports.main = async (event) => {
               shop_phone: s.contact_phone || '',
               // 老店还没补手机号时的兜底
               shop_wechat: s.contact_phone ? '' : (s.contact_wechat || ''),
-              // 店长自己留的邮箱或微信号，成团后用它联系买家
+              // 店长留的联系方式（微信号或邮箱），成团后用它联系买家
               shop_handle: s.contact_handle || '',
               shop_logo: s.logo || '',
               shop_slogan: s.slogan || '',

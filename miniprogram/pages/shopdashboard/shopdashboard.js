@@ -45,8 +45,6 @@ function decorateSession(s, now) {
       : '',
     gap: Math.max(0, (s.min_orders || 0) - c.total),
     canForce: open && !p.open && !p.formed,
-    // 照常送了、又还没凑够：可以撤回去。凑够了撤不撤都成团，就不给按钮了
-    canUnforce: open && !!p.forced,
     repeatText: s.repeat_weekly ? f('每{0}', weekday(s.date)) : ''
   })
 }
@@ -231,13 +229,13 @@ Page({
   },
 
   // 照常送：差几单没到门槛也送，截单时按成团算。
-  // 点下去马上通知买家「一定开团」，所以先把后果说清楚再让店长点
+  // 点下去马上通知买家「一定开团」，撤不回，所以先把后果说清楚再让店长点
   forceSession: function (e) {
     const s = this.data.sessions.find(x => x._id === e.currentTarget.dataset.id)
     if (!s) return
     wx.showModal({
       title: t('确定照常送？'),
-      content: f('现在 {0} 单，还差 {1} 单到门槛。照常送之后：\n· 截单时不管够不够，这一场都按成团算，你要照常出发送货\n· 马上通知已下单的买家「一定开团」\n截单前可以撤销，但通知已经发出去了，买家会以为一定能送到。', s.counts ? s.counts.total : 0, s.gap),
+      content: f('现在 {0} 单，还差 {1} 单到门槛。照常送之后：\n· 截单时不管够不够，这一场都按成团算，你要照常出发送货\n· 马上通知已下单的买家「一定开团」\n点了就不能撤回，确定吗？', s.counts ? s.counts.total : 0, s.gap),
       confirmText: t('照常送'),
       confirmColor: '#C8102E',
       success: res => {
@@ -256,51 +254,19 @@ Page({
           const notified = result.notified || 0
           wx.showModal({
             title: t('已设为照常送'),
-            content: result.already
-              ? t('买家之前已经收到过拼团成功的通知，这次不再重复发。')
-              : !buyers
-                ? t('这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。')
-                : result.pending
-                  ? t('拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。')
-                  : notified >= buyers
-                    ? f('已通知 {0} 位买家：这一场一定开团。', buyers)
-                    : f('{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。', buyers, notified),
+            content: !buyers
+              ? t('这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。')
+              : result.pending
+                ? t('拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。')
+                : notified >= buyers
+                  ? f('已通知 {0} 位买家：这一场一定开团。', buyers)
+                  : f('{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。', buyers, notified),
             showCancel: false,
             confirmText: t('知道了')
           })
         }).catch(err => {
           wx.hideLoading()
           console.error('照常送失败：', err)
-          wx.showToast({ title: t('操作失败'), icon: 'none' })
-        })
-      }
-    })
-  },
-
-  // 撤销照常送：回到满门槛才成团。买家的通知票已经用掉，撤销没法再通知
-  unforceSession: function (e) {
-    const s = this.data.sessions.find(x => x._id === e.currentTarget.dataset.id)
-    if (!s) return
-    wx.showModal({
-      title: t('撤销照常送？'),
-      content: f('撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知。撤销后，截单前 2 小时还没凑够的话，他们会收到「还差 N 位」的提醒（之前收到过的不会再收到）。', s.min_orders),
-      confirmText: t('撤销'),
-      confirmColor: '#C8102E',
-      success: res => {
-        if (!res.confirm) return
-        wx.showLoading({ title: t('处理中'), mask: true })
-        wx.cloud.callFunction({ name: 'shopManage', data: { action: 'unforceSession', sessionId: s._id } }).then(r => {
-          wx.hideLoading()
-          const result = (r && r.result) || {}
-          if (!result.success) {
-            wx.showToast({ title: t(result.message || '操作失败'), icon: 'none' })
-            return
-          }
-          wx.showToast({ title: t('已撤销照常送'), icon: 'none' })
-          this.loadSessions()
-        }).catch(err => {
-          wx.hideLoading()
-          console.error('撤销照常送失败：', err)
           wx.showToast({ title: t('操作失败'), icon: 'none' })
         })
       }

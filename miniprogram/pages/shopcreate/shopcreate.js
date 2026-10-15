@@ -33,7 +33,7 @@ Page({
 
     // 第 3 步：怎么找到你
     contact_phone: '',
-    contact_handle: '',  // 邮箱或微信号，必填。成团通知里写给买家
+    contact_handle: '',  // 联系方式（微信号或邮箱），必填。成团通知里写给买家
     logo: '',
     tempLogo: '',
     min_order: '',
@@ -127,7 +127,7 @@ Page({
       return
     }
     if (!d.contact_handle.trim()) {
-      wx.showToast({ title: t('请填写邮箱或微信号'), icon: 'none' })
+      wx.showToast({ title: t('请填写联系方式'), icon: 'none' })
       return
     }
     if (!d.agreed) {

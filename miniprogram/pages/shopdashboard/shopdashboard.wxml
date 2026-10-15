@@ -57,7 +57,6 @@
           <view class="session-btn" bindtap="editSession" data-id="{{item._id}}">{{item.open ? i18n.t('修改', lang) : i18n.t('设置', lang)}}</view>
           <view wx:if="{{item.open}}" class="session-btn" bindtap="goToPoster" data-id="{{item._id}}">{{i18n.t('海报', lang)}}</view>
           <view wx:if="{{item.canForce}}" class="session-btn session-btn-hot" bindtap="forceSession" data-id="{{item._id}}">{{i18n.t('照常送', lang)}}</view>
-          <view wx:if="{{item.canUnforce}}" class="session-btn" bindtap="unforceSession" data-id="{{item._id}}">{{i18n.t('撤销照常送', lang)}}</view>
         </view>
       </view>
 

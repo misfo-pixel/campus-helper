@@ -48,7 +48,7 @@
     <view wx:if="{{item.cancel_reason}}" class="order-cancel">{{i18n.f('取消原因：{0}', lang, item.cancel_reason)}}</view>
 
     <view wx:if="{{item.shop_handle}}" class="order-contact">
-      <text class="text-light">{{i18n.f('店长邮箱/微信：{0}', lang, item.shop_handle)}}</text>
+      <text class="text-light">{{i18n.f('店长联系方式：{0}', lang, item.shop_handle)}}</text>
       <text class="order-copy" bindtap="copyText" data-text="{{item.shop_handle}}">{{i18n.t('复制', lang)}}</text>
     </view>
     <view wx:if="{{item.shop_phone}}" class="order-contact">

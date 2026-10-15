@@ -130,7 +130,8 @@ function pickShopFields(event, needsDelivery) {
     // 2026-10-13 起店长联系方式从微信号换成手机号：收款走邮件，买家有急事打电话。
     // 老店的 contact_wechat 留在库里不动，买家订单页在店长没填手机时还显示它
     contact_phone: String(event.contact_phone || '').trim().slice(0, 30),
-    // 给买家的邮箱或微信号（必填）。成团时写进拼团成功通知的「联系人」，买家订单页也显示。
+    // 给买家的联系方式，微信号或邮箱都行（必填）。成团时写进拼团成功通知的「联系人」，买家订单页也显示。
+    // 界面上只说「联系方式，如微信号」，不提邮箱，免得审核觉得在往站外引
     // 和店长账号验证过的学校邮箱（user_emails）是两回事：那个不公开，这个就是填来给买家看的
     contact_handle: String(event.contact_handle || '').trim().slice(0, 40),
 
@@ -160,7 +161,7 @@ function validateShop(fields, needsDelivery) {
   if (!fields.name) return '请填写小店名称'
   const phoneDigits = fields.contact_phone.replace(/\D/g, '')
   if (phoneDigits.length < 10 || phoneDigits.length > 15) return '请填写正确的手机号'
-  if (!fields.contact_handle) return '请填写邮箱或微信号'
+  if (!fields.contact_handle) return '请填写联系方式'
   if (needsDelivery && !fields.exact_address && !fields.pickup_points.length) {
     return '至少设一个取货点'
   }
@@ -275,7 +276,7 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
-// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的邮箱或微信号，
+// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的联系方式（微信号或邮箱），
 // 温馨提示让买家留意这个联系方式发来的消息。模板字段最多 20 个字，放不下的退到手机号。
 // 这一段和 groupSettle 里的是同一份，改的时候两处一起改
 function shopContact(shop) {
@@ -283,12 +284,10 @@ function shopContact(shop) {
   return fit(shop.contact_handle) || fit(shop.contact_wechat) || fit(shop.contact_phone)
 }
 
-function successData(order, shop, forced) {
+function successData(order, shop) {
   const items = order.items || []
   const contact = shopContact(shop || {})
-  let tip
-  if (!contact) tip = forced ? '店长照常送，会联系你，请留意消息' : '店长会联系你，请留意消息'
-  else tip = forced ? '店长照常送，请留意上面联系方式的消息' : '请留意上面的联系方式给你发的消息'
+  const tip = contact ? '请留意上面的联系方式给你发的消息' : '店长会联系你，请留意消息'
   return {
     item: ((items[0] || {}).name || '你的订单') + (items.length > 1 ? ' 等 ' + items.length + ' 件' : ''),
     time: order.batch_date + ' ' + order.deliver_time,
@@ -300,7 +299,6 @@ function successData(order, shop, forced) {
 
 // 照常送：当场给这一场已经下单的人发拼团成功通知。每一单一条（每单下单时各要了一张票，取货点也可能不一样）。
 // 发出去的单记上 success_notified，截单时 groupSettle 就不再发（票用掉了）。
-// 照常送过、撤销、又照常送：已经收到过的单跳过，只发后来下的（already = 全都收到过了）。
 // 发不出去是常态（下单时没授权），返回通知到几位买家，店长心里有数。
 // pending = 模板还没配，一条都没发，也不记——截单时 groupSettle 会退回订单进度通知
 async function notifyForced(s, shop) {
@@ -310,7 +308,7 @@ async function notifyForced(s, shop) {
     .get()
   const todo = orders.data.filter(o => !o.success_notified)
   const buyers = new Set(todo.map(o => o.buyer)).size
-  if (!todo.length) return { buyers: 0, notified: 0, already: orders.data.length > 0 }
+  if (!todo.length) return { buyers: 0, notified: 0 }
 
   const sent = []
   let pending = false
@@ -321,7 +319,7 @@ async function notifyForced(s, shop) {
         tpl: 'groupSuccess',
         toUser: o.buyer,
         page: 'pages/myshoporders/myshoporders',
-        data: successData(o, shop, true)
+        data: successData(o, shop)
       }
     }).then(r => {
       const result = (r && r.result) || {}
@@ -598,7 +596,7 @@ exports.main = async (event) => {
         return { success: true }
       }
 
-      // 照常送：差几单没到门槛，店长愿意送，截单时就按成团算。
+      // 照常送：差几单没到门槛，店长愿意送，截单时就按成团算。设了就撤不回——买家已经收到「一定开团」了。
       // 设上之后马上告诉已下单的人「一定开团」，不用等到截单——他们也就不用再去拉人了。
       // 发的是拼团成功通知（和截单时凑够门槛发的是同一条），不占截单前 2 小时提醒和订单进度那两张票
       case 'forceSession': {
@@ -612,20 +610,7 @@ exports.main = async (event) => {
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         const s = (await db.collection('shop_sessions').doc(id).get()).data
         const sent = await notifyForced(s, shop)
-        return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending, already: sent.already }
-      }
-
-      // 撤销照常送：截单前都能撤，撤了就回到满门槛才成团。
-      // reminded 清掉：照常送期间 groupSettle 跳过了截单前 2 小时的「还差 N 位」，
-      // 撤了就让它照常发（拼团进度那张票和照常送是分开的，还没用）。已经在 2 小时内的，下一轮就发
-      case 'unforceSession': {
-        const shop = await getMyShop(openid)
-        if (!shop) return { success: false, message: '你还没有店铺' }
-        const res = await db.collection('shop_sessions')
-          .where({ _id: String(event.sessionId || ''), shop_id: shop._id, state: 'open', forced: true, cutoff_at: _.gt(nowAt()) })
-          .update({ data: { forced: false, reminded: false, updated_at: new Date() } })
-        if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
-        return { success: true }
+        return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending }
       }
 
       // 取消这一场。出发前都能取消，进行中的单一起取消。
