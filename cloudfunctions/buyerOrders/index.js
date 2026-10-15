@@ -375,6 +375,7 @@ exports.main = async (event) => {
           session_id: session._id,
           count: count,
           min_orders: session.min_orders || 0,
+          forced: session.forced === true,
           cutoff_at: session.cutoff_at,
           date: session.date,
           deliver_time: deliverTime,
@@ -417,6 +418,7 @@ exports.main = async (event) => {
             progress[s._id] = {
               count: n[s._id] || 0,
               min_orders: s.min_orders || 0,
+              forced: s.forced === true,
               depart_time: s.depart_time
             }
           })

@@ -71,6 +71,8 @@ function publicSession(s, count, now) {
     minutes_left: minutesBetween(now, s.cutoff_at),
     min_orders: s.min_orders || 0,
     count: count || 0,
+    // 店长点了「照常送」：没到门槛也一定开团
+    forced: s.forced === true,
     repeat_weekly: s.repeat_weekly === true,
     points: (s.points || []).map(p => ({
       name: p.name,

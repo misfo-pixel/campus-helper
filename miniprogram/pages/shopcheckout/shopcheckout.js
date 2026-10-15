@@ -303,6 +303,7 @@ Page({
         s: r.session_id,
         count: r.count,
         min: r.min_orders,
+        forced: r.forced ? 1 : '',
         cut: r.cutoff_at,
         date: r.date,
         at: r.deliver_time,

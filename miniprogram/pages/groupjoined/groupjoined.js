@@ -25,14 +25,15 @@ Page({
       session: d('s'),
       date: d('date'),
       count: Number(d('count')) || 0,
-      min_orders: Number(d('min')) || 0
+      min_orders: Number(d('min')) || 0,
+      forced: d('forced') === '1'
     }
     const cut = d('cut')
     const p = progress(this.info, true)
     this.setData({
       name: this.info.name,
       p: p,
-      headline: p.open ? t('下单成功') : (p.formed ? t('已成团') : f('再来 {0} 位就开团', p.gap)),
+      headline: p.open ? t('下单成功') : (p.forced ? p.text : (p.formed ? t('已成团') : f('再来 {0} 位就开团', p.gap))),
       countText: p.open ? '' : f('{0} / {1} 单', this.info.count, this.info.min_orders),
       cutText: cut ? f('{0} {1} {2} 截单', md(cut), weekday(cut.slice(0, 10)), cut.slice(11, 16)) : '',
       pickText: md(this.info.date) + ' ' + weekday(this.info.date) + ' ' + d('at') + (d('point') ? ' · ' + d('point') : '')

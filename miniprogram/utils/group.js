@@ -73,11 +73,13 @@ function cutoffText(s, now) {
 }
 
 // 进度条和那一句话。joined = 我已经在这一团里了（「就差你了」不对我说）
+// forced = 店长点了「照常送」：没到门槛也一定开团，对买家就当已成团说
 function progress(s, joined) {
   const min = Number(s.min_orders) || 0
   const count = Number(s.count) || 0
   if (!min) return { pct: 100, open: true, formed: true, gap: 0, text: t('下单就送') }
   const gap = Math.max(0, min - count)
+  if (gap > 0 && s.forced) return { pct: 100, open: false, formed: true, forced: true, gap: 0, text: t('店长照常送，一定开团') }
   return {
     pct: Math.min(100, Math.round(count / min * 100)),
     open: false,
@@ -129,7 +131,8 @@ function cardData(shop, s, items, theme) {
     dishImage: dish ? dish.image : '',
     date: s.date,
     min_orders: s.min_orders || 0,
-    count: s.count || 0
+    count: s.count || 0,
+    forced: s.forced === true
   }
 }
 

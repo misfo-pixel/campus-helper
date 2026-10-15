@@ -954,7 +954,6 @@ var en = {
  "日": "日",
  "读取场次失败": "Couldn't load session",
  "截单在前一天，最早开明天的团": "Cutoff is the day before, so the earliest session is tomorrow",
- "截单时不够门槛也按成团算。": "It will go ahead at cutoff even if the minimum isn't met.",
  "已设为照常送": "Set to deliver anyway",
  "告诉买家原因（选填）": "Tell the buyer why (optional)",
  "已更新": "Updated",
@@ -1397,7 +1396,18 @@ var en = {
  "导入记录不存在": "Import not found",
  "这批商品已经导入过了": "These items were already imported",
  "没有选中商品": "No items selected",
- "服务出错了，请重试": "Something went wrong, please try again"
+ "服务出错了，请重试": "Something went wrong, please try again",
+ "店长照常送，一定开团": "Going ahead for sure",
+ "确定照常送？": "Go anyway?",
+ "现在 {0} 单，还差 {1} 单到门槛。照常送之后：\n· 截单时不管够不够，这一场都按成团算，你要照常出发送货\n· 马上通知已下单的买家「一定开团」\n截单前可以撤销，但通知已经发出去了，买家会以为一定能送到。": "{0} orders so far, {1} short of the minimum. If you go anyway:\n· The session goes ahead at cutoff no matter what, and you have to deliver\n· Buyers who already ordered are notified right away that it's on\nYou can undo before cutoff, but the notice is already out and buyers will count on it.",
+ "这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。": "No orders yet. Anyone who orders will see that this session is going ahead for sure.",
+ "已通知 {0} 位买家：这一场一定开团。": "Notified {0} buyer(s) that this session is going ahead.",
+ "{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。": "Notified {1} of {0} buyers. The rest turned off notifications when ordering, but will see it in My Orders.",
+ "撤销照常送？": "Undo go anyway?",
+ "撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知，撤销不会再通知他们，只在订单里变回「再来 N 位」。": "After undoing, the session needs {0} orders. If it's still short at cutoff, it and all its orders are cancelled automatically.\nBuyers were already told it's going ahead. They won't get another notice; their orders will just show how many more are needed.",
+ "撤销": "Undo",
+ "撤销照常送": "Undo Go Anyway",
+ "已撤销照常送": "Go anyway undone"
 };
 
 function t(s, lang) {
