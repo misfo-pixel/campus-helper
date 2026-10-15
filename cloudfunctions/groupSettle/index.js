@@ -8,13 +8,19 @@ const _ = db.command
 // 一场拼团（shop_sessions 一条）的一生：
 //   open      拼团中。买家下单，订单是 forming
 //             截单前 2 小时还没到门槛：给已下单的买家各发一条拼团进度通知，喊人（只发一次）
-//             凑够门槛或店长点「照常送」的那一刻：发一条拼团成功通知（buyerOrders / shopManage 发，只发一次）
+//             店长点「照常送」：当场给已下单的买家发拼团成功通知（shopManage 发）
 //   ↓ 截单（cutoff_at）
-//   formed    成团：订单 forming → confirming（「待确认」），买家在 confirm_at 前联系店长确认
-//   failed    没成团：订单全部取消，原因「未成团」
+//   formed    成团：订单 forming → confirming（「待确认」），买家在 confirm_at 前联系店长确认。
+//             发拼团成功通知；照常送时已经收到过的单不再发
+//   failed    没成团：订单全部取消，原因「未成团」，发订单进度通知
 //   cancelled 店长手动取消（shopManage 的 cancelSession）
 //   ↓ 出发（depart_at）
 //   ended = true。开了每周重复的，这时候开下周同一时间的新场次
+//
+// 买家下单时要三张票，各管一件事（一张票只能发一条）：
+//   拼团进度  截单前 2 小时还差人
+//   拼团成功  成团了（截单时凑够，或者店长照常送）
+//   订单进度  其余的：没成团、取消、店长确认 / 配送 / 完成
 //
 // 每一步都是「带着旧状态做条件更新」：更新成功的那一次才往下做（发通知、开新场），
 // 两个实例前后脚跑到同一场也只有一个改得动。所以这个函数重复跑、跑到一半超时都没关系，
@@ -83,6 +89,25 @@ function notifyBuyer(order, status, tip) {
       data: { status: status, item: itemText(order), time: nowAt() + ':00', tip: tip }
     }
   }).catch(e => console.warn('拼团通知发送失败：', e))
+}
+
+// 拼团成功通知，用的是下单时单独要的那张票。不设门槛的团下单时没要这张，
+// 模板还没申请下来（pending）时也一样——这两种退回订单进度通知，至少让买家知道要去确认
+function notifySuccess(order, s, tip) {
+  if (!s.min_orders) return notifyBuyer(order, '待确认', tip)
+  const name = Array.from(s.shop_name || '').slice(0, 10).join('') + ' ' +
+    Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' 拼团'
+  return cloud.callFunction({
+    name: 'sendSubscribe',
+    data: {
+      tpl: 'groupSuccess',
+      toUser: order.buyer,
+      page: 'pages/myshoporders/myshoporders',
+      data: { name: name, tip: tip, time: s.cutoff_at }
+    }
+  }).then(r => {
+    if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', tip)
+  }).catch(e => console.warn('拼团成功通知发送失败：', e))
 }
 
 async function inChunks(list, fn) {
@@ -188,9 +213,11 @@ async function settleOrders(now) {
 
     let patch
     let notice
+    let success = false
     if (s.state === 'formed') {
       patch = { status: 'confirming' }
       notice = ['待确认', '请在' + shortAt(o.confirm_at) + '前联系店长确认']
+      success = true
     } else if (s.state === 'failed') {
       const gap = Math.max(1, (s.min_orders || 0) - (s.order_count || 0))
       patch = { status: 'cancelled', cancel_reason: '未成团' }
@@ -203,13 +230,18 @@ async function settleOrders(now) {
     const done = await db.collection('shop_orders')
       .where({ _id: o._id, status: 'forming' })
       .update({ data: Object.assign(patch, { updated_at: new Date() }) })
-    if (done.stats && done.stats.updated === 1) await notifyBuyer(o, notice[0], notice[1])
+    if (!done.stats || done.stats.updated !== 1) return
+    // 照常送时已经发过拼团成功的单不再发：那张票用掉了
+    if (success) {
+      if (!o.success_notified) await notifySuccess(o, s, notice[1])
+    } else {
+      await notifyBuyer(o, notice[0], notice[1])
+    }
   })
   return res.data.length
 }
 
-// 第三遍：确认截止已过、店长还没确认的单，自动取消并记一次爽约。
-// 买家那张通知票在成团时已经用掉了，这里不再发
+// 第三遍：确认截止已过、店长还没确认的单，自动取消并记一次爽约。这里不发通知
 async function expireUnconfirmed(now) {
   const res = await db.collection('shop_orders')
     .where({ status: 'confirming', confirm_at: _.lte(now) })

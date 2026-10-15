@@ -25,7 +25,7 @@ const TEMPLATES = {
   shopOpen: 'IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY',
   // 拼团进度通知 —— 截单前 2 小时还没成团时发给已下单的买家。下单时和订单进度一起要
   groupProgress: 'Nd_6RKnL8eAcYFPxLzcRhgNUflBL3_11ULgt-WruZEs',
-  // 拼团成功通知 —— 人数凑满或店长点「照常送」时发给这一场已下单的买家。和拼团进度各一张票，下单时一起要。
+  // 拼团成功通知 —— 截单时凑够门槛、或者店长点「照常送」时发给买家。和拼团进度各一张票，下单时一起要。
   // 还没申请，空着的时候下单只要前两张（ask 会跳过空的）
   groupSuccess: '',
   // 商品过期提醒 —— 发给发帖人

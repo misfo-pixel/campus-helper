@@ -271,27 +271,24 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
-// 拼团成功通知：这一场确定开团了，告诉已经下单的人。一个人下了几单只发一条。
-// 一场只发一次：先抢 success_notified，抢不到说明发过了（人数凑满时 buyerOrders 发过，
-// 或者照常送过、撤销、又照常送）——票已经用掉，再发也收不到。
-// 这一段和 buyerOrders 里的是同一份，改的时候两处一起改。
+// 照常送：当场给这一场已经下单的人发拼团成功通知。一个人下了几单只发一条。
+// 发出去的单记上 success_notified，截单时 groupSettle 就不再发（票用掉了）。
+// 照常送过、撤销、又照常送：已经收到过的人跳过，只发后来下单的（already = 全都收到过了）。
 // 发不出去是常态（下单时没授权），返回发出去几条，店长心里有数。
-// pending = 模板还没申请下来，一条都不会发
-async function notifyGroupSuccess(s, tip) {
-  const claim = await db.collection('shop_sessions')
-    .where({ _id: s._id, success_notified: _.neq(true) })
-    .update({ data: { success_notified: true } })
-  if (!claim.stats || claim.stats.updated !== 1) return { buyers: 0, notified: 0, already: true }
-
+// pending = 模板还没申请下来，一条都没发，也不记——截单时 groupSettle 会退回订单进度通知
+async function notifyForced(s) {
   const orders = await db.collection('shop_orders')
     .where({ session_id: s._id, status: 'forming' })
-    .field({ buyer: true })
+    .field({ buyer: true, success_notified: true })
     .limit(500)
     .get()
-  const buyers = [...new Set(orders.data.map(o => o.buyer))]
-  if (!buyers.length) return { buyers: 0, notified: 0 }
+  const todo = orders.data.filter(o => !o.success_notified)
+  const buyers = [...new Set(todo.map(o => o.buyer))]
+  if (!buyers.length) return { buyers: 0, notified: 0, already: orders.data.length > 0 }
+
   const name = Array.from(s.shop_name || '').slice(0, 10).join('') + ' ' +
     Number(s.date.slice(5, 7)) + '/' + Number(s.date.slice(8)) + ' 拼团'
+  let results = []
   try {
     const r = await cloud.callFunction({
       name: 'sendSubscribe',
@@ -299,16 +296,26 @@ async function notifyGroupSuccess(s, tip) {
         tpl: 'groupSuccess',
         toUsers: buyers,
         page: 'pages/myshoporders/myshoporders',
-        data: { name: name, tip: tip, time: nowAt() }
+        data: { name: name, tip: '店长照常送，截单后联系店长确认', time: nowAt() }
       }
     })
     const result = (r && r.result) || {}
     if (result.pending) return { buyers: buyers.length, notified: 0, pending: true }
-    return { buyers: buyers.length, notified: (result.results || []).filter(x => x.success).length }
+    results = result.results || []
   } catch (e) {
-    console.warn('拼团成功通知发送失败：', e)
+    console.warn('照常送通知发送失败：', e)
     return { buyers: buyers.length, notified: 0 }
   }
+
+  // 只记发出去了的人：没发出去的（多半是没授权），截单时还能再试一次
+  const sent = results.filter(x => x.success).map(x => x.toUser)
+  const ids = todo.filter(o => sent.indexOf(o.buyer) !== -1).map(o => o._id)
+  if (ids.length) {
+    await db.collection('shop_orders')
+      .where({ _id: _.in(ids), status: 'forming' })
+      .update({ data: { success_notified: true } })
+  }
+  return { buyers: buyers.length, notified: sent.length }
 }
 
 exports.main = async (event) => {
@@ -572,7 +579,7 @@ exports.main = async (event) => {
 
       // 照常送：差几单没到门槛，店长愿意送，截单时就按成团算。
       // 设上之后马上告诉已下单的人「一定开团」，不用等到截单——他们也就不用再去拉人了。
-      // 发的是拼团成功通知（和人数凑满时发的是同一条），不占截单前 2 小时提醒和截单结果那两张票
+      // 发的是拼团成功通知（和截单时凑够门槛发的是同一条），不占截单前 2 小时提醒和订单进度那两张票
       case 'forceSession': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
@@ -583,7 +590,7 @@ exports.main = async (event) => {
           .update({ data: { forced: true, updated_at: new Date() } })
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         const s = (await db.collection('shop_sessions').doc(id).get()).data
-        const sent = await notifyGroupSuccess(s, '店长照常送，截单后联系店长确认')
+        const sent = await notifyForced(s)
         return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending, already: sent.already }
       }
 
