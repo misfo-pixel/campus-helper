@@ -272,7 +272,8 @@ async function cancelSessionOrders(session, reason) {
 }
 
 // 照常送：告诉这一场已经下单的人一定开团。一个人下了几单只发一条。
-// 发不出去是常态（下单时没授权、截单前 2 小时的进度提醒已经用掉了票），返回发出去几条，店长心里有数
+// 发不出去是常态（下单时没授权），返回发出去几条，店长心里有数。
+// pending = 模板还没申请下来，一条都不会发
 async function notifyForced(s) {
   const orders = await db.collection('shop_orders')
     .where({ session_id: s._id, status: 'forming' })
@@ -287,14 +288,15 @@ async function notifyForced(s) {
     const r = await cloud.callFunction({
       name: 'sendSubscribe',
       data: {
-        tpl: 'groupProgress',
+        tpl: 'groupGo',
         toUsers: buyers,
         page: 'pages/myshoporders/myshoporders',
-        data: { name: name, min: s.min_orders, gap: '店长照常送，一定开团', cutoff: s.cutoff_at }
+        data: { name: name, tip: '店长照常送，一定开团', time: s.cutoff_at }
       }
     })
-    const results = (r && r.result && r.result.results) || []
-    return { buyers: buyers.length, notified: results.filter(x => x.success).length }
+    const result = (r && r.result) || {}
+    if (result.pending) return { buyers: buyers.length, notified: 0, pending: true }
+    return { buyers: buyers.length, notified: (result.results || []).filter(x => x.success).length }
   } catch (e) {
     console.warn('照常送通知发送失败：', e)
     return { buyers: buyers.length, notified: 0 }
@@ -562,8 +564,7 @@ exports.main = async (event) => {
 
       // 照常送：差几单没到门槛，店长愿意送，截单时就按成团算。
       // 设上之后马上告诉已下单的人「一定开团」，不用等到截单——他们也就不用再去拉人了。
-      // 用的是下单时要的那张拼团进度票：照常送的场次截单前不再发「还差 N 位」，这张票本来就空着。
-      // 成团通知用的是另一张（订单进度），不受影响
+      // 用的是下单时单独要的照常送票（groupGo），不占截单前 2 小时提醒和成团通知那两张
       case 'forceSession': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
@@ -575,18 +576,18 @@ exports.main = async (event) => {
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         const s = (await db.collection('shop_sessions').doc(id).get()).data
         const sent = await notifyForced(s)
-        return { success: true, buyers: sent.buyers, notified: sent.notified }
+        return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending }
       }
 
       // 撤销照常送：截单前都能撤，撤了就回到满门槛才成团。
-      // 买家已经收到「一定开团」了，票用掉了，撤销没法再通知——
-      // 他们在拼团进度里会看到变回「再来 N 位」，截单时没成团还会收到订单取消的通知
+      // reminded 清掉：照常送期间 groupSettle 跳过了截单前 2 小时的「还差 N 位」，
+      // 撤了就让它照常发（拼团进度那张票和照常送是分开的，还没用）。已经在 2 小时内的，下一轮就发
       case 'unforceSession': {
         const shop = await getMyShop(openid)
         if (!shop) return { success: false, message: '你还没有店铺' }
         const res = await db.collection('shop_sessions')
           .where({ _id: String(event.sessionId || ''), shop_id: shop._id, state: 'open', forced: true, cutoff_at: _.gt(nowAt()) })
-          .update({ data: { forced: false, updated_at: new Date() } })
+          .update({ data: { forced: false, reminded: false, updated_at: new Date() } })
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         return { success: true }
       }

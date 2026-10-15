@@ -1404,10 +1404,11 @@ var en = {
  "已通知 {0} 位买家：这一场一定开团。": "Notified {0} buyer(s) that this session is going ahead.",
  "{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。": "Notified {1} of {0} buyers. The rest turned off notifications when ordering, but will see it in My Orders.",
  "撤销照常送？": "Undo go anyway?",
- "撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知，撤销不会再通知他们，只在订单里变回「再来 N 位」。": "After undoing, the session needs {0} orders. If it's still short at cutoff, it and all its orders are cancelled automatically.\nBuyers were already told it's going ahead. They won't get another notice; their orders will just show how many more are needed.",
+ "撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知。撤销后，截单前 2 小时还没凑够的话，他们会收到「还差 N 位」的提醒（之前收到过的不会再收到）。": "After undoing, the session needs {0} orders. If it's still short at cutoff, it and all its orders are cancelled automatically.\nBuyers were already told it's going ahead. If it's still short 2 hours before cutoff, they'll get a how-many-more reminder (unless they already got one).",
  "撤销": "Undo",
  "撤销照常送": "Undo Go Anyway",
- "已撤销照常送": "Go anyway undone"
+ "已撤销照常送": "Go anyway undone",
+ "照常送通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Go-anyway notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders."
 };
 
 function t(s, lang) {

@@ -258,7 +258,9 @@ Page({
             title: t('已设为照常送'),
             content: !buyers
               ? t('这一场还没人下单。之后下单的人会看到「店长照常送，一定开团」。')
-              : (notified >= buyers
+              : result.pending
+                ? t('照常送通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。')
+                : (notified >= buyers
                 ? f('已通知 {0} 位买家：这一场一定开团。', buyers)
                 : f('{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。', buyers, notified)),
             showCancel: false,
@@ -279,7 +281,7 @@ Page({
     if (!s) return
     wx.showModal({
       title: t('撤销照常送？'),
-      content: f('撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知，撤销不会再通知他们，只在订单里变回「再来 N 位」。', s.min_orders),
+      content: f('撤销后要满 {0} 单才成团，截单时还差的话，这一场和所有订单会自动取消。\n买家已经收到「一定开团」的通知。撤销后，截单前 2 小时还没凑够的话，他们会收到「还差 N 位」的提醒（之前收到过的不会再收到）。', s.min_orders),
       confirmText: t('撤销'),
       confirmColor: '#C8102E',
       success: res => {

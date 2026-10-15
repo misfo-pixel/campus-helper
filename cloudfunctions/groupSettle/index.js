@@ -100,6 +100,7 @@ async function countOrders(sessionId) {
 // 第零遍：截单前 2 小时还没成团的场次，提醒已经下单的人去拉人。
 // 用的是下单时单独要的那张拼团进度票，不占订单进度那张（成团通知要用）。
 // 先把场次标成 reminded 再发，同一场只发一次；够门槛的、照常送的也标上，下一轮不再看
+// （店长撤销照常送时 shopManage 会把 reminded 清掉，让这条照常发）
 async function remindSessions(now) {
   const res = await db.collection('shop_sessions')
     .where({

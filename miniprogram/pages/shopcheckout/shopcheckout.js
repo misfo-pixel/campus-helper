@@ -234,9 +234,10 @@ Page({
     }
 
     // 正要提交订单，这一刻用户最想知道后续进展，授权成功率最高。
-    // 有门槛的团多要一张拼团进度的票：截单前 2 小时还没成团时提醒他去拉人。
-    // 一次弹窗里勾两项，各换一张票（一次最多 3 个模板）
-    await ask(d.session.min_orders ? ['orderProgress', 'groupProgress'] : 'orderProgress')
+    // 有门槛的团再多要两张：拼团进度（截单前 2 小时还没成团时提醒去拉人）、
+    // 照常送（店长决定不够门槛也送时告诉买家）。一张票只能发一条，所以分开要。
+    // 一次弹窗里勾几项，各换一张票（一次最多 3 个模板，正好用满）
+    await ask(d.session.min_orders ? ['orderProgress', 'groupProgress', 'groupGo'] : 'orderProgress')
 
     this.setData({ submitting: true })
     wx.showLoading({ title: t('提交中...'), mask: true })
