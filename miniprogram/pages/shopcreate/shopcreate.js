@@ -9,7 +9,7 @@
 
 const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { ORDERING_ENABLED } = require('../../config.js')
-const { uploadShopImage, validatePoints } = require('../../utils/shopForm.js')
+const { uploadShopImage, validatePoints, defaultPoints } = require('../../utils/shopForm.js')
 const { t } = require('../../i18n/index.js')
 
 const LAST_STEP = 3
@@ -28,8 +28,9 @@ Page({
     name: '',
     description: '',
 
-    // 第 2 步：取货点。场次不在这里设，开店后在「我的小店」的日历里开团
-    planPoints: [],
+    // 第 2 步：取货点。场次不在这里设，开店后在「我的小店」的日历里开团。
+    // 预先填好两个常用点（见 utils/shopForm.js），店长可改可删
+    planPoints: defaultPoints(),
 
     // 第 3 步：怎么找到你
     contact_phone: '',

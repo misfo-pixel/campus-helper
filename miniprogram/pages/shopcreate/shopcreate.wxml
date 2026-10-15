@@ -34,6 +34,7 @@
   <block wx:if="{{ordering && step === 2}}">
     <view class="wizard-title">{{i18n.t('买家去哪取货？', lang)}}</view>
     <view class="wizard-sub">{{i18n.t('设几个取货点，开团时再选这一场去哪几个。', lang)}}</view>
+    <view class="wizard-sub">{{i18n.t('已经填好两个常用点，可以改、删或再加。UMN 校区的点请自己加上，按你的出发地估到达时间。', lang)}}</view>
 
     <plan-editor part="points"
                  init-points="{{planPoints}}"

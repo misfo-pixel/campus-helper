@@ -1398,5 +1398,12 @@ module.exports = {
   "导入记录不存在": "Import not found",
   "这批商品已经导入过了": "These items were already imported",
   "没有选中商品": "No items selected",
-  "服务出错了，请重试": "Something went wrong, please try again"
+  "服务出错了，请重试": "Something went wrong, please try again",
+  "已经填好两个常用点，可以改、删或再加。UMN 校区的点请自己加上，按你的出发地估到达时间。": "Two common pickup points are filled in. Edit, remove or add more. Add your own UMN campus points and estimate arrival times from where you start.",
+  "拍一张送达照片": "Take a delivery photo",
+  "在「{0}」拍一张，买家会收到通知，并在订单里看到这张照片": "Take a photo at “{0}”. The buyer gets notified and sees the photo in their order.",
+  "拍照": "Take photo",
+  "请先拍一张送达照片": "Take a delivery photo first",
+  "送达照片": "Delivery photo",
+  "已送到 {0}": "Delivered to {0}"
 }

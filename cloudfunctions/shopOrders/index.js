@@ -16,7 +16,7 @@ const _ = db.command
 const STATUS_TEXT = {
   accepted: '已确认',
   delivering: '配送中',
-  completed: '已完成',
+  completed: '已送达',
   cancelled: '已取消'
 }
 
@@ -108,6 +108,13 @@ exports.main = async (event) => {
           return { success: false, message: '这个订单已经不能改成该状态了' }
         }
 
+        // 送达要带一张照片：拍在买家选的取货点。平台不碰钱也不派单，
+        // 买家说「没收到」时，能拿出来的只有这张。照片由前端先传到云存储、过机检，这里只收 fileID
+        const photo = typeof event.photo === 'string' ? event.photo.trim() : ''
+        if (next === 'completed' && !/^cloud:\/\//.test(photo)) {
+          return { success: false, message: '请先拍一张送达照片' }
+        }
+
         // 带着旧状态做条件更新：截单那一刻 groupSettle 可能正在把这一单改成待确认
         const moved = await db.collection('shop_orders')
           .where({ _id: orderId, status: order.status })
@@ -115,6 +122,7 @@ exports.main = async (event) => {
             data: {
               status: next,
               cancel_reason: next === 'cancelled' ? (event.reason || '店长取消') : '',
+              ...(next === 'completed' ? { delivery_photo: photo, delivered_at: new Date() } : {}),
               updated_at: new Date()
             }
           })
@@ -143,7 +151,9 @@ exports.main = async (event) => {
                       ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
                 tip: next === 'cancelled'
                   ? (event.reason || '店长取消了这笔订单')
-                  : (shop.contact_phone ? '店长手机：' + shop.contact_phone : '店长联系方式见订单页')
+                  : next === 'completed'
+                    ? '店长传了送达照片，点开订单看'   // thing 类型 20 字封顶，取货点名放不下
+                    : (shop.contact_phone ? '店长手机：' + shop.contact_phone : '店长联系方式见订单页')
               }
             }
           })

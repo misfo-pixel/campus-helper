@@ -26,7 +26,20 @@ function validatePoints(points) {
   return null
 }
 
+// 开店向导第 2 步预先填好的取货点，店长可以改、删、再加。
+// 名字最多 20 字（shopManage cleanPickupPoints），也是订单里引用的标识，写成中英文都看得懂的地名。
+//   Fresh Thyme：24 30th Ave SE, Minneapolis, MN 55414
+//   Macalester：学校小，就用校区（1600 Grand Ave, St Paul）
+// eta_minutes 是出发后多久到，两处大约差 25 分钟；得是 planEditor 的 ETA_OPTIONS 里有的值。
+// UMN 校区的点各家出发地不同，不预填，店长自己加、自己估时间。
+// 运费留空，店长自己填。
+const DEFAULT_POINTS = [
+  { name: 'Fresh Thyme 30th Ave', eta_minutes: 20 },
+  { name: 'Macalester College', eta_minutes: 45 }
+]
+
 module.exports = {
   uploadShopImage: uploadShopImage,
-  validatePoints: validatePoints
+  validatePoints: validatePoints,
+  defaultPoints: () => DEFAULT_POINTS.map(p => Object.assign({}, p))
 }

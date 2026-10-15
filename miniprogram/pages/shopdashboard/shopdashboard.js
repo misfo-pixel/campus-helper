@@ -23,6 +23,7 @@ const SESSION_STATE_TEXT = { formed: '已成团', failed: '未成团', cancelled
 
 const { ORDERING_ENABLED } = require('../../config.js')
 const { askOrGuide } = require('../../utils/subscribe.js')
+const { ensureContentOk, deleteCloudFiles } = require('../../utils/contentCheck.js')
 const { today, formatTime } = require('../../utils/date.js')
 const { addDays, md, weekday, minutesBetween, cutoffText, progress, sessionTitle, atText } = require('../../utils/group.js')
 const { t, f, getLang } = require('../../i18n/index.js')
@@ -262,8 +263,56 @@ Page({
     this.updateStatus(e.currentTarget.dataset.id, 'delivering')
   },
 
-  completeOrder: function (e) {
-    this.updateStatus(e.currentTarget.dataset.id, 'completed')
+  // 送达：在买家选的取货点拍一张照片再标记，买家收到通知、在订单里能看到这张。
+  // 平台不碰钱也不派单，买家说「没收到」时能拿出来的只有这张，所以必须传，没有「直接标记」的口子
+  completeOrder: async function (e) {
+    const id = e.currentTarget.dataset.id
+    if (this.delivering) return
+    const order = this.data.orders.find(o => o._id === id) || {}
+
+    const go = await new Promise(resolve => wx.showModal({
+      title: t('拍一张送达照片'),
+      content: f('在「{0}」拍一张，买家会收到通知，并在订单里看到这张照片', order.pickup_info || t('取货点')),
+      confirmText: t('拍照'),
+      success: r => resolve(r.confirm),
+      fail: () => resolve(false)
+    }))
+    if (!go) return
+
+    let path
+    try {
+      const chosen = await new Promise((resolve, reject) => wx.chooseMedia({
+        count: 1, mediaType: ['image'], sourceType: ['camera', 'album'], sizeType: ['compressed'],
+        success: resolve, fail: reject
+      }))
+      path = ((chosen.tempFiles || [])[0] || {}).tempFilePath
+    } catch (err) {
+      return   // 取消了
+    }
+    if (!path) return
+
+    this.delivering = true
+    wx.showLoading({ title: t('上传中'), mask: true })
+    let fileID = ''
+    try {
+      const match = path.match(/\.(\w+)$/)
+      const cloudPath = 'delivery/order-' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.' + (match ? match[1] : 'jpg')
+      fileID = (await wx.cloud.uploadFile({ cloudPath: cloudPath, filePath: path })).fileID
+
+      // 照片只给这一单的买家和店长看，但存进云存储的用户内容一律过一遍机检
+      if (!(await ensureContentOk({ fileIDs: [fileID] }))) {
+        await deleteCloudFiles([fileID])
+        return
+      }
+      if (!(await this.updateStatus(id, 'completed', '', fileID))) await deleteCloudFiles([fileID])
+    } catch (err) {
+      wx.hideLoading()
+      console.error('上传送达照片失败：', err)
+      if (fileID) await deleteCloudFiles([fileID])
+      wx.showToast({ title: t('上传失败，请重试'), icon: 'none' })
+    } finally {
+      this.delivering = false
+    }
   },
 
   cancelOrder: function (e) {
@@ -278,11 +327,12 @@ Page({
     })
   },
 
-  updateStatus: function (orderId, status, reason) {
+  // 返回 Promise<是否成功>，送达那一步失败了要把刚传的照片删掉
+  updateStatus: function (orderId, status, reason, photo) {
     wx.showLoading({ title: t('处理中'), mask: true })
-    wx.cloud.callFunction({
+    return wx.cloud.callFunction({
       name: 'shopOrders',
-      data: { action: 'updateStatus', orderId: orderId, status: status, reason: reason || '' }
+      data: { action: 'updateStatus', orderId: orderId, status: status, reason: reason || '', photo: photo || '' }
     }).then(res => {
       wx.hideLoading()
       const r = (res && res.result) || {}
@@ -291,13 +341,15 @@ Page({
         this.loadOrders()
         this.loadSummary()
         this.loadSessions()
-      } else {
-        wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
+        return true
       }
+      wx.showToast({ title: t(r.message || '操作失败'), icon: 'none' })
+      return false
     }).catch(err => {
       wx.hideLoading()
       console.error('更新订单状态失败：', err)
       wx.showToast({ title: t('操作失败'), icon: 'none' })
+      return false
     })
   },
 

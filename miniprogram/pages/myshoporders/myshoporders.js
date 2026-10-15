@@ -13,7 +13,7 @@ const STATUS_TEXT = {
   pending: '待确认',
   accepted: '已确认',
   delivering: '配送中',
-  completed: '已完成',
+  completed: '已送达',
   cancelled: '已取消'
 }
 

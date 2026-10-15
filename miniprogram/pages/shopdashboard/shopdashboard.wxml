@@ -129,6 +129,13 @@
           <text class="order-copy" bindtap="callBuyer" data-phone="{{item.phone}}">{{i18n.t('拨打', lang)}}</text>
         </view>
 
+        <!-- 店长自己拍的送达照片，买家那边看到的是同一张 -->
+        <view wx:if="{{item.delivery_photo}}" class="order-note-imgs">
+          <image src="{{item.delivery_photo}}" mode="aspectFill" class="order-note-img"
+                 bindtap="previewNoteImages" data-urls="{{[item.delivery_photo]}}" data-url="{{item.delivery_photo}}" />
+          <text class="text-light">{{i18n.t('送达照片', lang)}}</text>
+        </view>
+
         <view wx:if="{{item.status === 'cancelled' && item.cancel_reason}}" class="order-cancel">
           {{i18n.f('取消原因：{0}', lang, item.cancel_reason)}}
         </view>
