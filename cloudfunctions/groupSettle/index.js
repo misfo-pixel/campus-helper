@@ -91,24 +91,37 @@ function notifyBuyer(order, status, tip) {
   }).catch(e => console.warn('拼团通知发送失败：', e))
 }
 
+// 拼团成功通知（模板是「预定成功通知」）的内容。店长拿买家下单时留的邮箱（老单是微信号）联系他，
+// 温馨提示里说清楚去哪儿等：邮箱就留意邮件，微信就记得通过好友申请。
+// 这一段和 shopManage 里的是同一份，改的时候两处一起改
+function successData(order, shopName, forced) {
+  const by = order.contact_email ? 'email' : (order.contact_wechat ? 'wechat' : '')
+  const tips = forced
+    ? { email: '店长照常送，会发邮件联系你', wechat: '店长照常送，会加你微信好友', '': '店长照常送，会发邮件或加你微信' }
+    : { email: '店长会发邮件联系你，留意查收', wechat: '店长会加你微信，记得通过好友申请', '': '店长会通过邮件或微信好友申请联系你' }
+  return {
+    item: itemText(order),
+    time: order.batch_date + ' ' + order.deliver_time,
+    address: order.pickup_info || order.pickup_point || '',
+    contact: Array.from(shopName || '').slice(0, 15).join('') + ' 店长',
+    tip: tips[by]
+  }
+}
+
 // 拼团成功通知，用的是下单时单独要的那张票。不设门槛的团下单时没要这张，
-// 模板还没申请下来（pending）时也一样——这两种退回订单进度通知，至少让买家知道要去确认
-function notifySuccess(order, s, tip) {
-  if (!s.min_orders) return notifyBuyer(order, '待确认', tip)
+// 模板没配好（pending）时也一样——这两种退回订单进度通知，至少让买家知道要去确认
+function notifySuccess(order, s, fallbackTip) {
+  if (!s.min_orders) return notifyBuyer(order, '待确认', fallbackTip)
   return cloud.callFunction({
     name: 'sendSubscribe',
     data: {
       tpl: 'groupSuccess',
       toUser: order.buyer,
       page: 'pages/myshoporders/myshoporders',
-      data: {
-        item: Array.from(s.shop_name || '').slice(0, 6).join('') + ' ' + itemText(order),
-        amount: order.total,
-        time: s.cutoff_at
-      }
+      data: successData(order, s.shop_name, false)
     }
   }).then(r => {
-    if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', tip)
+    if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', fallbackTip)
   }).catch(e => console.warn('拼团成功通知发送失败：', e))
 }
 
