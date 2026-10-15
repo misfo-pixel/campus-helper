@@ -41,6 +41,20 @@ const TEMPLATES = {
     }
   },
 
+  // 订单送达提醒 —— 店长在取货点拍照标记送达时发给买家（shopOrders）。
+  // 模板编号 32344，类目 跑腿，2026-10-14 申请。
+  // 单独一个模板，是因为订阅消息一张授权只能发一条：成团时的「待确认」用掉了订单进度通知那张，
+  // 送达要另有一张。买家下单时三个模板一起勾（订单进度 + 拼团进度 + 这个），一次最多就 3 个。
+  delivered: {
+    id: 'AdFg4pqeq5-tfkF4hbSFy4fjNxYVghOUbPH8CjERui4',
+    fields: {
+      shop: 'thing14',          // 商家名称
+      time: 'time2',            // 送达时间
+      phone: 'phone_number13',  // 联系电话 → 店长手机
+      place: 'thing10'          // 派送地址 → 取货点
+    }
+  },
+
   // 服务咨询提醒 —— 发给发帖人
   inquiry: {
     id: 'e0y61cAJe_oAQaexZDJgVqh0gasrQ-O24bWDaR_Srm4',
@@ -155,7 +169,11 @@ function buildData(tpl, payload) {
     const type = fieldType(field)
     const raw = payload[key]
 
-    if (type === 'number') {
+    if (type === 'phone_number') {
+      // 只认数字、+、-，括号空格都会被拒。没有手机号就不带这一项，别拿占位符去撞格式校验
+      const phone = String(raw || '').replace(/[^\d+-]/g, '').slice(0, 17)
+      if (phone) data[field] = { value: phone }
+    } else if (type === 'number') {
       // number 只认纯数字，混进别的字符整条会被拒
       const n = Number(raw)
       data[field] = { value: String(isNaN(n) ? 0 : n) }

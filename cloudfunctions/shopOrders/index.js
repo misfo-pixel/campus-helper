@@ -10,10 +10,20 @@ const _ = db.command
 // 平台也不碰钱：订单里没有任何支付状态，小程序里也不展示收款方式。
 // 「确认订单」只表示店长认了这一单；之前要不要先收钱，是他和买家在小程序外的事。
 
-// 推给买家的状态词。模板里「当前状态」是 phrase 类型，5 个汉字封顶。
-// 现在只有送达这一条会推（见 updateStatus 末尾）
-const STATUS_TEXT = {
-  completed: '已送达'
+// 买家看到的时间按明尼苏达走，云函数机器的时区不可信
+const TZ = 'America/Chicago'
+
+function nowAt() {
+  const parts = {}
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(new Date()).forEach(p => {
+    if (p.type !== 'literal') parts[p.type] = p.value
+  })
+  const hour = parts.hour === '24' ? '00' : parts.hour
+  return parts.year + '-' + parts.month + '-' + parts.day + ' ' + hour + ':' + parts.minute
 }
 
 // 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
@@ -133,29 +143,22 @@ exports.main = async (event) => {
           return { success: false, message: '订单状态变了，刷新看看' }
         }
 
-        // 只在送达时通知买家。订阅消息授权一次只能发一条（见小程序 utils/subscribe.js），
-        // 买家只在下单时授权过一次：要是「已确认」「配送中」也发，票早就用掉了，
-        // 最要紧的这条（饭到了、店长等你几分钟）反而发不出去。其他状态买家在订单页看。
+        // 只在送达时通知买家，用单独的「订单送达提醒」模板（买家下单时一起授权的）。
+        // 订阅消息一张授权只能发一条，成团时的「待确认」用掉了订单进度通知那张，所以送达不能和它共用。
+        // 模板里没有备注栏，「几分钟内取餐」放不进去，买家点开订单页能看到店长等到几点和照片
         if (next === 'completed') {
           try {
-            const first = (order.items || [])[0] || {}
-            const more = (order.items || []).length > 1
-              ? ' 等 ' + order.items.length + ' 件' : ''
-            const pad = n => (n < 10 ? '0' + n : '' + n)
             await cloud.callFunction({
               name: 'sendSubscribe',
               data: {
-                tpl: 'orderProgress',
+                tpl: 'delivered',
                 toUser: order.buyer,
                 page: 'pages/myshoporders/myshoporders',
                 data: {
-                  status: STATUS_TEXT[next],
-                  item: (first.name || '你的订单') + more,
-                  // date 类型：年月日，可带时分秒
-                  time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-                        ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
-                  // thing 类型 20 字封顶，照片和取货点在订单页
-                  tip: '请在 ' + waitMinutes + ' 分钟内取餐'
+                  shop: shop.name || '小店',
+                  time: nowAt(),
+                  phone: shop.contact_phone || '',
+                  place: order.pickup_info || order.pickup_point || '取货点'
                 }
               }
             })
