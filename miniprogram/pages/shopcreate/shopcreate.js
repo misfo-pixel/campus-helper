@@ -33,6 +33,7 @@ Page({
 
     // 第 3 步：怎么找到你
     contact_phone: '',
+    contact_handle: '',  // 邮箱或微信号，选填。成团通知里写给买家
     logo: '',
     tempLogo: '',
     min_order: '',
@@ -139,7 +140,7 @@ Page({
 
     try {
       if (!(await ensureContentOk({
-        texts: [d.name, d.description]
+        texts: [d.name, d.description, d.contact_handle]
       }))) return
 
       stage = 'upload'
@@ -165,6 +166,7 @@ Page({
           description: d.description,
           min_order: d.min_order,
           contact_phone: d.contact_phone,
+          contact_handle: d.contact_handle,
           license_image: licenseImage,
           pickup_points: d.planPoints
         }

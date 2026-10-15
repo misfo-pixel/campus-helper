@@ -1409,7 +1409,9 @@ var en = {
  "撤销照常送": "Undo Go Anyway",
  "已撤销照常送": "Go anyway undone",
  "拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Group-success notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders.",
- "买家之前已经收到过拼团成功的通知，这次不再重复发。": "Buyers were already notified that this group is on, so no new notice was sent."
+ "买家之前已经收到过拼团成功的通知，这次不再重复发。": "Buyers were already notified that this group is on, so no new notice was sent.",
+ "店长邮箱/微信：{0}": "Shop email/WeChat: {0}",
+ "邮箱或微信号（选填，成团后你用它联系买家）": "Email or WeChat ID (optional, used to reach buyers once the group is on)"
 };
 
 function t(s, lang) {

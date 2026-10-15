@@ -24,6 +24,7 @@ Page({
     description: '',
     min_order: '',
     contact_phone: '',
+    contact_handle: '',  // 邮箱或微信号，选填。成团通知里写给买家
     slogan: '',        // 广告语：海报大标题、店长自己转发时的卡片标题
 
     // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
@@ -78,6 +79,7 @@ Page({
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
         contact_phone: shop.contact_phone || '',
+        contact_handle: shop.contact_handle || '',
         slogan: shop.slogan || '',
         noteRequired: shop.note_required === true,
         note_hint: shop.note_hint || '',
@@ -163,7 +165,7 @@ Page({
     try {
       // 小店资料是公开展示的内容，一样要过内容安全检测
       if (!(await ensureContentOk({
-        texts: [d.name, d.slogan, d.description, d.note_hint]
+        texts: [d.name, d.slogan, d.description, d.note_hint, d.contact_handle]
       }))) return
 
       const logo = await uploadShopImage(d.tempLogo, d.logo, 'shops')
@@ -185,6 +187,7 @@ Page({
           description: d.description,
           min_order: d.min_order,
           contact_phone: d.contact_phone,
+          contact_handle: d.contact_handle,
           slogan: d.slogan,
           note_required: d.noteRequired,
           note_hint: d.noteRequired ? d.note_hint : '',

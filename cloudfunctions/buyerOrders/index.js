@@ -398,7 +398,7 @@ exports.main = async (event) => {
             .where({ _id: _.in(shopIds) }).limit(100).get()
           shops.data.forEach(s => {
             // logo、广告语给「喊人上车」画转发卡片用
-            shopMap[s._id] = { name: s.name, contact_phone: s.contact_phone, contact_wechat: s.contact_wechat, logo: s.logo || '', slogan: s.slogan || '', poster_style: s.poster_style || 'magazine' }
+            shopMap[s._id] = { name: s.name, contact_phone: s.contact_phone, contact_wechat: s.contact_wechat, contact_handle: s.contact_handle || '', logo: s.logo || '', slogan: s.slogan || '', poster_style: s.poster_style || 'magazine' }
           })
         }
 
@@ -436,6 +436,8 @@ exports.main = async (event) => {
               shop_phone: s.contact_phone || '',
               // 老店还没补手机号时的兜底
               shop_wechat: s.contact_phone ? '' : (s.contact_wechat || ''),
+              // 店长自己留的邮箱或微信号，成团后用它联系买家
+              shop_handle: s.contact_handle || '',
               shop_logo: s.logo || '',
               shop_slogan: s.slogan || '',
               shop_poster_style: s.poster_style || 'magazine',

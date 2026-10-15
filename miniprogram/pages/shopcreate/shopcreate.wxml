@@ -47,6 +47,9 @@
 
     <input type="number" maxlength="15" placeholder="{{i18n.t('手机号（必填，买家有急事时打给你）', lang)}}" value="{{contact_phone}}" bindinput="onInput" data-field="contact_phone" class="card form-card" />
 
+    <!-- 成团时拼团成功通知的「联系人」写这个，通知里最多放 20 个字，再长就只写手机号 -->
+    <input maxlength="40" placeholder="{{i18n.t('邮箱或微信号（选填，成团后你用它联系买家）', lang)}}" value="{{contact_handle}}" bindinput="onInput" data-field="contact_handle" class="card form-card" />
+
     <view class="section-title">{{i18n.t('详细信息（选填）', lang)}}</view>
 
     <view class="logo-row card" bindtap="chooseLogo">

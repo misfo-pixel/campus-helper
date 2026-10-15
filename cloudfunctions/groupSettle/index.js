@@ -91,26 +91,31 @@ function notifyBuyer(order, status, tip) {
   }).catch(e => console.warn('拼团通知发送失败：', e))
 }
 
-// 拼团成功通知（模板是「预定成功通知」）的内容。店长拿买家下单时留的邮箱（老单是微信号）联系他，
-// 温馨提示里说清楚去哪儿等：邮箱就留意邮件，微信就记得通过好友申请。
+// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的邮箱或微信号，
+// 温馨提示让买家留意这个联系方式发来的消息。模板字段最多 20 个字，放不下的退到手机号。
 // 这一段和 shopManage 里的是同一份，改的时候两处一起改
-function successData(order, shopName, forced) {
-  const by = order.contact_email ? 'email' : (order.contact_wechat ? 'wechat' : '')
-  const tips = forced
-    ? { email: '店长照常送，会发邮件联系你', wechat: '店长照常送，会加你微信好友', '': '店长照常送，会发邮件或加你微信' }
-    : { email: '店长会发邮件联系你，留意查收', wechat: '店长会加你微信，记得通过好友申请', '': '店长会通过邮件或微信好友申请联系你' }
+function shopContact(shop) {
+  const fit = v => (v && Array.from(v).length <= 20 ? v : '')
+  return fit(shop.contact_handle) || fit(shop.contact_wechat) || fit(shop.contact_phone)
+}
+
+function successData(order, shop, forced) {
+  const contact = shopContact(shop || {})
+  let tip
+  if (!contact) tip = forced ? '店长照常送，会联系你，请留意消息' : '店长会联系你，请留意消息'
+  else tip = forced ? '店长照常送，请留意上面联系方式的消息' : '请留意上面的联系方式给你发的消息'
   return {
     item: itemText(order),
     time: order.batch_date + ' ' + order.deliver_time,
     address: order.pickup_info || order.pickup_point || '',
-    contact: Array.from(shopName || '').slice(0, 15).join('') + ' 店长',
-    tip: tips[by]
+    contact: contact || ((shop && shop.name) || order.shop_name || '') + ' 店长',
+    tip: tip
   }
 }
 
 // 拼团成功通知，用的是下单时单独要的那张票。不设门槛的团下单时没要这张，
 // 模板没配好（pending）时也一样——这两种退回订单进度通知，至少让买家知道要去确认
-function notifySuccess(order, s, fallbackTip) {
+function notifySuccess(order, s, shop, fallbackTip) {
   if (!s.min_orders) return notifyBuyer(order, '待确认', fallbackTip)
   return cloud.callFunction({
     name: 'sendSubscribe',
@@ -118,7 +123,7 @@ function notifySuccess(order, s, fallbackTip) {
       tpl: 'groupSuccess',
       toUser: order.buyer,
       page: 'pages/myshoporders/myshoporders',
-      data: successData(order, s.shop_name, false)
+      data: successData(order, shop, false)
     }
   }).then(r => {
     if (r && r.result && r.result.pending) return notifyBuyer(order, '待确认', fallbackTip)
@@ -221,6 +226,13 @@ async function settleOrders(now) {
   const byId = {}
   sessions.data.forEach(s => { byId[s._id] = s })
 
+  // 拼团成功通知要写店长的联系方式，读店铺现在的
+  const shopIds = [...new Set(res.data.map(o => o.shop_id))]
+  const shops = await db.collection('shops').where({ _id: _.in(shopIds) }).limit(shopIds.length).get()
+    .catch(() => ({ data: [] }))
+  const shopById = {}
+  shops.data.forEach(sh => { shopById[sh._id] = sh })
+
   await inChunks(res.data, async o => {
     const s = byId[o.session_id]
     // 场次还没判（第一遍这轮没轮到），下一轮再来
@@ -248,7 +260,7 @@ async function settleOrders(now) {
     if (!done.stats || done.stats.updated !== 1) return
     // 照常送时已经发过拼团成功的单不再发：那张票用掉了
     if (success) {
-      if (!o.success_notified) await notifySuccess(o, s, notice[1])
+      if (!o.success_notified) await notifySuccess(o, s, shopById[o.shop_id], notice[1])
     } else {
       await notifyBuyer(o, notice[0], notice[1])
     }

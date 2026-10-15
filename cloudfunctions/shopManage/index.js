@@ -130,6 +130,9 @@ function pickShopFields(event, needsDelivery) {
     // 2026-10-13 起店长联系方式从微信号换成手机号：收款走邮件，买家有急事打电话。
     // 老店的 contact_wechat 留在库里不动，买家订单页在店长没填手机时还显示它
     contact_phone: String(event.contact_phone || '').trim().slice(0, 30),
+    // 店长自己愿意给买家的邮箱或微信号（选填）。成团时写进拼团成功通知的「联系人」，
+    // 买家订单页也显示。店长验证过的邮箱不拿来用——那个是私密的，只有店长自己填了才公开
+    contact_handle: String(event.contact_handle || '').trim().slice(0, 40),
 
     // 广告语：海报大标题、店长自己转发时的卡片标题。小程序端保存前过内容检测
     slogan: Array.from((event.slogan || '').trim()).slice(0, 16).join(''),
@@ -271,21 +274,26 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
-// 拼团成功通知（模板是「预定成功通知」）的内容。店长拿买家下单时留的邮箱（老单是微信号）联系他，
-// 温馨提示里说清楚去哪儿等：邮箱就留意邮件，微信就记得通过好友申请。
+// 拼团成功通知（模板是「预定成功通知」）的内容。「联系人」写店长留的邮箱或微信号，
+// 温馨提示让买家留意这个联系方式发来的消息。模板字段最多 20 个字，放不下的退到手机号。
 // 这一段和 groupSettle 里的是同一份，改的时候两处一起改
-function successData(order, shopName, forced) {
+function shopContact(shop) {
+  const fit = v => (v && Array.from(v).length <= 20 ? v : '')
+  return fit(shop.contact_handle) || fit(shop.contact_wechat) || fit(shop.contact_phone)
+}
+
+function successData(order, shop, forced) {
   const items = order.items || []
-  const by = order.contact_email ? 'email' : (order.contact_wechat ? 'wechat' : '')
-  const tips = forced
-    ? { email: '店长照常送，会发邮件联系你', wechat: '店长照常送，会加你微信好友', '': '店长照常送，会发邮件或加你微信' }
-    : { email: '店长会发邮件联系你，留意查收', wechat: '店长会加你微信，记得通过好友申请', '': '店长会通过邮件或微信好友申请联系你' }
+  const contact = shopContact(shop || {})
+  let tip
+  if (!contact) tip = forced ? '店长照常送，会联系你，请留意消息' : '店长会联系你，请留意消息'
+  else tip = forced ? '店长照常送，请留意上面联系方式的消息' : '请留意上面的联系方式给你发的消息'
   return {
     item: ((items[0] || {}).name || '你的订单') + (items.length > 1 ? ' 等 ' + items.length + ' 件' : ''),
     time: order.batch_date + ' ' + order.deliver_time,
     address: order.pickup_info || order.pickup_point || '',
-    contact: Array.from(shopName || '').slice(0, 15).join('') + ' 店长',
-    tip: tips[by]
+    contact: contact || ((shop && shop.name) || '') + ' 店长',
+    tip: tip
   }
 }
 
@@ -294,7 +302,7 @@ function successData(order, shopName, forced) {
 // 照常送过、撤销、又照常送：已经收到过的单跳过，只发后来下的（already = 全都收到过了）。
 // 发不出去是常态（下单时没授权），返回通知到几位买家，店长心里有数。
 // pending = 模板还没配，一条都没发，也不记——截单时 groupSettle 会退回订单进度通知
-async function notifyForced(s) {
+async function notifyForced(s, shop) {
   const orders = await db.collection('shop_orders')
     .where({ session_id: s._id, status: 'forming' })
     .limit(500)
@@ -312,7 +320,7 @@ async function notifyForced(s) {
         tpl: 'groupSuccess',
         toUser: o.buyer,
         page: 'pages/myshoporders/myshoporders',
-        data: successData(o, s.shop_name, true)
+        data: successData(o, shop, true)
       }
     }).then(r => {
       const result = (r && r.result) || {}
@@ -602,7 +610,7 @@ exports.main = async (event) => {
           .update({ data: { forced: true, updated_at: new Date() } })
         if (!res.stats || res.stats.updated !== 1) return { success: false, message: '这一场已经截单了' }
         const s = (await db.collection('shop_sessions').doc(id).get()).data
-        const sent = await notifyForced(s)
+        const sent = await notifyForced(s, shop)
         return { success: true, buyers: sent.buyers, notified: sent.notified, pending: sent.pending, already: sent.already }
       }
 
