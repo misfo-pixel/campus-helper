@@ -1403,11 +1403,11 @@ var en = {
  "已通知 {0} 位买家：这一场一定开团。": "Notified {0} buyer(s) that this session is going ahead.",
  "{0} 位买家里通知到了 {1} 位，其余的人下单时没开通知，收不到。他们在「我的订单」里能看到「店长照常送」。": "Notified {1} of {0} buyers. The rest turned off notifications when ordering, but will see it in My Orders.",
  "拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Group-success notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders.",
- "店长联系方式：{0}": "Shop contact: {0}",
- "联系方式，如微信号（成团后你用它联系买家）": "Contact, e.g. WeChat ID (used to reach buyers once the group is on)",
- "联系方式，如微信号（必填，成团后你用它联系买家）": "Contact, e.g. WeChat ID (required, used to reach buyers once the group is on)",
- "请填写联系方式": "Please enter a contact",
- "手机号和联系方式是必填的，其余可以之后再补。": "Phone and contact are required; the rest can be added later."
+ "店长消息联系方式：{0}": "Shop messaging contact: {0}",
+ "消息联系方式，如微信号（成团后你用它联系买家）": "Messaging contact, e.g. WeChat ID (used to reach buyers once the group is on)",
+ "消息联系方式，如微信号（必填，成团后你用它联系买家）": "Messaging contact, e.g. WeChat ID (required, used to reach buyers once the group is on)",
+ "请填写消息联系方式": "Please enter a messaging contact",
+ "手机号和消息联系方式是必填的，其余可以之后再补。": "Phone and messaging contact are required; the rest can be added later."
 };
 
 function t(s, lang) {

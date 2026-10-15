@@ -131,7 +131,7 @@ function pickShopFields(event, needsDelivery) {
     // 老店的 contact_wechat 留在库里不动，买家订单页在店长没填手机时还显示它
     contact_phone: String(event.contact_phone || '').trim().slice(0, 30),
     // 给买家的联系方式，微信号或邮箱都行（必填）。成团时写进拼团成功通知的「联系人」，买家订单页也显示。
-    // 界面上只说「联系方式，如微信号」，不提邮箱，免得审核觉得在往站外引
+    // 界面上叫「消息联系方式，如微信号」（和电话区分开），不提邮箱，免得审核觉得在往站外引
     // 和店长账号验证过的学校邮箱（user_emails）是两回事：那个不公开，这个就是填来给买家看的
     contact_handle: String(event.contact_handle || '').trim().slice(0, 40),
 
@@ -161,7 +161,7 @@ function validateShop(fields, needsDelivery) {
   if (!fields.name) return '请填写小店名称'
   const phoneDigits = fields.contact_phone.replace(/\D/g, '')
   if (phoneDigits.length < 10 || phoneDigits.length > 15) return '请填写正确的手机号'
-  if (!fields.contact_handle) return '请填写联系方式'
+  if (!fields.contact_handle) return '请填写消息联系方式'
   if (needsDelivery && !fields.exact_address && !fields.pickup_points.length) {
     return '至少设一个取货点'
   }

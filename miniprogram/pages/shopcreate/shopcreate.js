@@ -127,7 +127,7 @@ Page({
       return
     }
     if (!d.contact_handle.trim()) {
-      wx.showToast({ title: t('请填写联系方式'), icon: 'none' })
+      wx.showToast({ title: t('请填写消息联系方式'), icon: 'none' })
       return
     }
     if (!d.agreed) {

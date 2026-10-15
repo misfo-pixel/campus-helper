@@ -14,7 +14,7 @@
   <input type="number" maxlength="15" placeholder="{{i18n.t('手机号（买家有急事时打给你）', lang)}}" value="{{contact_phone}}" bindinput="onInput" data-field="contact_phone" class="card form-card" />
 
   <!-- 联系方式（微信号或邮箱都行，界面上不提邮箱）。成团时拼团成功通知的「联系人」写这个，通知里最多放 20 个字，再长就只写手机号 -->
-  <input maxlength="40" placeholder="{{i18n.t('联系方式，如微信号（成团后你用它联系买家）', lang)}}" value="{{contact_handle}}" bindinput="onInput" data-field="contact_handle" class="card form-card" />
+  <input maxlength="40" placeholder="{{i18n.t('消息联系方式，如微信号（成团后你用它联系买家）', lang)}}" value="{{contact_handle}}" bindinput="onInput" data-field="contact_handle" class="card form-card" />
 
   <!-- 取货点：买家下单时挑一个过来取。开团时再勾这一场去哪几个 -->
   <view wx:if="{{ordering && needsDelivery}}" class="card group">
