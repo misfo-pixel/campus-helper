@@ -154,8 +154,8 @@ exports.main = async (event) => {
                   // date 类型：年月日，可带时分秒
                   time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
                         ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
-                  // thing 类型 20 字封顶，取货点名放不下，照片和地点在订单页
-                  tip: '店长等你 ' + waitMinutes + ' 分钟，送达照片在订单里'
+                  // thing 类型 20 字封顶，照片和取货点在订单页
+                  tip: '请在 ' + waitMinutes + ' 分钟内取餐'
                 }
               }
             })
