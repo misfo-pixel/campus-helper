@@ -51,9 +51,9 @@ Page({
   sendCode: async function () {
     if (this.data.countdown || this.sending) return
     const email = this.data.emailInput.trim().toLowerCase()
-    // 和 emailVerify 的 STUDENT_RE 同一条规则，服务端那边才是闸门
-    if (!/@(?:[a-z0-9-]+\.)+edu(?:\.[a-z]{2})?$/i.test(email)) {
-      wx.showToast({ title: t('请使用学校邮箱（.edu）'), icon: 'none' })
+    // 这里只查格式。是不是 .edu 由 emailVerify 判断：提审期间那边会放行普通邮箱（ALLOW_ANY_EMAIL），前端别先拦掉
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      wx.showToast({ title: t('请填写正确的邮箱'), icon: 'none' })
       return
     }
     this.sending = true

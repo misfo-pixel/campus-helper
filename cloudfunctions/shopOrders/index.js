@@ -66,6 +66,24 @@ exports.main = async (event) => {
         return { success: true, orders: res.data }
       }
 
+      // 成团后一键复制这一场所有买家的邮箱，店长拿去群发取货通知。
+      // 取消的单不算；同一个人下了几单只留一个
+      case 'emails': {
+        const sessionId = String(event.sessionId || '')
+        if (!sessionId) return { success: false, message: '参数不完整' }
+        const res = await db.collection('shop_orders')
+          .where({ shop_id: shop._id, session_id: sessionId, status: _.neq('cancelled') })
+          .field({ contact_email: true })
+          .limit(1000)
+          .get()
+        const emails = []
+        for (const o of res.data) {
+          const email = (o.contact_email || '').trim().toLowerCase()
+          if (email && emails.indexOf(email) === -1) emails.push(email)
+        }
+        return { success: true, emails: emails }
+      }
+
       // 工作台顶部那条今日数据
       case 'summary': {
         const start = new Date()

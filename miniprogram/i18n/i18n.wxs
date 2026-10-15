@@ -1407,7 +1407,10 @@ var en = {
  "消息联系方式，如微信号（成团后你用它联系买家）": "Messaging contact, e.g. WeChat ID (used to reach buyers once the group is on)",
  "消息联系方式，如微信号（必填，成团后你用它联系买家）": "Messaging contact, e.g. WeChat ID (required, used to reach buyers once the group is on)",
  "请填写消息联系方式": "Please enter a messaging contact",
- "手机号和消息联系方式是必填的，其余可以之后再补。": "Phone and messaging contact are required; the rest can be added later."
+ "手机号和消息联系方式是必填的，其余可以之后再补。": "Phone and messaging contact are required; the rest can be added later.",
+ "复制邮箱": "Copy Emails",
+ "这一场没有买家邮箱": "No buyer emails for this run",
+ "已复制 {0} 个邮箱": "Copied {0} emails"
 };
 
 function t(s, lang) {
