@@ -21,8 +21,8 @@ const TEMPLATES = {
   // 服务咨询提醒 —— 发给发帖人（二手 / 转租 / 委托有人想要）
   inquiry: 'e0y61cAJe_oAQaexZDJgVqh0gasrQ-O24bWDaR_Srm4',
   // 开团提醒 —— 发给订阅了某家店的买家（模板是「产品截团通知」）。
-  // 置空的话店铺页的「开团提醒」整条不显示
-  shopOpen: 'IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY',
+  // 置空的话店铺页的「开团提醒」整条不显示。2026-10-15 关掉，原 ID：IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY
+  shopOpen: '',
   // 拼团进度通知 —— 截单前 2 小时还没成团时发给已下单的买家。下单时和订单进度一起要
   groupProgress: 'Nd_6RKnL8eAcYFPxLzcRhgNUflBL3_11ULgt-WruZEs',
   // 商品过期提醒 —— 发给发帖人

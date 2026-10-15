@@ -225,7 +225,7 @@ Page({
     if (!item || !item.available) return
 
     if (!this.data.session) {
-      wx.showToast({ title: t('暂无拼团，可以订阅开团提醒'), icon: 'none' })
+      wx.showToast({ title: t(this.data.subEnabled ? '暂无拼团，可以订阅开团提醒' : '暂无拼团'), icon: 'none' })
       return
     }
 
@@ -367,7 +367,7 @@ Page({
 
     const s = this.data.session
     // 店长转自己的店是在打广告，标题用他写的广告语；别人转用进度
-    const title = !s ? f('{0} · 订阅开团提醒', shop.name) : (this.data.subMine ? ownerTitle(shop, s) : shareTitle(shop.name, s, false))
+    const title = !s ? (this.data.subEnabled ? f('{0} · 订阅开团提醒', shop.name) : shop.name) : (this.data.subMine ? ownerTitle(shop, s) : shareTitle(shop.name, s, false))
     const path = '/pages/shopdetail/shopdetail?id=' + shop._id + (s ? '&s=' + s._id : '') + '&from=share'
     if (this.cardPath) return { title: title, path: path, imageUrl: this.cardPath }
     return withCover({ title: title, path: path }, this.coverID, this.cover)

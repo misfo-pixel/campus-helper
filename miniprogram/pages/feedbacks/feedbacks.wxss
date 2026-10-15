@@ -67,3 +67,13 @@
   justify-content: flex-end;
   margin-top: 20rpx;
 }
+
+/* 每日汇总的授权入口：微信只认点击时弹的授权，所以得有个按钮 */
+.digest-bar {
+  margin-bottom: 20rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 12rpx;
+  background: #fff8e3;
+  font-size: 26rpx;
+  color: #7a5a00;
+}

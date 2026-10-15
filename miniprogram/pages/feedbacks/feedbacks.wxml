@@ -1,5 +1,6 @@
 <wxs src="/i18n/i18n.wxs" module="i18n" />
 <view class="page-container">
+  <view class="digest-bar" bindtap="askDigest">{{i18n.t('接收每日待处理提醒（点一次提醒一次）', lang)}}</view>
   <view class="tabs">
     <view class="tab {{status === 'pending' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="pending">{{i18n.t('待回复', lang)}}</view>
     <view class="tab {{status === 'replied' ? 'tab-on' : ''}}" bindtap="switchStatus" data-status="replied">{{i18n.t('已回复', lang)}}</view>

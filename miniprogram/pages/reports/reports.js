@@ -6,7 +6,7 @@ const TYPE_TEXT = { item: t('闲置'), sublet: t('转租'), task: t('委托'), g
 // 店铺和配送队只下架不删（底下挂着订单 / 请求），按钮和结果都说「下架」
 const TAKEDOWN_TYPES = ['shop', 'team']
 
-const { ask } = require('../../utils/subscribe.js')
+const { askOrGuide } = require('../../utils/subscribe.js')
 const { formatTime } = require('../../utils/date.js')
 const { t } = require('../../i18n/index.js')
 
@@ -18,9 +18,16 @@ Page({
   },
 
   onShow: function () {
-    // 管理员每来一次就要一次授权，攒的额度供第二天的每日汇总用
-    ask('adminPending')
     this.load()
+  },
+
+  // 每日待处理汇总（adminDigest）要的授权。微信只认用户点按钮时弹的授权，
+  // 原来写在 onShow 里自动要，每次都静默失败，管理员一张票都攒不到，所以从来收不到。
+  // 点一次 = 一张票 = 收一次汇总
+  askDigest: function () {
+    askOrGuide('adminPending').then(ok => {
+      if (ok) wx.showToast({ title: t('下次有待处理会提醒你'), icon: 'none' })
+    })
   },
 
   switchStatus: function (e) {

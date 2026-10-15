@@ -1407,5 +1407,7 @@ module.exports = {
   "送达照片": "Delivery photo",
   "已送到 {0}": "Delivered to {0}",
   "店长等到 {0}，过时请先打电话": "The seller waits until {0}. After that, call first.",
-  "等待时间（分钟，默认 10）": "Wait time (minutes, default 10)"
+  "等待时间（分钟，默认 10）": "Wait time (minutes, default 10)",
+  "下次有待处理会提醒你": "You'll be reminded next time",
+  "接收每日待处理提醒（点一次提醒一次）": "Get the daily pending reminder (one tap = one reminder)"
 }

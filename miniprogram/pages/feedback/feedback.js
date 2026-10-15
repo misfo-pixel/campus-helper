@@ -25,13 +25,14 @@ Page({
       return
     }
     if (this.data.submitting) return          // 防止连点重复提交
+    // 提反馈的人正等着回音，这一刻要授权最自然。
+    // 必须在第一个 await 之前弹：微信只认点击当下发起的授权，等完内容检测再要就静默失败了
+    // （原来放在检测之后，所以从来没人收到过回复通知）。不等它返回，提交照常往下走
+    ask('feedbackReply')
     this.setData({ submitting: true })
     try {
       // 反馈也是用户产生的内容，一样要过内容安全检测
       if (!(await ensureContentOk({ texts: [content, this.data.contact], scene: 2 }))) return
-
-      // 提反馈的人正等着回音，这一刻要授权最自然
-      await ask('feedbackReply')
 
       const db = wx.cloud.database()
       await db.collection('feedback').add({

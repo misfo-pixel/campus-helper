@@ -88,8 +88,10 @@ const TEMPLATES = {
   // 公共库里没有「开团」模板，用的是「产品截团通知」（编号 17717，类目 信息查询）。
   // 买家收到时最要紧的就是「几点截单」，截团时间正好装它；标题叫截团不叫开团，
   // 但内容说的是同一场，不冲突。
+  // 2026-10-15 关掉：id 置空后 announceSession 照常跑，但一条都不发（见下面 main 的「模板尚未配置」）。
+  // 要恢复就把 id 填回来，小程序 utils/subscribe.js 那份也一起填。
   shopOpen: {
-    id: 'IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY',
+    id: '',   // 原 ID：IaOuudvjfzb534S9XXllRBVPyFM1JCu5Fha9Yz83tOY
     fields: {
       shop: 'thing2',         // 厂家名称 → 店铺名
       cutoff: 'time3',        // 截团时间 → 这一场的截单时刻
