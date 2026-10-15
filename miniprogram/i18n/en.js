@@ -448,7 +448,6 @@ module.exports = {
   "买家去哪取货？": "Where do buyers pick up?",
   "设几个取货点，开团时再选这一场去哪几个。": "Set up a few pickup points; you choose which ones each session goes to.",
   "买家怎么找到你？": "How can buyers reach you?",
-  "只有手机号是必填的，其余可以之后再补。": "Only your phone number is required. You can fill in the rest later.",
   "手机号（必填，买家有急事时打给你）": "Phone number (required, for buyers to call if urgent)",
   "小店 Logo": "Shop logo",
   "点击{0}，建议正方形": "Tap to {0}. Square works best",
@@ -1412,5 +1411,8 @@ module.exports = {
   "拼团成功通知还没开通，这次没能通知买家。他们在「我的订单」里能看到「店长照常送」。": "Group-success notices aren't set up yet, so buyers weren't notified. They'll see it in My Orders.",
   "买家之前已经收到过拼团成功的通知，这次不再重复发。": "Buyers were already notified that this group is on, so no new notice was sent.",
   "店长邮箱/微信：{0}": "Shop email/WeChat: {0}",
-  "邮箱或微信号（选填，成团后你用它联系买家）": "Email or WeChat ID (optional, used to reach buyers once the group is on)"
+  "邮箱或微信号（成团后你用它联系买家）": "Email or WeChat ID (used to reach buyers once the group is on)",
+  "邮箱或微信号（必填，成团后你用它联系买家）": "Email or WeChat ID (required, used to reach buyers once the group is on)",
+  "请填写邮箱或微信号": "Please enter an email or WeChat ID",
+  "手机号和邮箱/微信号是必填的，其余可以之后再补。": "Phone and email/WeChat are required; the rest can be added later."
 }

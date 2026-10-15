@@ -24,7 +24,7 @@ Page({
     description: '',
     min_order: '',
     contact_phone: '',
-    contact_handle: '',  // 邮箱或微信号，选填。成团通知里写给买家
+    contact_handle: '',  // 邮箱或微信号，必填。成团通知里写给买家
     slogan: '',        // 广告语：海报大标题、店长自己转发时的卡片标题
 
     // 收款方式展示位。默认关，平台不主动把人往站外支付上引。
@@ -148,6 +148,10 @@ Page({
     const phoneDigits = d.contact_phone.replace(/\D/g, '')
     if (phoneDigits.length < 10 || phoneDigits.length > 15) {
       wx.showToast({ title: t('请填写正确的手机号'), icon: 'none' })
+      return
+    }
+    if (!d.contact_handle.trim()) {
+      wx.showToast({ title: t('请填写邮箱或微信号'), icon: 'none' })
       return
     }
     if (d.needsDelivery && !d.exactAddress) {
