@@ -1401,9 +1401,11 @@ module.exports = {
   "服务出错了，请重试": "Something went wrong, please try again",
   "已经填好两个常用点，可以改、删或再加。UMN 校区的点请自己加上，按你的出发地估到达时间。": "Two common pickup points are filled in. Edit, remove or add more. Add your own UMN campus points and estimate arrival times from where you start.",
   "拍一张送达照片": "Take a delivery photo",
-  "在「{0}」拍一张，买家会收到通知，并在订单里看到这张照片": "Take a photo at “{0}”. The buyer gets notified and sees the photo in their order.",
+  "在「{0}」拍一张，买家会收到通知和这张照片。记得在那里等 {1} 分钟": "Take a photo at “{0}”. The buyer gets notified with the photo. Remember to wait there {1} minutes.",
   "拍照": "Take photo",
   "请先拍一张送达照片": "Take a delivery photo first",
   "送达照片": "Delivery photo",
-  "已送到 {0}": "Delivered to {0}"
+  "已送到 {0}": "Delivered to {0}",
+  "店长等到 {0}，过时请先打电话": "The seller waits until {0}. After that, call first.",
+  "送到取货点后等买家几分钟（不填就是 10 分钟）": "Minutes you wait at the pickup point (default 10)"
 }

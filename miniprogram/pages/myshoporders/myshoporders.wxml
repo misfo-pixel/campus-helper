@@ -48,6 +48,7 @@
     <!-- 店长送到时在取货点拍的照片，点开看大图 -->
     <view wx:if="{{item.delivery_photo}}" class="note-box">
       <view class="note-label">{{i18n.f('已送到 {0}', lang, item.pickup_info)}}</view>
+      <view wx:if="{{item.waitText}}" class="note-text">{{i18n.f('店长等到 {0}，过时请先打电话', lang, item.waitText)}}</view>
       <view class="note-imgs">
         <image src="{{item.delivery_photo}}" mode="aspectFill" class="note-img"
                bindtap="previewNoteImages" data-urls="{{[item.delivery_photo]}}" data-url="{{item.delivery_photo}}" />

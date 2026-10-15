@@ -10,16 +10,14 @@ const _ = db.command
 // 平台也不碰钱：订单里没有任何支付状态，小程序里也不展示收款方式。
 // 「确认订单」只表示店长认了这一单；之前要不要先收钱，是他和买家在小程序外的事。
 
-// 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
-// 免得前端出 bug 时把订单改成乱七八糟的状态。
 // 推给买家的状态词。模板里「当前状态」是 phrase 类型，5 个汉字封顶。
+// 现在只有送达这一条会推（见 updateStatus 末尾）
 const STATUS_TEXT = {
-  accepted: '已确认',
-  delivering: '配送中',
-  completed: '已送达',
-  cancelled: '已取消'
+  completed: '已送达'
 }
 
+// 每个状态允许转到哪些状态。不在表里的转换一律拒绝，
+// 免得前端出 bug 时把订单改成乱七八糟的状态。
 const TRANSITIONS = {
   forming: ['cancelled'],                 // 拼团中 → 拒单（成团由 groupSettle 推进）
   confirming: ['accepted', 'cancelled'],  // 待确认 → 确认 / 取消
@@ -115,6 +113,11 @@ exports.main = async (event) => {
           return { success: false, message: '请先拍一张送达照片' }
         }
 
+        // 送到后店长在取货点等多久（小店设置里改，默认 10 分钟），买家订单页显示「等到几点」
+        const waitMinutes = shop.wait_minutes || 10
+        const now = new Date()
+        const waitUntil = new Date(now.getTime() + waitMinutes * 60000)
+
         // 带着旧状态做条件更新：截单那一刻 groupSettle 可能正在把这一单改成待确认
         const moved = await db.collection('shop_orders')
           .where({ _id: orderId, status: order.status })
@@ -122,7 +125,7 @@ exports.main = async (event) => {
             data: {
               status: next,
               cancel_reason: next === 'cancelled' ? (event.reason || '店长取消') : '',
-              ...(next === 'completed' ? { delivery_photo: photo, delivered_at: new Date() } : {}),
+              ...(next === 'completed' ? { delivery_photo: photo, delivered_at: now, wait_until: waitUntil } : {}),
               updated_at: new Date()
             }
           })
@@ -130,35 +133,35 @@ exports.main = async (event) => {
           return { success: false, message: '订单状态变了，刷新看看' }
         }
 
-        // 告诉买家状态变了。买家在下单那一刻授权过，这条多半发得出去。
-        try {
-          const first = (order.items || [])[0] || {}
-          const more = (order.items || []).length > 1
-            ? ' 等 ' + order.items.length + ' 件' : ''
-          const pad = n => (n < 10 ? '0' + n : '' + n)
-          const now = new Date()
-          await cloud.callFunction({
-            name: 'sendSubscribe',
-            data: {
-              tpl: 'orderProgress',
-              toUser: order.buyer,
-              page: 'pages/myshoporders/myshoporders',
+        // 只在送达时通知买家。订阅消息授权一次只能发一条（见小程序 utils/subscribe.js），
+        // 买家只在下单时授权过一次：要是「已确认」「配送中」也发，票早就用掉了，
+        // 最要紧的这条（饭到了、店长等你几分钟）反而发不出去。其他状态买家在订单页看。
+        if (next === 'completed') {
+          try {
+            const first = (order.items || [])[0] || {}
+            const more = (order.items || []).length > 1
+              ? ' 等 ' + order.items.length + ' 件' : ''
+            const pad = n => (n < 10 ? '0' + n : '' + n)
+            await cloud.callFunction({
+              name: 'sendSubscribe',
               data: {
-                status: STATUS_TEXT[next] || next,
-                item: (first.name || '你的订单') + more,
-                // date 类型：年月日，可带时分秒
-                time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
-                      ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
-                tip: next === 'cancelled'
-                  ? (event.reason || '店长取消了这笔订单')
-                  : next === 'completed'
-                    ? '店长传了送达照片，点开订单看'   // thing 类型 20 字封顶，取货点名放不下
-                    : (shop.contact_phone ? '店长手机：' + shop.contact_phone : '店长联系方式见订单页')
+                tpl: 'orderProgress',
+                toUser: order.buyer,
+                page: 'pages/myshoporders/myshoporders',
+                data: {
+                  status: STATUS_TEXT[next],
+                  item: (first.name || '你的订单') + more,
+                  // date 类型：年月日，可带时分秒
+                  time: now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+                        ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':00',
+                  // thing 类型 20 字封顶，取货点名放不下，照片和地点在订单页
+                  tip: '店长等你 ' + waitMinutes + ' 分钟，送达照片在订单里'
+                }
               }
-            }
-          })
-        } catch (e) {
-          console.warn('订单进度通知发送失败（不影响状态推进）：', e)
+            })
+          } catch (e) {
+            console.warn('送达通知发送失败（不影响状态推进）：', e)
+          }
         }
 
         return { success: true }

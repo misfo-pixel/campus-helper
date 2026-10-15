@@ -272,7 +272,7 @@ Page({
 
     const go = await new Promise(resolve => wx.showModal({
       title: t('拍一张送达照片'),
-      content: f('在「{0}」拍一张，买家会收到通知，并在订单里看到这张照片', order.pickup_info || t('取货点')),
+      content: f('在「{0}」拍一张，买家会收到通知和这张照片。记得在那里等 {1} 分钟', order.pickup_info || t('取货点'), (this.data.shop && this.data.shop.wait_minutes) || 10),
       confirmText: t('拍照'),
       success: r => resolve(r.confirm),
       fail: () => resolve(false)

@@ -23,6 +23,7 @@ Page({
     tempLogo: '',      // 本次新选的本地文件，提交时才上传
     description: '',
     min_order: '',
+    wait_minutes: '',  // 送到后等买家几分钟，空着就是 10
     contact_phone: '',
     slogan: '',        // 广告语：海报大标题、店长自己转发时的卡片标题
 
@@ -77,6 +78,7 @@ Page({
         logo: shop.logo || '',
         description: shop.description || '',
         min_order: shop.min_order === 0 ? '0' : String(shop.min_order || ''),
+        wait_minutes: shop.wait_minutes ? String(shop.wait_minutes) : '',
         contact_phone: shop.contact_phone || '',
         slogan: shop.slogan || '',
         noteRequired: shop.note_required === true,
@@ -184,6 +186,7 @@ Page({
           logo: logo,
           description: d.description,
           min_order: d.min_order,
+          wait_minutes: d.wait_minutes,
           contact_phone: d.contact_phone,
           slogan: d.slogan,
           note_required: d.noteRequired,

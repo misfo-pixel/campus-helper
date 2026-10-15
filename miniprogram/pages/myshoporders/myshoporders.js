@@ -53,6 +53,8 @@ Page({
           hint: hint,
           p: p,
           timeText: formatTime(o.created_at),
+          // 店长送到后在取货点等到几点（只取时分，按手机本地时间）
+          waitText: o.wait_until ? formatTime(o.wait_until).split(' ')[1] : '',
           shortId: (o._id || '').slice(-6).toUpperCase()
         })
       })

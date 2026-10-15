@@ -123,6 +123,8 @@ function pickShopFields(event, needsDelivery) {
     description: (event.description || '').trim(),
     logo: event.logo || '',
     min_order: Number(event.min_order) || 0,
+    // 送到取货点后等买家几分钟，写进送达通知和买家订单页。没填或乱填就按 10 分钟
+    wait_minutes: Math.max(1, Math.min(60, Math.floor(Number(event.wait_minutes)) || 10)),
 
     // 店长自己写给买家看的一段话（取货约定、备注怎么填、多久回复…）。
     // 平台不替店长生成这段，也不审它——写什么、写不写都由店长决定。
