@@ -1408,7 +1408,7 @@ module.exports = {
   "网页上能做的": "What you can do on the web",
   "看订单、确认订单、一键复制待确认买家的邮箱、导出订单表格": "See and confirm orders, copy every unconfirmed buyer's email at once, export orders as a spreadsheet",
   "开团、改场次、照常送、取消场次": "Open group orders, edit them, run them anyway or cancel them",
-  "新增和修改商品、换商品照片、改价格、上下架": "Add and edit items, change item photos and prices, mark sold out",
+  "导入菜单、新增和修改商品、换商品照片、改价格、上下架": "Import your menu, add and edit items, change item photos and prices, mark sold out",
   "还是要在小程序里做的": "Still done in the mini program",
   "小店设置（店名、logo、取货点）、海报、新单提醒": "Shop settings (name, logo, pickup points), posters, new-order alerts",
   "退出所有网页登录": "Sign out of all computers",

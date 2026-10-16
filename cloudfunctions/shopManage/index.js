@@ -294,7 +294,8 @@ const WEB_SESSION_MS = 7 * 24 * 3600 * 1000
 // 网页能调的操作。开店、改店铺资料（logo、取货点）、海报、删店、开店码不在里面
 const WEB_ACTIONS = [
   'getMine', 'sessions', 'sessionForm', 'openSession', 'updateSession', 'forceSession', 'cancelSession',
-  'listItems', 'setUseCategory', 'saveItem', 'toggleItem', 'deleteItem', 'setItemImage'
+  'listItems', 'setUseCategory', 'saveItem', 'toggleItem', 'deleteItem', 'setItemImage',
+  'useMenuParse', 'importItems'
 ]
 
 let webReady = false
@@ -445,6 +446,58 @@ async function tmsCheck(text) {
     console.error('TMS 调用失败：', err && err.code, err && err.message)
     return { pass: false, reason: '内容校验服务暂时不可用，请稍后重试' }
   }
+}
+
+// ---- 网页店长后台里导入菜单 ----
+//
+// 和 menuImport（输导入码的那条路）做的是同一件事，只是店长已经登录了，不用码：
+//   - AI 整理在网站上做，每次整理前先来这里记一次（useMenuParse），每家店每天最多 WEB_PARSES_PER_DAY 次，
+//     免得登录后的页面被拿去刷 AI 额度
+//   - 核对完直接写进店里（importItems）。小程序那条路上架前过 msgSecCheck，这里过腾讯云 TMS
+const WEB_PARSES_PER_DAY = 20
+const MAX_IMPORT = 150
+const SHOP_ITEM_LIMIT = 200   // 和 menuImport 一致，超过了商品管理页显示不全
+
+function str(v, max) {
+  return String(v == null ? '' : v).trim().slice(0, max)
+}
+
+// 网页交回来的东西一律当不可信输入，逐个字段收窄（和 menuImport 的 cleanItems 同一套规则）
+function cleanImportItems(list) {
+  if (!Array.isArray(list)) return []
+  return list.slice(0, MAX_IMPORT).map(i => {
+    // Number(null) 是 0：没填价格的会变成 $0 上架，空的先当成没价格
+    const raw = i && i.price
+    const price = raw === null || raw === undefined || raw === '' ? NaN : Number(raw)
+    return {
+      name: str(i && i.name, 40),
+      price: price >= 0 && price < 10000 ? Math.round(price * 100) / 100 : null,
+      unit: str(i && i.unit, 6),
+      description: str(i && i.description, 200),
+      category: str(i && i.category, 12),
+      restricted: !!(i && i.restricted)
+    }
+  }).filter(i => i.name && !i.restricted && i.price !== null)
+}
+
+// 整批文字分段送 TMS：一段 3000 字以内，一次并发 5 段
+async function tmsCheckAll(lines) {
+  const chunks = []
+  let cur = ''
+  lines.forEach(line => {
+    if (cur && (cur + '\n' + line).length > 3000) {
+      chunks.push(cur)
+      cur = ''
+    }
+    cur = cur ? cur + '\n' + line : line.slice(0, 3000)
+  })
+  if (cur) chunks.push(cur)
+  for (let k = 0; k < chunks.length; k += 5) {
+    const results = await Promise.all(chunks.slice(k, k + 5).map(tmsCheck))
+    const bad = results.find(r => !r.pass)
+    if (bad) return bad
+  }
+  return { pass: true }
 }
 
 // ---- 网页上传商品照片：图片审核 ----
@@ -1063,6 +1116,68 @@ async function handle(event, openid, fromWeb) {
         }
         const url = fileID ? (await tempUrls([fileID]))[fileID] || '' : ''
         return { success: true, image_url: url }
+      }
+
+      // 网页导入菜单：AI 整理一次之前先记一次数，超了就不让整理
+      case 'useMenuParse': {
+        if (!fromWeb) return { success: false, message: '未知操作：' + action }
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有店铺' }
+        const today = nowAt().slice(0, 10)
+        // 新的一天从 1 开始数；同一天的条件加一，并发点几次也不会超过上限
+        let r = await db.collection('shops')
+          .where({ _id: shop._id, web_parse_day: _.neq(today) })
+          .update({ data: { web_parse_day: today, web_parse_count: 1 } })
+        if (r.stats && r.stats.updated === 1) return { success: true, left: WEB_PARSES_PER_DAY - 1 }
+        r = await db.collection('shops')
+          .where({ _id: shop._id, web_parse_day: today, web_parse_count: _.lt(WEB_PARSES_PER_DAY) })
+          .update({ data: { web_parse_count: _.inc(1) } })
+        if (!r.stats || r.stats.updated !== 1) return { success: false, message: '今天的 AI 整理次数用完了，明天再试' }
+        const after = (await db.collection('shops').doc(shop._id).get()).data
+        return { success: true, left: Math.max(0, WEB_PARSES_PER_DAY - (after.web_parse_count || 0)) }
+      }
+
+      // 网页导入菜单：核对完的商品直接上架。字段和 menuImport commit 写的一样
+      case 'importItems': {
+        if (!fromWeb) return { success: false, message: '未知操作：' + action }
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有店铺' }
+        const chosen = cleanImportItems(event.items)
+        if (!chosen.length) return { success: false, message: '没有可导入的商品' }
+
+        const existing = await db.collection('shop_items').where({ shop_id: shop._id }).count()
+        if (existing.total + chosen.length > SHOP_ITEM_LIMIT) {
+          return { success: false, message: '店里最多 ' + SHOP_ITEM_LIMIT + ' 件商品，这次最多还能导入 ' + Math.max(0, SHOP_ITEM_LIMIT - existing.total) + ' 件' }
+        }
+
+        const check = await tmsCheckAll(chosen.map(i => [i.name, i.description, i.category, i.unit].filter(Boolean).join(' ')))
+        if (!check.pass) return { success: false, message: check.reason }
+
+        const now = new Date()
+        const docs = chosen.map((i, n) => ({
+          name: i.name,
+          price: i.price,
+          description: i.description,
+          unit: i.unit,
+          specs: '',
+          image: '',
+          category: i.category,
+          available: true,
+          shop_id: shop._id,
+          owner: openid,
+          imported: true,
+          // 按菜单顺序排：商品管理按 created_at 升序
+          created_at: new Date(now.getTime() + n),
+          updated_at: now
+        }))
+        for (let k = 0; k < docs.length; k += 20) {
+          await Promise.all(docs.slice(k, k + 20).map(d => db.collection('shop_items').add({ data: d })))
+        }
+        // 菜单里有分类的话，顺手打开分类显示
+        if (chosen.some(i => i.category) && shop.use_category !== true) {
+          await db.collection('shops').doc(shop._id).update({ data: { use_category: true, updated_at: now } })
+        }
+        return { success: true, count: docs.length }
       }
 
       // 只切上架/售罄，比走 saveItem 轻，店长一天要点好几次
