@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "wx-server-sdk": "latest",
-    "tencentcloud-sdk-nodejs-tms": "^4.1.311"
+    "tencentcloud-sdk-nodejs-tms": "^4.1.311",
+    "tencentcloud-sdk-nodejs-ims": "^4.1.326"
   }
 }

@@ -294,7 +294,7 @@ const WEB_SESSION_MS = 7 * 24 * 3600 * 1000
 // 网页能调的操作。开店、改店铺资料（logo、取货点）、海报、删店、开店码不在里面
 const WEB_ACTIONS = [
   'getMine', 'sessions', 'sessionForm', 'openSession', 'updateSession', 'forceSession', 'cancelSession',
-  'listItems', 'setUseCategory', 'saveItem', 'toggleItem', 'deleteItem'
+  'listItems', 'setUseCategory', 'saveItem', 'toggleItem', 'deleteItem', 'setItemImage'
 ]
 
 let webReady = false
@@ -444,6 +444,52 @@ async function tmsCheck(text) {
   } catch (err) {
     console.error('TMS 调用失败：', err && err.code, err && err.message)
     return { pass: false, reason: '内容校验服务暂时不可用，请稍后重试' }
+  }
+}
+
+// ---- 网页上传商品照片：图片审核 ----
+//
+// 先用微信的 imgSecCheck（和小程序 contentCheck 同一个接口，不要 openid）。
+// 它是「云调用」，从 HTTP 访问服务进来的请求能不能用，要看云开发那边的支持——
+// 调不通（不是内容违规，是接口本身报错）时退到腾讯云图片内容安全（IMS），
+// 用和 TMS 同一对密钥，要在腾讯云开通「图片内容安全」并给子账号加 QcloudIMSFullAccess。
+// 两个都不通就不让传（测不了就不让发）。错误码打在日志里，部署后看一眼就知道走的是哪条。
+const IMS_LABEL_TEXT = TMS_LABEL_TEXT
+
+let imsClient = null
+function imsOf() {
+  if (!imsClient) {
+    const { ims } = require('tencentcloud-sdk-nodejs-ims')
+    imsClient = new ims.v20201229.Client({
+      credential: { secretId: process.env.TMS_SECRET_ID, secretKey: process.env.TMS_SECRET_KEY },
+      region: 'ap-guangzhou',
+      profile: { httpProfile: { endpoint: 'ims.tencentcloudapi.com', reqTimeout: 8 } }
+    })
+  }
+  return imsClient
+}
+
+async function imageCheck(buffer) {
+  try {
+    await cloud.openapi.security.imgSecCheck({ media: { contentType: 'image/jpeg', value: buffer } })
+    return { pass: true }
+  } catch (err) {
+    const code = err && (err.errCode || err.errcode)
+    if (code === 87014) return { pass: false, reason: '图片可能包含违规内容，换一张试试' }
+    console.warn('imgSecCheck 调不通，改用腾讯云 IMS：errCode=', code, err && (err.errMsg || err.message))
+  }
+  if (!process.env.TMS_SECRET_ID || !process.env.TMS_SECRET_KEY) {
+    return { pass: false, reason: '图片审核暂时不可用，请先在小程序里传照片' }
+  }
+  try {
+    const res = await imsOf().ImageModeration({ FileContent: buffer.toString('base64') })
+    if (res.Suggestion === 'Pass') return { pass: true }
+    // 和文字一样：疑似广告放过——菜单照片上本来就有店名、价格
+    if (res.Suggestion === 'Review' && res.Label === 'Ad') return { pass: true }
+    return { pass: false, reason: '图片可能包含' + (IMS_LABEL_TEXT[res.Label] || '违规内容') + '，换一张试试' }
+  } catch (err) {
+    console.error('IMS 调用失败：', err && err.code, err && err.message)
+    return { pass: false, reason: '图片审核暂时不可用，请先在小程序里传照片' }
   }
 }
 
@@ -981,6 +1027,42 @@ async function handle(event, openid, fromWeb) {
           })
         })
         return { success: true, itemId: res._id }
+      }
+
+      // 网页换商品照片（小程序自己传云存储，不走这里）。
+      // 浏览器已经压成 JPEG，这里收 base64，审核通过再存云存储，路径和小程序 shopitem 一样；
+      // 换掉的旧图顺手删了。remove 为 true 是去掉照片
+      case 'setItemImage': {
+        if (!fromWeb) return { success: false, message: '未知操作：' + action }
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有店铺' }
+        const doc = await db.collection('shop_items').doc(String(event.itemId || '')).get().catch(() => ({ data: null }))
+        const item = doc.data
+        if (!item || item.shop_id !== shop._id) return { success: false, message: '没有权限' }
+
+        let fileID = ''
+        if (event.remove !== true) {
+          const buffer = Buffer.from(String(event.image || ''), 'base64')
+          // imgSecCheck 单张上限 1MB；只收 JPEG（看文件头，不信扩展名）
+          if (buffer.length < 100 || buffer[0] !== 0xFF || buffer[1] !== 0xD8 || buffer[2] !== 0xFF) {
+            return { success: false, message: '图片格式不对，请换一张' }
+          }
+          if (buffer.length > 1024 * 1024) return { success: false, message: '图片太大了，请换一张' }
+          const check = await imageCheck(buffer)
+          if (!check.pass) return { success: false, message: check.reason }
+          const up = await cloud.uploadFile({
+            cloudPath: 'shop_items/' + Date.now() + '-' + Math.floor(Math.random() * 1000000) + '.jpg',
+            fileContent: buffer
+          })
+          fileID = up.fileID
+        }
+
+        await db.collection('shop_items').doc(item._id).update({ data: { image: fileID, updated_at: new Date() } })
+        if (typeof item.image === 'string' && item.image.indexOf('cloud://') === 0 && item.image !== fileID) {
+          cloud.deleteFile({ fileList: [item.image] }).catch(e => console.warn('删除旧商品图失败（不影响结果）：', e))
+        }
+        const url = fileID ? (await tempUrls([fileID]))[fileID] || '' : ''
+        return { success: true, image_url: url }
       }
 
       // 只切上架/售罄，比走 saveItem 轻，店长一天要点好几次

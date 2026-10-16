@@ -63,7 +63,7 @@
 - 展示字体是站酷庆科黄油体（SIL OFL，可商用），只留 GB2312 一级常用字转成 WOFF，约 800KB。主包放不下，放在云函数 `appAssets` 里，第一次有人要时传进云存储（记在集合 `app_assets`），小程序端 `utils/fonts.js` 用 `wx.loadFontFace` 全局加载；加载不上退回系统黑体。
 - 2026-10-12 试过用腾讯混元写广告语、出设计稿和背景图（云函数 shopAI），额度没批下来、一直 429，删了。代码没提交过，git 历史里没有。
 
-**网页店长后台**（2026-10-16，网站在 minne-web 的 `/shop`）：店长在「我的小店 → 电脑上管理」（`pages/shopweb`）拿 8 位登录码，网页上输入后 7 天内不用再登。网页经 HTTP 访问服务调 `shopManage`、`shopOrders`，身份是登录凭证换出来的店长，只开放订单、场次、商品文字和价格、上下架（白名单 `WEB_ACTIONS`）；开店、店铺资料、照片、海报、删店还是只在小程序里。网页上改商品文字由 `shopManage` 调腾讯云 TMS 审核，因为微信的 msgSecCheck 要求发布者两小时内打开过小程序。部署步骤见 minne-web 的 README「店长后台」。
+**网页店长后台**（2026-10-16，网站在 minne-web 的 `/shop`）：店长在「我的小店 → 电脑上管理」（`pages/shopweb`）拿 8 位登录码，网页上输入后 7 天内不用再登。网页经 HTTP 访问服务调 `shopManage`、`shopOrders`，身份是登录凭证换出来的店长，只开放订单、场次、商品（文字、价格、照片、上下架）（白名单 `WEB_ACTIONS`）；开店、店铺资料、海报、删店还是只在小程序里。网页上改商品文字由 `shopManage` 调腾讯云 TMS 审核，因为微信的 msgSecCheck 要求发布者两小时内打开过小程序；商品照片先试微信 imgSecCheck，调不通再用腾讯云 IMS（见 `imageCheck`）。部署步骤见 minne-web 的 README「店长后台」。
 
 **上线前**：部署 `groupSettle`（连同触发器一起上传，超时在控制台调到 60 秒）、`shopManage`、`shopBrowse`、`buyerOrders`、`shopOrders`、`shopSubscribe`、`sendSubscribe`、`handleReport`、`getMiniCode`、`getUserStore`、`appAssets`（字体）。`shop_sessions`、`shop_create_codes` 两个集合第一次用时自动建，建好后在控制台把权限改成「所有用户不可读写」。
 
