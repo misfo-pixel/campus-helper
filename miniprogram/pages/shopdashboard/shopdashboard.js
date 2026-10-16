@@ -337,6 +337,11 @@ Page({
     wx.previewImage({ urls: urls, current: e.currentTarget.dataset.url })
   },
 
+  // 网页店长后台的登录码
+  goToWeb: function () {
+    wx.navigateTo({ url: '/pages/shopweb/shopweb' })
+  },
+
   goToSettings: function () {
     wx.navigateTo({ url: '/pages/shopedit/shopedit' })
   },

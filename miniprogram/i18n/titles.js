@@ -39,6 +39,7 @@ module.exports = {
   "pages/shopmenu/shopmenu": "商品管理",
   "pages/shopposter/shopposter": "海报",
   "pages/shopsession/shopsession": "开团",
+  "pages/shopweb/shopweb": "在电脑上管理",
   "pages/subletdetail/subletdetail": "房源详情",
   "pages/subletmarket/subletmarket": "房屋转租",
   "pages/subletpublish/subletpublish": "发布转租",

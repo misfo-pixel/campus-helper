@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -18,6 +19,12 @@ const _ = db.command
 //   - 场次从 shops.batches 搬到 shop_sessions 集合，一家店最多同时开 MAX_ACTIVE 场。
 //     老店铺上的 batches 留着不读
 //   - 开店要开店码（shop_create_codes），管理员在「我的 → 开店码」生成
+//
+// 2026-10-16 加网页店长后台（minne-web 的 /shop）。同一个云函数两种调法，和 menuImport 一样：
+//   - 小程序 callFunction：照旧，身份是 OPENID
+//   - 网页经 HTTP 访问服务：请求头 x-web-key 要等于环境变量 WEB_KEY（和 webFeed 同一个值），
+//     身份是网页登录凭证换出来的 owner（见下面「网页登录」）。只开放 WEB_ACTIONS 里的操作，
+//     开店、改店铺资料、删店、开店码都还是只能在小程序里做
 
 // 场次时间一律按明尼苏达当地时间、存成 'YYYY-MM-DD HH:MM' 字符串，直接按字符串比大小。
 // 这段和 groupSettle / shopBrowse / buyerOrders 里的是同一份——
@@ -271,8 +278,206 @@ async function cancelSessionOrders(session, reason) {
   return res.data.length
 }
 
+// ---- 网页登录 ----
+//
+// 网页拿不到微信身份，所以和「在电脑上输入电视上的码」一样：
+//   1. 小程序「我的小店 → 在电脑上管理」：webLoginStart 生成 8 位登录码，5 分钟有效、只能用一次
+//   2. 网页输入登录码：webLogin 换一个登录凭证（32 字节随机数），7 天有效，存在网站的 httpOnly cookie 里
+//   3. 之后网页每次请求都带着凭证，这里查出是哪个店长，再走和小程序一模一样的校验
+//
+// 库里只存凭证的 sha256，库里的东西漏了也拿不去登录。
+// 店长在小程序里点「退出所有网页登录」（webLogoutAll），所有凭证立刻作废。
+// 登录码 8 位、31 个字符，约 8500 亿种组合，5 分钟内猜不中，不用另外限次数。
+const WEB_LOGIN_TTL_MS = 5 * 60 * 1000
+const WEB_SESSION_MS = 7 * 24 * 3600 * 1000
+
+// 网页能调的操作。开店、改店铺资料（logo、取货点）、海报、删店、开店码不在里面
+const WEB_ACTIONS = [
+  'getMine', 'sessions', 'sessionForm', 'openSession', 'updateSession', 'forceSession', 'cancelSession',
+  'listItems', 'setUseCategory', 'saveItem', 'toggleItem', 'deleteItem'
+]
+
+let webReady = false
+async function ensureWebCollections() {
+  if (webReady) return
+  for (const name of ['web_logins', 'web_sessions']) {
+    try {
+      await db.createCollection(name)
+    } catch (e) { /* 已经存在 */ }
+  }
+  webReady = true
+}
+
+const sha256 = s => crypto.createHash('sha256').update(String(s)).digest('hex')
+
+// 凭证 → 店长 openid。过期、被退出、格式不对都是 null
+async function webOwner(token) {
+  if (!/^[0-9a-f]{64}$/.test(String(token || ''))) return null
+  const res = await db.collection('web_sessions')
+    .where({ token_hash: sha256(token), revoked: false, expires_at: _.gt(Date.now()) })
+    .limit(1)
+    .get()
+  return res.data[0] ? res.data[0].owner : null
+}
+
+function reply(status, data) {
+  return {
+    statusCode: status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    body: JSON.stringify(data)
+  }
+}
+
+function headerOf(event, name) {
+  const headers = (event && event.headers) || {}
+  const key = Object.keys(headers).find(k => k.toLowerCase() === name)
+  return key ? headers[key] : ''
+}
+
+function bodyOf(event) {
+  try {
+    const raw = event.isBase64Encoded ? Buffer.from(event.body || '', 'base64').toString() : event.body
+    return JSON.parse(raw || '{}')
+  } catch (e) {
+    return {}
+  }
+}
+
+async function web(p) {
+  await ensureWebCollections()
+
+  if (p.action === 'webLogin') {
+    const code = String(p.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+    if (code.length !== 8) return reply(400, { success: false, message: '登录码是 8 位' })
+    const found = await db.collection('web_logins')
+      .where({ code: code, used: false, expires_at: _.gt(Date.now()) })
+      .limit(1)
+      .get()
+    const ticket = found.data[0]
+    if (!ticket) return reply(400, { success: false, message: '登录码不对或已过期' })
+    // 条件更新占住这个码，两个网页同时拿同一个码只有一个登得上
+    const claim = await db.collection('web_logins')
+      .where({ _id: ticket._id, used: false })
+      .update({ data: { used: true, used_at: Date.now() } })
+    if (!claim.stats || claim.stats.updated !== 1) return reply(400, { success: false, message: '登录码不对或已过期' })
+
+    const shop = await getMyShop(ticket.owner)
+    if (!shop) return reply(400, { success: false, message: '你还没有店铺' })
+
+    const token = crypto.randomBytes(32).toString('hex')
+    const expires = Date.now() + WEB_SESSION_MS
+    await db.collection('web_sessions').add({
+      data: {
+        token_hash: sha256(token),
+        owner: ticket.owner,
+        shop_id: shop._id,
+        revoked: false,
+        created_at: Date.now(),
+        expires_at: expires
+      }
+    })
+    return reply(200, { success: true, token: token, expiresAt: expires, shopName: shop.name })
+  }
+
+  const owner = await webOwner(p.token)
+  if (!owner) return reply(401, { success: false, message: '登录已失效，请重新登录' })
+
+  if (p.action === 'webLogout') {
+    await db.collection('web_sessions').where({ token_hash: sha256(p.token) }).update({ data: { revoked: true } })
+    return reply(200, { success: true })
+  }
+  if (WEB_ACTIONS.indexOf(p.action) === -1) return reply(400, { success: false, message: '网页上不能做这个操作' })
+
+  const params = Object.assign({}, p)
+  delete params.token
+  return reply(200, await handle(params, owner, true))
+}
+
+// ---- 网页上改商品文字：腾讯云文本内容安全（TMS） ----
+//
+// 小程序里改商品，文字在提交前先过微信的 msgSecCheck（utils/contentCheck.js）。
+// 网页上用不了它：msgSecCheck 要求发布者近两小时内打开过小程序，店长在电脑前改菜单时多半不满足。
+// 所以网页这条路改用腾讯云 TMS，它不要 openid。
+//
+// 密钥放在本云函数的环境变量 TMS_SECRET_ID / TMS_SECRET_KEY 里，用只授权了 QcloudTMSFullAccess 的子账号。
+// 没配就不让改文字（和 contentCheck 一样「测不了就不让发」），改价格、上下架不受影响。
+//
+// Block 一律拦；Review（建议人工复审）也拦，因为没有人工复核队列——
+// 只有标签是广告（Ad）的 Review 放过：卖东西的商品名和介绍本来就像广告，拦了等于不让上菜单。
+const TMS_LABEL_TEXT = {
+  Porn: '色情内容',
+  Abuse: '辱骂内容',
+  Ad: '广告',
+  Illegal: '违法内容',
+  Polity: '时政内容',
+  Terror: '暴恐内容',
+  Sexy: '低俗内容'
+}
+
+let tmsClient = null
+function tmsOf() {
+  const id = process.env.TMS_SECRET_ID
+  const key = process.env.TMS_SECRET_KEY
+  if (!id || !key) return null
+  if (!tmsClient) {
+    const { tms } = require('tencentcloud-sdk-nodejs-tms')
+    tmsClient = new tms.v20201229.Client({
+      credential: { secretId: id, secretKey: key },
+      region: 'ap-guangzhou',
+      profile: { httpProfile: { endpoint: 'tms.tencentcloudapi.com', reqTimeout: 5 } }
+    })
+  }
+  return tmsClient
+}
+
+async function tmsCheck(text) {
+  if (!String(text).trim()) return { pass: true }
+  if (!process.env.TMS_SECRET_ID || !process.env.TMS_SECRET_KEY) {
+    return { pass: false, reason: '网页上改商品文字还没开通，请先在小程序里改' }
+  }
+  try {
+    // 部署时没装上 SDK，require 会在这里抛错，按「暂时不可用」处理
+    const res = await tmsOf().TextModeration({ Content: Buffer.from(String(text), 'utf8').toString('base64') })
+    if (res.Suggestion === 'Pass') return { pass: true }
+    if (res.Suggestion === 'Review' && res.Label === 'Ad') return { pass: true }
+    return { pass: false, reason: '文字可能包含' + (TMS_LABEL_TEXT[res.Label] || '违规内容') + '，请修改后再保存' }
+  } catch (err) {
+    console.error('TMS 调用失败：', err && err.code, err && err.message)
+    return { pass: false, reason: '内容校验服务暂时不可用，请稍后重试' }
+  }
+}
+
+// 网页上看商品照片、订单配图：cloud:// 换成临时链接。一次最多 50 个
+async function tempUrls(fileIDs) {
+  const ids = Array.from(new Set(fileIDs.filter(f => typeof f === 'string' && f.indexOf('cloud://') === 0)))
+  const out = {}
+  for (let i = 0; i < ids.length; i += 50) {
+    try {
+      const res = await cloud.getTempFileURL({ fileList: ids.slice(i, i + 50).map(id => ({ fileID: id, maxAge: 3600 })) })
+      res.fileList.forEach(f => { if (f.tempFileURL) out[f.fileID] = f.tempFileURL })
+    } catch (e) {
+      console.warn('换临时链接失败（不影响结果）：', e)
+    }
+  }
+  return out
+}
+
 exports.main = async (event) => {
-  const openid = cloud.getWXContext().OPENID
+  if (event && event.httpMethod) {
+    try {
+      const key = process.env.WEB_KEY
+      if (!key || headerOf(event, 'x-web-key') !== key) return reply(403, { success: false, message: 'forbidden' })
+      return await web(bodyOf(event))
+    } catch (err) {
+      console.error('shopManage 网页请求失败：', err)
+      return reply(500, { success: false, message: '服务出错了' })
+    }
+  }
+  return handle(event || {}, cloud.getWXContext().OPENID, false)
+}
+
+// fromWeb 为 true 时是网页店长后台来的（见 web()），openid 是登录凭证换出来的店长
+async function handle(event, openid, fromWeb) {
   const action = event.action
 
   try {
@@ -282,7 +487,54 @@ exports.main = async (event) => {
 
       case 'getMine': {
         const shop = await getMyShop(openid)
-        return { success: true, shop: shop }
+        if (!fromWeb || !shop) return { success: true, shop: shop }
+        // 网页只要显示得到的那几项，openid、营业执照这些不出去
+        const logo = (await tempUrls([shop.logo]))[shop.logo] || ''
+        return {
+          success: true,
+          shop: {
+            _id: shop._id,
+            name: shop.name,
+            logo_url: logo,
+            takedown: shop.takedown === true,
+            needs_delivery: shop.needs_delivery !== false,
+            exact_address: shop.exact_address === true,
+            pickup_points: shop.pickup_points || [],
+            use_category: shop.use_category === true
+          }
+        }
+      }
+
+      // ---- 网页登录（小程序这一半） ----
+
+      // 「在电脑上管理」：生成网页登录码
+      case 'webLoginStart': {
+        const shop = await getMyShop(openid)
+        if (!shop) return { success: false, message: '你还没有店铺' }
+        if (shop.takedown) return { success: false, message: '店铺已被下架' }
+        await ensureWebCollections()
+        const expires = Date.now() + WEB_LOGIN_TTL_MS
+        // 撞上别人还没用的码就会登进别人的店，所以撞了一定换一个（概率极低）
+        const live = code => db.collection('web_logins')
+          .where({ code: code, used: false, expires_at: _.gt(Date.now()) })
+          .count()
+          .then(r => r.total > 0)
+        let code = makeCode(8)
+        for (let i = 0; i < 5 && (await live(code)); i++) code = makeCode(8)
+        if (await live(code)) return { success: false, message: '生成失败，请重试' }
+        await db.collection('web_logins').add({
+          data: { code: code, owner: openid, shop_id: shop._id, used: false, created_at: Date.now(), expires_at: expires }
+        })
+        return { success: true, code: code, expiresAt: expires }
+      }
+
+      // 换了电脑、借别人电脑登过：所有网页登录立刻作废
+      case 'webLogoutAll': {
+        await ensureWebCollections()
+        const res = await db.collection('web_sessions')
+          .where({ owner: openid, revoked: false })
+          .update({ data: { revoked: true } })
+        return { success: true, count: (res.stats && res.stats.updated) || 0 }
       }
 
       // 首次入驻。要开店码；已经有店的话走 update，不允许一个人开两家
@@ -648,9 +900,14 @@ exports.main = async (event) => {
           .orderBy('created_at', 'asc')
           .limit(200)
           .get()
+        let items = res.data
+        if (fromWeb) {
+          const urls = await tempUrls(items.map(i => i.image))
+          items = items.map(i => Object.assign({}, i, { owner: undefined, image_url: urls[i.image] || '' }))
+        }
         return {
           success: true,
-          items: res.data,
+          items: items,
           useCategory: shop.use_category === true
         }
       }
@@ -690,12 +947,28 @@ exports.main = async (event) => {
           updated_at: new Date()
         }
 
+        let old = null
         if (event.itemId) {
           // 只能改自己店里的商品
           const doc = await db.collection('shop_items').doc(event.itemId).get()
           if (!doc.data || doc.data.shop_id !== shop._id) {
             return { success: false, message: '没有权限' }
           }
+          old = doc.data
+        }
+
+        if (fromWeb) {
+          // 网页上换不了照片，沿用原来的
+          data.image = old ? (old.image || '') : ''
+          // 文字有改动才送审：只改价格、上下架不用等审核，也不花 TMS 的额度
+          const fields = ['name', 'description', 'unit', 'specs', 'category']
+          if (!old || fields.some(k => (old[k] || '') !== data[k])) {
+            const check = await tmsCheck(fields.map(k => data[k]).filter(Boolean).join('\n'))
+            if (!check.pass) return { success: false, message: check.reason }
+          }
+        }
+
+        if (old) {
           await db.collection('shop_items').doc(event.itemId).update({ data: data })
           return { success: true, itemId: event.itemId }
         }

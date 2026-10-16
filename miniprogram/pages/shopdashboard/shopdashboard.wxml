@@ -168,6 +168,10 @@
         <view class="entry-icon"><image src="/images/ui/bell.svg" class="ico-md"></image></view>
         <view class="entry-label">{{i18n.t('新单提醒', lang)}}</view>
       </view>
+      <view wx:if="{{ordering && !shop.takedown}}" class="entry card" bindtap="goToWeb">
+        <view class="entry-icon"><image src="/images/ui/laptop.svg" class="ico-md"></image></view>
+        <view class="entry-label">{{i18n.t('电脑上管理', lang)}}</view>
+      </view>
     </view>
   </block>
 </view>

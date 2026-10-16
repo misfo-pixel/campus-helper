@@ -1,0 +1,21 @@
+/* 版式和「从网页导入」那页一致：两步 + 一个大号的码 */
+.step { padding: 32rpx; }
+.step-row { display: flex; align-items: center; gap: 16rpx; margin-top: 24rpx; font-size: 28rpx; }
+.step-row:first-child { margin-top: 0; }
+.step-num {
+  width: 40rpx; height: 40rpx; line-height: 40rpx; text-align: center; flex: none;
+  font-size: 24rpx; font-weight: 700; color: var(--color-primary); background: var(--color-accent); border-radius: 50%;
+}
+.url-row { display: flex; align-items: center; justify-content: space-between; margin: 16rpx 0 0 56rpx; padding: 18rpx 24rpx; background: #f5f2ee; border-radius: 12rpx; }
+.url { font-weight: 700; color: var(--color-text); }
+.copy { font-size: 24rpx; color: var(--color-primary); }
+.code { margin: 16rpx 0 0 56rpx; font-size: 64rpx; font-weight: 800; letter-spacing: 8rpx; color: var(--color-primary); font-family: Menlo, monospace; }
+.code-dead { color: #c4bcb6; text-decoration: line-through; }
+.hint { margin: 8rpx 0 0 56rpx; font-size: 24rpx; }
+
+.about { padding: 32rpx; }
+.about-title { font-size: 28rpx; font-weight: 600; }
+.about-gap { margin-top: 28rpx; }
+.about-line { margin-top: 10rpx; font-size: 26rpx; }
+
+.logout { margin: 40rpx 0; text-align: center; font-size: 26rpx; color: var(--color-text-light); text-decoration: underline; }

@@ -1398,5 +1398,21 @@ module.exports = {
   "导入记录不存在": "Import not found",
   "这批商品已经导入过了": "These items were already imported",
   "没有选中商品": "No items selected",
-  "服务出错了，请重试": "Something went wrong, please try again"
+  "服务出错了，请重试": "Something went wrong, please try again",
+  "在电脑上管理": "Manage on Computer",
+  "电脑上管理": "On Computer",
+  "用电脑浏览器打开": "Open this in a computer browser",
+  "输入登录码": "Enter the login code",
+  "{0} 分钟内有效，只能用一次": "Valid for {0} min, works once",
+  "登录码已过期，重新生成": "Code expired, get a new one",
+  "网页上能做的": "What you can do on the web",
+  "看订单、确认订单、一键复制待确认买家的邮箱、导出订单表格": "See and confirm orders, copy every unconfirmed buyer's email at once, export orders as a spreadsheet",
+  "开团、改场次、照常送、取消场次": "Open group orders, edit them, run them anyway or cancel them",
+  "新增和修改商品文字、改价格、上下架": "Add items, edit names and descriptions, change prices, mark sold out",
+  "还是要在小程序里做的": "Still done in the mini program",
+  "小店设置（店名、logo、取货点）、商品照片、海报、新单提醒": "Shop settings (name, logo, pickup points), item photos, posters, new-order alerts",
+  "退出所有网页登录": "Sign out of all computers",
+  "所有登录过的电脑都要重新输入登录码。": "Every computer that signed in will need a new login code.",
+  "退出": "Sign Out",
+  "已退出 {0} 处登录": "Signed out of {0} computer(s)"
 }

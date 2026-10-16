@@ -66,6 +66,7 @@
     "pages/shopcodes/shopcodes",
     "pages/shopmenu/shopmenu",
     "pages/menuimport/menuimport",
+    "pages/shopweb/shopweb",
     "pages/shopitem/shopitem",
     "pages/deliveryask/deliveryask",
     "pages/teamdashboard/teamdashboard",
