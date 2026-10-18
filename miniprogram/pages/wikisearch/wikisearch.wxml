@@ -1,0 +1,19 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="page-container">
+  <view class="wiki-search-bar">
+    <input class="wiki-search-input" value="{{q}}" bindinput="onInput" confirm-type="search" bindconfirm="onSearch"
+           placeholder="{{i18n.t('搜一搜：报税、公交、保险…', lang)}}" focus="{{true}}" />
+    <button class="btn-primary wiki-search-btn" bindtap="onSearch" disabled="{{searching}}">{{i18n.t('搜索', lang)}}</button>
+  </view>
+
+  <view wx:for="{{items}}" wx:key="_id" class="wiki-item" bindtap="onTapArticle" data-id="{{item._id}}">
+    <view class="wiki-item-title">{{item.title}}</view>
+    <view class="wiki-item-summary">{{item.summary}}</view>
+  </view>
+
+  <view wx:if="{{searched && !items.length}}" class="wiki-empty">
+    <view class="wiki-empty-title">{{i18n.t('没找到相关词条', lang)}}</view>
+    <view class="text-light">{{i18n.t('告诉我们你想查什么，整理好了第一时间补上', lang)}}</view>
+    <button class="btn-primary wiki-empty-btn" bindtap="onGoFeedback">{{i18n.t('告诉我们', lang)}}</button>
+  </view>
+</view>

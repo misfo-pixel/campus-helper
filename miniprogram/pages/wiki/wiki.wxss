@@ -1,0 +1,68 @@
+/* 生活百科：卡片、圆角、阴影都用 app.wxss 的全局变量，这里只摆布局 */
+
+.wiki-search {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 24rpx 32rpx;
+  margin-bottom: 32rpx;
+}
+
+.wiki-search-placeholder {
+  color: var(--color-text-light);
+  font-size: 28rpx;
+}
+
+.wiki-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.wiki-cat {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 28rpx 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.wiki-cat-icon { font-size: 48rpx; }
+
+.wiki-cat-name { font-size: 26rpx; }
+
+.wiki-item {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.wiki-item-title {
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
+
+.wiki-item-summary {
+  color: var(--color-text-light);
+  font-size: 26rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.wiki-empty {
+  text-align: center;
+  padding: 80rpx 0;
+}
+
+.wiki-empty-title {
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}

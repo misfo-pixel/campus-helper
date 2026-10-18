@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "生活百科",
+  "onReachBottomDistance": 100,
+  "usingComponents": {
+    "skeleton": "/components/skeleton/index"
+  }
+}

@@ -1,0 +1,7 @@
+@import "../wiki/wiki.wxss";
+
+.wiki-list-foot {
+  text-align: center;
+  padding: 24rpx 0;
+  font-size: 26rpx;
+}

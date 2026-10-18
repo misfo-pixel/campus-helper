@@ -76,7 +76,11 @@
     "pages/teammanifest/teammanifest",
     "pages/settlement/settlement",
     "pages/blocklist/blocklist",
-    "pages/event/event"
+    "pages/event/event",
+    "pages/wiki/wiki",
+    "pages/wikilist/wikilist",
+    "pages/wikidetail/wikidetail",
+    "pages/wikisearch/wikisearch"
   ],
   "window": {
     "backgroundColor": "#F6F6F6",

@@ -1,0 +1,36 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view wx:if="{{article}}" class="page-container">
+  <!-- 签证、报税这类词条顶部固定免责声明（article.disclaimer），只整理官方信息，不给结论 -->
+  <view wx:if="{{article.disclaimer}}" class="wiki-disclaimer">
+    {{i18n.t('仅供参考，请以 ISSS / 官方信息为准', lang)}}
+  </view>
+
+  <view class="wiki-detail-card">
+    <view class="detail-title">{{article.title}}</view>
+    <view class="wiki-detail-meta">
+      <text wx:if="{{verifiedText}}">{{i18n.t('最后核实', lang)}}：{{verifiedText}}</text>
+      <text wx:if="{{article.applicableTo.length}}"> · {{i18n.t('适用', lang)}}：{{article.applicableTo.join('、')}}</text>
+    </view>
+
+    <!-- 一句话结论，永远放在正文前面 -->
+    <view class="wiki-tldr">{{article.summary}}</view>
+
+    <rich-text nodes="{{nodes}}" class="wiki-body"></rich-text>
+
+    <view wx:if="{{article.sources.length}}" class="wiki-sources">
+      <view class="section-title">{{i18n.t('来源', lang)}}</view>
+      <view wx:for="{{article.sources}}" wx:key="url" class="wiki-source" bindtap="onCopySource" data-url="{{item.url}}">
+        <view class="wiki-source-title">{{item.title}}</view>
+        <view class="wiki-source-url">{{item.url}}</view>
+      </view>
+      <view class="text-light wiki-source-hint">{{i18n.t('点一下复制链接，到浏览器打开', lang)}}</view>
+    </view>
+  </view>
+</view>
+
+<skeleton wx:elif="{{loading}}" type="detail-text" />
+
+<view wx:else class="detail-state">
+  <view class="detail-state-title">{{i18n.t('词条不存在', lang)}}</view>
+  <view class="text-light" style="margin-top: 12rpx;">{{i18n.t('可能还在核实中，或者已经被合并到别的词条', lang)}}</view>
+</view>

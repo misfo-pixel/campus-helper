@@ -1,4 +1,4 @@
-const { SHOP_MODULE_ENABLED, GROUP_MODULE_ENABLED, SPONSORS_ENABLED } = require('../../config.js')
+const { SHOP_MODULE_ENABLED, GROUP_MODULE_ENABLED, SPONSORS_ENABLED, WIKI_MODULE_ENABLED } = require('../../config.js')
 const { currentBanner } = require('../../utils/promo.js')
 const { readCache, writeCache } = require('../../utils/listCache.js')
 const { layoutTiles } = require('../../utils/tiles.js')
@@ -15,6 +15,8 @@ const TILES = [
     enabled: GROUP_MODULE_ENABLED, sticker: t('新'), stickerUntil: '2026-11-10' },
   { key: 'shop', title: t('一起拼团'), sub: t('满单成团，送到学校'), color: 'cream', url: '/pages/shoplist/shoplist',
     enabled: SHOP_MODULE_ENABLED },
+  { key: 'wiki', title: t('生活百科'), sub: t('核实过的答案库'), color: '', url: '/pages/wiki/wiki',
+    enabled: WIKI_MODULE_ENABLED, sticker: t('新'), stickerUntil: '2026-12-31' },
   { key: 'feedback', title: t('意见反馈'), sub: t('问题和建议都欢迎'), color: '', url: '/pages/feedback/feedback' }
 ]
 

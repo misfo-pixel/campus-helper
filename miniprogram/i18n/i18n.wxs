@@ -1413,7 +1413,31 @@ var en = {
  "退出所有网页登录": "Sign out of all computers",
  "所有登录过的电脑都要重新输入登录码。": "Every computer that signed in will need a new login code.",
  "退出": "Sign Out",
- "已退出 {0} 处登录": "Signed out of {0} computer(s)"
+ "已退出 {0} 处登录": "Signed out of {0} computer(s)",
+ "生活百科": "Life Wiki",
+ "核实过的答案库": "Verified answers",
+ "明尼生活百科": "Minnesota Life Wiki",
+ "搜一搜：报税、公交、保险…": "Search: taxes, transit, insurance…",
+ "分类": "Categories",
+ "最近更新": "Recently updated",
+ "热门词条": "Popular",
+ "词条还在整理中": "Articles are still being prepared",
+ "可以先去「意见反馈」告诉我们你想查什么": "Tell us what you want to look up in Feedback",
+ "这个分类还没有词条": "No articles in this category yet",
+ "加载中…": "Loading…",
+ "加载失败，请稍后再试": "Failed to load, please try again",
+ "仅供参考，请以 ISSS / 官方信息为准": "For reference only — always check ISSS / official sources",
+ "最后核实": "Last verified",
+ "适用": "Applies to",
+ "来源": "Sources",
+ "点一下复制链接，到浏览器打开": "Tap to copy the link, then open it in a browser",
+ "词条不存在": "Article not found",
+ "可能还在核实中，或者已经被合并到别的词条": "It may still be under review, or merged into another article",
+ "搜索百科": "Search Wiki",
+ "搜索": "Search",
+ "没找到相关词条": "No matching articles",
+ "告诉我们你想查什么，整理好了第一时间补上": "Tell us what you want to look up and we'll add it",
+ "告诉我们": "Tell us"
 };
 
 function t(s, lang) {

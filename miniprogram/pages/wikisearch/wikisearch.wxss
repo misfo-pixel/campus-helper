@@ -1,0 +1,27 @@
+@import "../wiki/wiki.wxss";
+
+.wiki-search-bar {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 32rpx;
+}
+
+.wiki-search-input {
+  flex: 1;
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 18rpx 28rpx;
+  font-size: 28rpx;
+}
+
+.wiki-search-btn {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  padding: 0 32rpx;
+}
+
+.wiki-empty-btn {
+  margin-top: 32rpx;
+  width: 60%;
+}

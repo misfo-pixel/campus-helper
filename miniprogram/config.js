@@ -138,6 +138,13 @@ const EXACT_ADDRESS_ENABLED = false
 // 关掉后首页、发布页、「我的」页的入口全部消失，已发的群组卡片还在库里。
 const GROUP_MODULE_ENABLED = true
 
+// 生活百科（pages/wiki，数据在 wiki_categories / wiki_articles / wiki_search_logs）。
+// 定位是「核实过的答案库」：词条内容只由管理员在控制台维护（wikiSeed 起底子、
+// 之后手工补），普通用户只读 status=verified 的词条；wikiBrowse 是唯一的读取入口，
+// 草稿对普通用户就是「不存在」。签证、报税这类词条带 disclaimer 提示条。
+// 关掉后首页入口消失，已写的词条还在库里。
+const WIKI_MODULE_ENABLED = true
+
 // 首页广告语下面的活动横幅。按日期自动上下架，同一时间只显示排在最前的那一条，
 // 一条都没在期内就整块不显示。
 //
@@ -211,6 +218,7 @@ module.exports = {
   TEAM_MODULE_ENABLED: TEAM_MODULE_ENABLED,
   EXACT_ADDRESS_ENABLED: EXACT_ADDRESS_ENABLED,
   GROUP_MODULE_ENABLED: GROUP_MODULE_ENABLED,
+  WIKI_MODULE_ENABLED: WIKI_MODULE_ENABLED,
   HOME_BANNERS: HOME_BANNERS,
   SPONSORS_ENABLED: SPONSORS_ENABLED,
   DEBUG_TIMING: DEBUG_TIMING

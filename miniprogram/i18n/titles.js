@@ -50,5 +50,9 @@ module.exports = {
   "pages/teamdashboard/teamdashboard": "配送工作台",
   "pages/teamedit/teamedit": "配送队",
   "pages/teammanifest/teammanifest": "配送清单",
-  "pages/userstore/userstore": "闲置主页"
+  "pages/userstore/userstore": "闲置主页",
+  "pages/wiki/wiki": "生活百科",
+  "pages/wikidetail/wikidetail": "生活百科",
+  "pages/wikilist/wikilist": "生活百科",
+  "pages/wikisearch/wikisearch": "搜索百科"
 }

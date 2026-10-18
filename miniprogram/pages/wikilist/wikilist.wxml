@@ -1,0 +1,18 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="page-container">
+  <skeleton wx:if="{{loading}}" type="row" />
+
+  <block wx:else>
+    <view wx:for="{{items}}" wx:key="_id" class="wiki-item" bindtap="onTapArticle" data-id="{{item._id}}">
+      <view class="wiki-item-title">{{item.title}}</view>
+      <view class="wiki-item-summary">{{item.summary}}</view>
+    </view>
+
+    <view wx:if="{{!items.length}}" class="wiki-empty">
+      <view class="wiki-empty-title">{{i18n.t('这个分类还没有词条', lang)}}</view>
+    </view>
+
+    <view wx:if="{{loadingMore}}" class="text-light wiki-list-foot">{{i18n.t('加载中…', lang)}}</view>
+    <view wx:elif="{{noMore && items.length}}" class="text-light wiki-list-foot">{{i18n.t('没有更多了', lang)}}</view>
+  </block>
+</view>

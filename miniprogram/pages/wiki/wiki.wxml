@@ -1,0 +1,36 @@
+<wxs src="/i18n/i18n.wxs" module="i18n" />
+<view class="page-container">
+  <!-- 搜索框是假的输入框：点一下跳到搜索页，省得首页维护输入状态 -->
+  <view class="wiki-search" bindtap="onSearchFocus">
+    <text class="wiki-search-placeholder">🔍 {{i18n.t('搜一搜：报税、公交、保险…', lang)}}</text>
+  </view>
+
+  <skeleton wx:if="{{loading}}" type="row" />
+
+  <block wx:else>
+    <view class="section-title">{{i18n.t('分类', lang)}}</view>
+    <view class="wiki-cat-grid">
+      <view wx:for="{{categories}}" wx:key="_id" class="wiki-cat" bindtap="onTapCategory" data-id="{{item._id}}" data-name="{{item.name}}">
+        <view class="wiki-cat-icon">{{item.icon}}</view>
+        <view class="wiki-cat-name">{{item.name}}</view>
+      </view>
+    </view>
+
+    <view wx:if="{{recent.length}}" class="section-title">{{i18n.t('最近更新', lang)}}</view>
+    <view wx:for="{{recent}}" wx:key="_id" class="wiki-item" bindtap="onTapArticle" data-id="{{item._id}}">
+      <view class="wiki-item-title">{{item.title}}</view>
+      <view class="wiki-item-summary">{{item.summary}}</view>
+    </view>
+
+    <view wx:if="{{hot.length}}" class="section-title">{{i18n.t('热门词条', lang)}}</view>
+    <view wx:for="{{hot}}" wx:key="_id" class="wiki-item" bindtap="onTapArticle" data-id="{{item._id}}">
+      <view class="wiki-item-title">{{item.title}}</view>
+      <view class="wiki-item-summary">{{item.summary}}</view>
+    </view>
+
+    <view wx:if="{{!categories.length && !recent.length}}" class="wiki-empty">
+      <view class="wiki-empty-title">{{i18n.t('词条还在整理中', lang)}}</view>
+      <view class="text-light">{{i18n.t('可以先去「意见反馈」告诉我们你想查什么', lang)}}</view>
+    </view>
+  </block>
+</view>

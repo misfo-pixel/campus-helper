@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "生活百科",
+  "usingComponents": {
+    "skeleton": "/components/skeleton/index"
+  }
+}

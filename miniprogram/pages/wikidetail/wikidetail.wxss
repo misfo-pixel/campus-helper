@@ -1,0 +1,84 @@
+.wiki-disclaimer {
+  background: rgba(255, 204, 51, 0.15);
+  border: 1rpx solid var(--color-accent);
+  border-radius: var(--radius);
+  padding: 20rpx 28rpx;
+  margin-bottom: 24rpx;
+  font-size: 26rpx;
+}
+
+.wiki-detail-card {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: 40rpx 32rpx;
+}
+
+.wiki-detail-meta {
+  color: var(--color-text-light);
+  font-size: 24rpx;
+  margin-top: 12rpx;
+}
+
+.wiki-tldr {
+  background: rgba(122, 0, 25, 0.05);
+  border-left: 6rpx solid var(--color-primary);
+  border-radius: 8rpx;
+  padding: 20rpx 24rpx;
+  margin: 28rpx 0;
+  font-size: 28rpx;
+}
+
+/* rich-text 里的节点靠这些类排版（utils/wikiMd.js 生成） */
+.wiki-body .md-h2 {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin: 36rpx 0 16rpx;
+}
+
+.wiki-body .md-h3 {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 28rpx 0 12rpx;
+}
+
+.wiki-body .md-p { margin: 16rpx 0; }
+
+.wiki-body .md-ul, .wiki-body .md-ol {
+  padding-left: 40rpx;
+  margin: 16rpx 0;
+}
+
+.wiki-body .md-li { margin: 8rpx 0; }
+
+.wiki-body .md-blockquote {
+  border-left: 6rpx solid var(--color-border);
+  padding-left: 24rpx;
+  color: var(--color-text-light);
+  margin: 16rpx 0;
+  font-size: 28rpx;
+}
+
+.wiki-body .md-link {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.wiki-sources { margin-top: 40rpx; }
+
+.wiki-source {
+  border: 1rpx solid var(--color-border);
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 16rpx;
+}
+
+.wiki-source-title { font-size: 28rpx; }
+
+.wiki-source-url {
+  color: var(--color-text-light);
+  font-size: 24rpx;
+  word-break: break-all;
+}
+
+.wiki-source-hint { font-size: 24rpx; }
